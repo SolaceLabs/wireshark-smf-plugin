@@ -1,0 +1,5 @@
+[submodule "wireshark"]
+	path = wireshark
+	url = https://gitlab.com/amqp-protobuf-dissector/wireshark.git
+	branch = 4.0.5-with-amqp-work
+	ignore = untracked
