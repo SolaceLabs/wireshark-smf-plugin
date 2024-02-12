@@ -1,6 +1,6 @@
 /* packet-smf-openmama-payload.c
  * Solace OpenMAMA payload Dissector
- * Copyright 2015, Solace Systems Inc.
+ * Copyright 2015, Solace Corporation
  *
  * $Id: $
  *

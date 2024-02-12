@@ -1,8 +1,8 @@
 /* packet-assuredctrl.c
  * Routines for Assured Control dissection
- * Copyright 2007, Solace Systems Inc. 
+ * Copyright 2007, Solace Corporation 
  *
- * $Id: packet-assuredctrl.c 321 2007-01-24 19:42:21Z jdentremont $
+ * $Id: packet-assuredctrl.c 321 2007-01-24 19:42:21Z $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>

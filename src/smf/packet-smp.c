@@ -1,6 +1,6 @@
 /* packet-smp.c
  * Subscription Management Protocol Dissector
- * Copyright 2007, Solace Systems Inc. 
+ * Copyright 2007, Solace Corporation 
  *
  * $Id: $
  *

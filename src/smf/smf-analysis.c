@@ -1,8 +1,8 @@
 /* smf-analysis.c
  * Routines for Solace Message Format analysis
- * Copyright 2021, Solace Systems Inc. 
+ * Copyright 2021, Solace Corporation
  *
- * $Id: smf-analysis.c dng $
+ * $Id: smf-analysis.c $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>

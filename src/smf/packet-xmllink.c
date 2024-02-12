@@ -1,8 +1,8 @@
 /* packet-xmllink.c
  * Routines for XML Link dissection
- * Copyright 2007, Solace Systems Inc. 
+ * Copyright 2007, Solace Corporation
  *
- * $Id: packet-xmllink.c 320 2007-01-24 18:57:25Z jdentremont $
+ * $Id: packet-xmllink.c 320 2007-01-24 18:57:25Z $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>

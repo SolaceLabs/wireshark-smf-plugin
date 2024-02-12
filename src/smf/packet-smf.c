@@ -1,8 +1,8 @@
 /* packet-smf.c
  * Routines for Solace Message Format dissection
- * Copyright 2007, Solace Systems Inc. 
+ * Copyright 2007, Solace Corporation
  *
- * $Id: packet-smf.c 657 2007-07-31 20:42:07Z jdentremont $
+ * $Id: packet-smf.c 657 2007-07-31 20:42:07Z $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>

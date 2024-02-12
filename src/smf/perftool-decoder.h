@@ -1,6 +1,6 @@
 /* perftool-decoder.h
  * Structured Data Type Dissector
- * Copyright 2007, Solace Systems Inc.
+ * Copyright 2007, Solace Corporation
  *
  * $Id: $
  *

@@ -1,8 +1,8 @@
 /* packet-smf-compress.c
  * Routines for Solace Message Format with compression dissection
- * Copyright 2021, Solace Systems Inc. 
+ * Copyright 2021, Solace Corporation 
  *
- * $Id: packet-smf-compress.c 657 2007-07-31 20:42:07Z jdentremont $
+ * $Id: packet-smf-compress.c 657 2007-07-31 20:42:07Z $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>

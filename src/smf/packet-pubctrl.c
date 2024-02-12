@@ -1,8 +1,8 @@
 /* packet-pubctrl.c
  * Routines for Publisher Control dissection
- * Copyright 2007, Solace Systems Inc. 
+ * Copyright 2007, Solace Corporation
  *
- * $Id: packet-pubctrl.c 318 2007-01-24 16:01:31Z jdentremont $
+ * $Id: packet-pubctrl.c 318 2007-01-24 16:01:31Z $
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>

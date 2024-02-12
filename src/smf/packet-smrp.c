@@ -1,6 +1,6 @@
 /* packet-smrp.c
  * Subscription Management Routing Protocol Dissector
- * Copyright 2009, Solace Systems Inc. 
+ * Copyright 2009, Solace Corporation
  *
  * $Id: $
  *
