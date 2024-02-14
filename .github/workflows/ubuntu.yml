@@ -1,0 +1,61 @@
+name: Build Ubuntu
+
+on:
+  workflow_call:
+    inputs:
+      MAJOR_VERSION:
+        description: "Version string for wireshark tag needed to build can be v#.#.# or v#.#.#-rc#"
+        type: string
+        required: true
+        default: "4"
+      MINOR_VERSION:
+        description: "Minor version of the wireshark tag"
+        type: string
+        required: true
+        default: "0"
+      PATCH_VERSION:
+        description: "Patch version of the wireshark tag"
+        type: string
+        required: true
+        default: "5"
+jobs:
+  ubuntu:
+    name: Build on Linux
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Checkout Wireshark
+        uses: actions/checkout@v4
+        with:
+          repository: wireshark/wireshark
+          path: "./wireshark"
+          ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
+
+      - name: Install deps
+        run: sudo ./wireshark/tools/debian-setup.sh --install-optional --install-test-deps --install-deb-deps python3-pip -y
+
+      - name: Link SMF plugin
+        shell: bash
+        run: |
+          ln -s ${{ github.workspace }}/src/CMakeListsCustom.txt  ${{ github.workspace }}/wireshark/CMakeListsCustom.txt
+          ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
+
+      - name: Mkdir
+        run: mkdir build
+
+      - name: Cmake
+        working-directory: build
+        run: cmake -GNinja ${{ github.workspace }}/wireshark
+
+      - name: Build
+        run: ninja
+        working-directory: build
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wireshark-smf-linux
+          path: ${{ github.workspace }}/build/run/plugins/**/epan/smf.so
+          overwrite: true
