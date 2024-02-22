@@ -75,7 +75,13 @@ jobs:
         run: mkdir build
 
       - name: Cmake
-        run: cmake -DUSE_qt6=ON -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -A x64 ../wireshark
+        run: |
+          cmake -DUSE_qt6=ON -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -A x64 ../wireshark \
+            -DCMAKE_POLICY_DEFAULT_CMP0094=NEW \
+            -DPythopn3_ROOT_DIR="${{ env.pythonVersion }}" \
+            -DPython3_EXECUTABLE="${{ env.pythonVersion }}\python.exe" \
+            -DPython3_LIBRARY="${{ env.pythonVersion }}\libs" \
+            -DPython3_INCLUDE_DIR="${{ env.pythonVersion }}\Include"
         env:
           PLATFORM: x64
           WIRESHARK_BASE_DIR: C:/wireshark-libs
