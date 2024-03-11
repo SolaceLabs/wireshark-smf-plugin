@@ -561,7 +561,7 @@ proto_register_subctrl(void)
 	proto_register_field_array(proto_subctrl, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("subctrl", dissect_subctrl, proto_subctrl);
+    register_dissector("solace.subctrl", dissect_subctrl, proto_subctrl);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */

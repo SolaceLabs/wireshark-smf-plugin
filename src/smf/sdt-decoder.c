@@ -431,5 +431,5 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
 void sdt_decoder_init(void) 
 {
     xml_handle = find_dissector("xml");
-    smrp_handle = find_dissector("smrp");
+    smrp_handle = find_dissector("solace.smrp");
 }
