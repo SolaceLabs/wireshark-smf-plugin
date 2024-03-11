@@ -2870,7 +2870,7 @@ void proto_register_smf(void)
     expert_module_t* expert_smf = expert_register_protocol(proto_smf);
     expert_register_field_array(expert_smf, ei, array_length(ei));
 
-    smf_handle = register_dissector("smf", dissect_smf_tcp_pdu, proto_smf);
+    smf_handle = register_dissector("solace.smf", dissect_smf_tcp_pdu, proto_smf);
 
     register_init_routine(&smf_proto_init);
 
@@ -3331,15 +3331,15 @@ void proto_reg_handoff_smf(void)
         heur_dissector_add("tls", dissect_smf_heur_tls, "SMF over TLS/SSL", "smf_tls", proto_smf, (heuristic_enable_e)TRUE);
 
         xml_handle = find_dissector("xml");
-        pubctrl_handle = find_dissector("pubctrl");
-        subctrl_handle = find_dissector("subctrl");
-        xmllink_handle = find_dissector("xmllink");
-        assuredctrl_handle = find_dissector("assuredctrl");
-        smp_handle = find_dissector("smp");
-        smrp_handle = find_dissector("smrp");
-        clientctrl_handle = find_dissector("clientctrl");
-        bm_handle = find_dissector("smf-bm");
-        mama_payload_handle = find_dissector("mama-payload");
+        pubctrl_handle = find_dissector("solace.pubctrl");
+        subctrl_handle = find_dissector("solace.subctrl");
+        xmllink_handle = find_dissector("solace.xmllink");
+        assuredctrl_handle = find_dissector("solace.assuredctrl");
+        smp_handle = find_dissector("solace.smp");
+        smrp_handle = find_dissector("solace.smrp");
+        clientctrl_handle = find_dissector("solace.clientctrl");
+        bm_handle = find_dissector("solace.smf-bm");
+        mama_payload_handle = find_dissector("solace.mama-payload");
         protobuf_handle = find_dissector("protobuf");
         dissector_add_for_decode_as("smf_payload_dissector_table", protobuf_handle);
         smf_reas_init();

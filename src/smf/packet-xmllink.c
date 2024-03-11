@@ -400,7 +400,7 @@ proto_register_xmllink(void)
 	proto_register_field_array(proto_xmllink, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("xmllink", dissect_xmllink, proto_xmllink);
+    register_dissector("solace.xmllink", dissect_xmllink, proto_xmllink);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */

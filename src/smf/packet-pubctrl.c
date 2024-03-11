@@ -394,7 +394,7 @@ proto_register_pubctrl(void)
 	proto_register_field_array(proto_pubctrl, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("pubctrl", dissect_pubctrl, proto_pubctrl);
+    register_dissector("solace.pubctrl", dissect_pubctrl, proto_pubctrl);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */

@@ -260,7 +260,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     // Dont care what smf returns, just keep going
     // Could check if we have collect enough data in currentStream_p->desegment_len. To do later...
     // Does not hurt to call smf dissector, just a little slower.
-    call_dissector_only(find_dissector("smf"), next_tvb, pinfo, tree, data);
+    call_dissector_only(find_dissector("solace.smf"), next_tvb, pinfo, tree, data);
 
     if (!PINFO_FD_VISITED(pinfo)) {
         currentStream_p->desegment_offset = pinfo->desegment_offset;
@@ -301,7 +301,7 @@ void proto_register_smf_compress(void)
     };
 
     proto_smf_compressed = proto_register_protocol("Solace Message Format (Compressed)", "SMF-COMP", "smf-comp");
-    register_dissector("smf-comp", dissect_smf_compressed, proto_smf_compressed);
+    register_dissector("solace.smf-comp", dissect_smf_compressed, proto_smf_compressed);
 
     proto_register_field_array(proto_smf_compressed, hf, array_length(hf));
 

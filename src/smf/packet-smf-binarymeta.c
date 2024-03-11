@@ -173,7 +173,7 @@ proto_register_bm(void)
 	proto_register_field_array(proto_bm, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("smf-bm", dissect_bm, proto_bm);
+    register_dissector("solace.smf-bm", dissect_bm, proto_bm);
 
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
