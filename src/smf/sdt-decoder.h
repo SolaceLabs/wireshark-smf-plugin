@@ -26,7 +26,9 @@
 #ifndef SDT_DECODER_H_
 #define SDT_DECODER_H_
 
-extern gint ett_trace_span_message_creation_context;
+#include "epan/proto.h"
+
+extern int ett_trace_span_message_creation_context;
 
 void
 add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvbuff_t *tvb, int offset, int length, int indent, gboolean is_in_map);

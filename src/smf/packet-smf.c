@@ -564,7 +564,7 @@ static void* smf_subdissection_uat_entry_copy_cb(void* dest, const void* orig, s
     return d;
 }
 
-static gboolean smf_subdissection_uat_entry_update_cb(void* record, char** error)
+static bool smf_subdissection_uat_entry_update_cb(void* record, char** error)
 {
     smf_subdissection_uat_entry_t* u = (smf_subdissection_uat_entry_t*)record;
 
@@ -665,7 +665,7 @@ smf_call_subdissector(const smf_subdissection_uat_entry_t* subdissector, tvbuff_
 
 UAT_VS_DEF(smf_subdissection, match_criteria, smf_subdissection_uat_entry_t, smf_subdissection_match_criteria_t, MATCH_CRITERIA_EQUAL, "Equal to")
 UAT_CSTRING_CB_DEF(smf_subdissection, topic_pattern, smf_subdissection_uat_entry_t)
-UAT_PROTO_DEF(smf_subdissection, payload_proto, payload_proto, payload_proto_name, smf_subdissection_uat_entry_t)
+UAT_DISSECTOR_DEF(smf_subdissection, payload_proto, payload_proto, payload_proto_name, smf_subdissection_uat_entry_t)
 UAT_CSTRING_CB_DEF(smf_subdissection, proto_more_info, smf_subdissection_uat_entry_t)
 
 /* reassembly table used for calls into reassemble.h */
@@ -2884,8 +2884,8 @@ void proto_register_smf(void)
     static uat_field_t smf_subdissection_table_columns[] = {
         UAT_FLD_VS(smf_subdissection, match_criteria, "Match criteria", smf_subdissection_match_criteria, "Match criteria"),
         UAT_FLD_CSTRING(smf_subdissection, topic_pattern, "Topic pattern", "Pattern to match for the topic"),
-        UAT_FLD_PROTO(smf_subdissection, payload_proto, "Payload protocol",
-                      "Protocol to be used for the message part of the matching topic"),
+        UAT_FLD_DISSECTOR(smf_subdissection, payload_proto, "Payload dissector",
+                      "Dissector to be used for the message part of the matching topic"),
         UAT_FLD_CSTRING(smf_subdissection, proto_more_info, "Additional Data", "Additional Data to pass to the disector"),
         UAT_END_FIELDS
     };
@@ -2936,11 +2936,11 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
     gboolean needMore = TRUE;
     guint32 pduLen;
     tvbuff_t* newTvb;
-    fragment_item* fdHead = NULL;
+    fragment_head* fdHead = NULL;
     gboolean savedFragmented = pinfo->fragmented;
-    fragment_item* fragmentData =
+    fragment_head* fragmentData =
         fragment_get(&smf_gen_reassembly_table, pinfo, id, data);
-    fragment_item* assembledData =
+    fragment_head* assembledData =
         fragment_get_reassembled_id(&smf_gen_reassembly_table, pinfo, id);
 
     // Try load the uat subdissection
@@ -3171,11 +3171,11 @@ static int dissect_smf_bd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     gboolean needMore = TRUE;
     guint32 pduLen;
     tvbuff_t *newTvb;
-    fragment_item *fdHead = NULL;
+    fragment_head *fdHead = NULL;
     gboolean savedFragmented = pinfo->fragmented;
-    fragment_item *fragmentData =
+    fragment_head *fragmentData =
         fragment_get(&reasTable, pinfo, bdChannel, data);
-    fragment_item *assembledData =
+    fragment_head *assembledData =
         fragment_get_reassembled_id(&reasTable, pinfo, bdChannel);
 
     if (bdChannel < 0)
