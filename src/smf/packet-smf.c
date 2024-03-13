@@ -74,6 +74,7 @@ static void smf_proto_init(void);
 static int proto_smf = -1;
 static int global_smf_port = 55555;
 static int global_smf_rtg_port = 55556;
+static gboolean scan_smf_in_stream = 0;
 
 /* Header v3 */
 
@@ -837,20 +838,22 @@ static guint get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *
     if (msglen == 1) {
         // Packet is not valid. One possibility is that the packet capture not done at from the beginning.
         // As SMF could start somewhere inside a TCP packet, we look for the next potential starting point
-        guint captured_length_remaining = tvb_ensure_captured_length_remaining(tvb, offset);
-        // Start from the MIN_SMF_HEADER_LEN byte. Returning anything less than MIN_SMF_HEADER_LEN is an error
-        guint32 index = offset + MIN_SMF_HEADER_LEN;
-        guint32 found = 0;
-        // The reason for not checking the last 12 bytes of the packet is because it would trigger some 
-        // other errors in decoding. The exact reason has not been studied.
-        while (!found && ((index + MIN_SMF_HEADER_LEN) < captured_length_remaining) ) {
-            if (test_smf(tvb, inf, index) != 1) {
-                // Found a good starting point. Indicate that our current smf message ends there.
-                msglen = index;
-                found = 1;
-                break;
+        if (scan_smf_in_stream) {
+            guint captured_length_remaining = tvb_ensure_captured_length_remaining(tvb, offset);
+            // Start from the MIN_SMF_HEADER_LEN byte. Returning anything less than MIN_SMF_HEADER_LEN is an error
+            guint32 index = offset + MIN_SMF_HEADER_LEN;
+            guint32 found = 0;
+            // The reason for not checking the last 12 bytes of the packet is because it would trigger some 
+            // other errors in decoding. The exact reason has not been studied.
+            while (!found && ((index + MIN_SMF_HEADER_LEN) < captured_length_remaining) ) {
+                if (test_smf(tvb, inf, index) != 1) {
+                    // Found a good starting point. Indicate that our current smf message ends there.
+                    msglen = index;
+                    found = 1;
+                    break;
+                }
+                index++;
             }
-            index++;
         }
     }
 
@@ -2871,6 +2874,10 @@ void proto_register_smf(void)
 
         uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
     }
+
+    // Register aggressive smf decoding
+    prefs_register_bool_preference(smf_module, "scan_smf_in_stream", "Scan for SMF in TCP Stream", 
+        "Scan for SMF data inside the TCP Stream. Used in packet capture with busy SMF traffic. If unselected, SMF is scanned at the beginning of each TCP packet.", &scan_smf_in_stream);
 
     /* Register a sample preference */
 #if 0
