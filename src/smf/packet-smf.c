@@ -1925,7 +1925,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
                     add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
                         payload_offset + param_info.attachment_start + param_info.tooldata_length + 5,
-                        -1, 1, FALSE);
+                        param_info.attachment_length - 5, 1, FALSE);
 
 
                     break;
