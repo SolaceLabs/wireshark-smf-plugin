@@ -32,10 +32,10 @@ jobs:
           repository: wireshark/wireshark
           path: "./wireshark"
           ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
-      - name: Set up Python 3.8
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.10"
       - name: Install deps
         continue-on-error: true
         run: |
@@ -44,7 +44,7 @@ jobs:
 
           # install qt5
           brew install qt@5
-          qt5_dir="$(brew --prefix)/opt/qt@5/lib/cmake/Qt5:/usr/local/Cellar/qt@5/5.15.12:/usr/local/Cellar/qt@5/5.15.12/lib/cmake/Qt5:/usr/local/opt/qt@5/bin"
+          qt5_dir="$(brew --prefix)/opt/qt@5/lib/cmake/Qt5:/usr/local/Cellar/qt@5/5.15.12:/usr/local/Cellar/qt@5/5.15.12/lib/cmake/Qt5:/usr/local/opt/qt@5/bin:/opt/homebrew/opt/qt@5"
           echo "Qt5_DIR=$qt5_dir" >> $GITHUB_ENV
 
       - name: Link SMF plugin
@@ -68,6 +68,8 @@ jobs:
             -D Qt5_DIR=${{ env.Qt5_DIR }} \
             -D Qt5Core_DIR=${{ env.Qt5_DIR }} \
             -D CMAKE_OSX_ARCHITECTURES="arm64" \
+            -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DPython_ROOT_DIR=${{ env.pythonLocation }} \
             -DPython_LIBRARY=${{ env.pythonLocation }}/lib \
             -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
