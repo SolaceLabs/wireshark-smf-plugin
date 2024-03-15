@@ -74,7 +74,7 @@ static void smf_proto_init(void);
 static int proto_smf = -1;
 static int global_smf_port = 55555;
 static int global_smf_rtg_port = 55556;
-static gboolean scan_smf_in_stream = 0;
+static int scan_smf_in_stream = 0;
 
 /* Header v3 */
 
