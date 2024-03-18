@@ -29,6 +29,7 @@
 #include <epan/proto_data.h>
 #include <epan/dissectors/packet-tcp.h>
 #include <epan/prefs.h>
+#include <epan/expert.h>
 
 #include <wsutil/str_util.h>
 
@@ -43,9 +44,12 @@ static int hf_smf_compressed_segment_data = -1;
 
 static dissector_handle_t smf_tcp_compressed_handle;
 
+static expert_field ei_decompression_error = EI_INIT;
+
 typedef struct _smf_uncompressed_buf_t {
     guchar *buf;
     guint len;
+    char *errorMsg;
 } smf_uncompressed_buf_t;
 
 typedef struct _smf_compressed_stream_t {
@@ -99,7 +103,7 @@ static void init_stream(smf_compressed_stream_t *compressed_stream_p)
 }
 
 static int
-decompress_record(smf_compressed_stream_t* compressed_stream_p, const guchar* in, guint inl, guchar* out_str, guint* outl, packet_info * pinfo)
+decompress_record(smf_compressed_stream_t* compressed_stream_p, const guchar* in, guint inl, guchar* out_str, guint* outl, char *errorMsg_p)
 {
     gint err = Z_OK;
 
@@ -136,9 +140,13 @@ DIAG_ON(cast-qual)
             outStr = "Unknown";
             break;
         }
-        g_print("ssl_decompress_record: Frame %d inflate() failed (%d): %s: %s\n", pinfo->fd->num, err, outStr, stream_p->msg);
+        
+        sprintf(errorMsg_p, "%s(%d): %s", outStr, err, stream_p->msg);
+        *outl = *outl - stream_p->avail_out;
+        
+        init_stream(compressed_stream_p);
 
-        return -1;
+        return 1;
 
     }
 
@@ -155,6 +163,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     conv = find_or_create_conversation(pinfo);
     smf_compressed_stream_t *currentStream_p;
     int direction;
+    char errorMsg[256]= {0};
 
     smf_compressed_conv = (smf_compressed_conv_t *)conversation_get_proto_data(conv, proto_smf_compressed);
     if (!smf_compressed_conv) {
@@ -190,7 +199,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
                                     tvb_captured_length_remaining(tvb, 0),
                                     out_str,
                                     &outl,
-                                    pinfo);
+                                    errorMsg);
         if (err == -1) {
             // Error is reported inside decompress_record()
             return 0;
@@ -198,6 +207,12 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 
         uncompressed_buf = (smf_uncompressed_buf_t *)wmem_alloc(wmem_file_scope(), sizeof(smf_uncompressed_buf_t));
         uncompressed_buf->len = outl;
+        uncompressed_buf->errorMsg = NULL;
+        if (errorMsg[0] != '\0') {
+            // Some error message
+            uncompressed_buf->errorMsg = (char *)wmem_alloc(wmem_file_scope(), sizeof(errorMsg));
+            strcpy(uncompressed_buf->errorMsg, (char *)errorMsg);
+        }
         // See if there is something left in the previous desegment
         int prefBufOffset = 0;
         if (currentStream_p->uncompressed_buf) {
@@ -242,9 +257,6 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
         return 0;
     }
     proto_tree_add_item(tree, proto_smf_compressed, tvb, 0, -1, ENC_NA);
-    /* TODO: Display raw decompressed data
-    proto_tree_add_bytes_format(tree, hf_smf_compressed_segment_data, tvb, 0,
-        nbytes, NULL, "SMF Decompressed segment data (%u byte%s)", nbytes, plurality(nbytes, "", "s")); */
 
     tvbuff_t *next_tvb = tvb_new_child_real_data(tvb, uncompressed_buf->buf, nbytes, nbytes);
     add_new_data_source(pinfo, next_tvb, "Decompressed Data");
@@ -255,7 +267,19 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     }
 
     // Show the decompressed data in an attribute.
-    proto_tree_add_item(tree, hf_smf_compressed_segment_data, next_tvb, 0, -1, ENC_NA);
+    proto_item *item = proto_tree_add_item(tree, hf_smf_compressed_segment_data, next_tvb, 0, -1, ENC_NA);
+
+    if (uncompressed_buf->errorMsg) {
+        char *isSnaplencapture = "";
+        if (tvb_captured_length(tvb) != tvb_reported_length(tvb)) {
+            // This is a packet capture with snap length
+            // This is the likely cause of decompression failure
+            isSnaplencapture = " (Snaplen capture)";
+        }
+
+        col_append_fstr(pinfo->cinfo, COL_INFO, "[Decompression Error%s]", isSnaplencapture);
+        expert_add_info_format(pinfo, item, &ei_decompression_error, "Decompression Error%s: %s", isSnaplencapture, uncompressed_buf->errorMsg);
+    }
 
     // Dont care what smf returns, just keep going
     // Could check if we have collect enough data in currentStream_p->desegment_len. To do later...
@@ -300,10 +324,20 @@ void proto_register_smf_compress(void)
             "A data segment used in reassembly of a lower-level protocol", HFILL}},
     };
 
+    static ei_register_info ei[] = {
+        { &ei_decompression_error,
+            { "smf-comp.decompression_error", PI_PROTOCOL,
+                PI_ERROR, "Decompression Error", EXPFILL
+                }},
+    };
+
     proto_smf_compressed = proto_register_protocol("Solace Message Format (Compressed)", "SMF-COMP", "smf-comp");
     register_dissector("smf-comp", dissect_smf_compressed, proto_smf_compressed);
 
     proto_register_field_array(proto_smf_compressed, hf, array_length(hf));
+
+    expert_module_t* expert_smf_compressed = expert_register_protocol(proto_smf_compressed);
+    expert_register_field_array(expert_smf_compressed, ei, array_length(ei));
 
     module_t* smfcomp_module;
     smfcomp_module = prefs_register_protocol(proto_smf_compressed, NULL);
