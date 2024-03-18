@@ -437,7 +437,6 @@ struct param_info_t
     int binary_metadata_length;
     gint32 correlation_tag;
     gboolean ack_immediately_tag;
-    int tooldata_length;
 };
 
 /* Dissector handles for external dissectors */
@@ -1862,8 +1861,6 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             {
                 _smf_attachment_type_t attachment_type = _smf_attachment_type_none;
 
-                /* Check for perf tool data */
-                param_info.tooldata_length = 0;
                 /* Only check for perf tool if the payload length is long enough for perf tool to exist. In certain cases, usually testing, a payload that is less than four 
                  * bytes will be sent. In those cases, the call to ntohl() below causes a malformed packet because there are fewer than four bytes to pull.
                  */
@@ -1873,11 +1870,10 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     if (magicNumber == 0x501ACE01) {
                         attach_item = proto_tree_add_item(smf_tree, hf_smf_attachment, tvb, payload_offset + param_info.attachment_start, param_info.attachment_length, FALSE);
                         attach_tree = proto_item_add_subtree(attach_item, ett_attachment_sdt);
-                        // add_tooldata_block(attach_tree, hf_smf_attachment_tooldata, tvb, payload_offset + param_info.attachment_start, &param_info.tooldata_length);
                     }
                 }
                 if (param_info.attachment_length > 5) {
-                    guint8 type = tvb_get_guint8(tvb, payload_offset + param_info.attachment_start + param_info.tooldata_length);
+                    guint8 type = tvb_get_guint8(tvb, payload_offset + param_info.attachment_start);
                     /* Within this if statement, length is compared to param_info.attachment_length. the length is encoded as an 
                      * unsigned 32-bit integer value on the wire, so it is necessary to use tvb_get_ntohl since it fetches an 
                      * unsigned 32-bit value from the packet. However, param_info.attachment_length is declared as a regular int 
@@ -1886,7 +1882,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                      * variable, and typecast any assignments or comparisons to type 'guint64' so that there is no overflow like 
                      * there might be if we typecasted int to unsigned int or vice versa. 
                      */
-                    guint64 length = (guint64)tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start + param_info.tooldata_length + 1);
+                    guint64 length = (guint64)tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start + 1);
 
                     if ((type == 0x2f || //Decode as SDT if an SDT stream is contained
                         type == 0x2b || //Decode as SDT if an SDT map is contained
@@ -1897,9 +1893,9 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     }
                     else if ((type == 0x31) && (param_info.attachment_length > 7)) { /* 0x31 = Solace openMAMA payload*/
                         type = tvb_get_guint8(tvb,
-                            payload_offset + param_info.attachment_start + param_info.tooldata_length + 2);
+                            payload_offset + param_info.attachment_start + 2);
                         length = (guint64)tvb_get_ntohl(tvb,
-                            payload_offset + param_info.attachment_start + param_info.tooldata_length + 3);
+                            payload_offset + param_info.attachment_start + 3);
 
 
                         if ((type == 0x2F) && (length + 2 == (guint64)param_info.attachment_length)) { /* Stream of fields starts with 0x2F */
@@ -1916,7 +1912,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     {
                         attach_item = proto_tree_add_item(smf_tree,
                             hf_smf_attachment, tvb,
-                            payload_offset + param_info.attachment_start + param_info.tooldata_length,
+                            payload_offset + param_info.attachment_start,
                             -1, FALSE);
 
                         attach_tree = proto_item_add_subtree(
@@ -1924,7 +1920,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     }
 
                     add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
-                        payload_offset + param_info.attachment_start + param_info.tooldata_length + 5,
+                        payload_offset + param_info.attachment_start + 5,
                         param_info.attachment_length - 5, 1, FALSE);
 
 
@@ -1934,7 +1930,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                 {
                     /* openMAMA payload */
                     next_tvb = tvb_new_subset_length_caplen(tvb,
-                        payload_offset + param_info.attachment_start + param_info.tooldata_length,
+                        payload_offset + param_info.attachment_start,
                         -1,
                         param_info.attachment_length);
                     call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
@@ -1944,7 +1940,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     if (attach_item == NULL)
                     {  
                         next_tvb = tvb_new_subset_length_caplen(tvb,
-                            payload_offset + param_info.attachment_start + param_info.tooldata_length,
+                            payload_offset + param_info.attachment_start,
                             -1,
                             param_info.attachment_length);
 
@@ -1955,7 +1951,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                         else if (!dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,TRUE,NULL))
                         {
                             proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
-                                payload_offset + param_info.attachment_start + param_info.tooldata_length,
+                                payload_offset + param_info.attachment_start,
                                 -1, FALSE);
                         }
                     }
