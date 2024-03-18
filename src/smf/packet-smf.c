@@ -74,7 +74,7 @@ static void smf_proto_init(void);
 static int proto_smf = -1;
 static int global_smf_port = 55555;
 static int global_smf_rtg_port = 55556;
-static int scan_smf_in_stream = 0;
+static int scan_smf_in_stream = 1;
 
 /* Header v3 */
 
@@ -2875,7 +2875,7 @@ void proto_register_smf(void)
         uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
     }
 
-    // Register aggressive smf decoding
+    // Register scan smf in stream
     prefs_register_bool_preference(smf_module, "scan_smf_in_stream", "Scan for SMF in TCP Stream", 
         "Scan for SMF data inside the TCP Stream. Used in packet capture with busy SMF traffic. If unselected, SMF is scanned at the beginning of each TCP packet.", &scan_smf_in_stream);
 
