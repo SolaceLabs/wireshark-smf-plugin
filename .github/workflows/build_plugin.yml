@@ -1,0 +1,45 @@
+name: Build SMF plugin
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      MAJOR_VERSION:
+        description: "Version string for wireshark tag needed to build can be v#.#.# or v#.#.#-rc#"
+        required: true
+        default: "4"
+      MINOR_VERSION:
+        description: "Minor version of the wireshark tag"
+        required: true
+        default: "0"
+      PATCH_VERSION:
+        description: "Patch version of the wireshark tag"
+        required: true
+        default: "5"
+jobs:
+  build_macos:
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos.yml@CRE-1480
+    with:
+      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+  build_macos_arm64:
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@CRE-1480
+    with:
+      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+  build_windows:
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/windows.yml@CRE-1480
+    with:
+      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+  build_linux:
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/ubuntu.yml@CRE-1480
+    with:
+      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
