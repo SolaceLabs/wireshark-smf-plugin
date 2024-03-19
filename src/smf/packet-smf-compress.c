@@ -36,6 +36,7 @@
 #include <zlib.h>
 
 #define MAX_DECOMPRESS_LEN 16384 // This comes from packet-tls-utils.c
+#define ERROR_MSG_SIZE 256 // This is the size of the error message string
 
 static int proto_smf_compressed = -1;
 static int global_smf_compressed_port = 55003;
@@ -141,7 +142,7 @@ DIAG_ON(cast-qual)
             break;
         }
         
-        sprintf(errorMsg_p, "%s(%d): %s", outStr, err, stream_p->msg);
+        snprintf(errorMsg_p, ERROR_MSG_SIZE,"%s(%d): %s", outStr, err, stream_p->msg);
         *outl = *outl - stream_p->avail_out;
         
         init_stream(compressed_stream_p);
@@ -163,7 +164,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     conv = find_or_create_conversation(pinfo);
     smf_compressed_stream_t *currentStream_p;
     int direction;
-    char errorMsg[256]= {0};
+    char errorMsg[ERROR_MSG_SIZE]= {0};
 
     smf_compressed_conv = (smf_compressed_conv_t *)conversation_get_proto_data(conv, proto_smf_compressed);
     if (!smf_compressed_conv) {
