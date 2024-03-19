@@ -784,9 +784,25 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
     }
     // Check protocol
     guint8 secondByte = tvb_get_guint8(tvb, offset+1);
-    if ((secondByte & 0x3f) > SMF_PROTOCOL_MAX)
+    guint8 smfProtocol = secondByte & 0x3f;
+    if (smfProtocol > SMF_PROTOCOL_MAX)
     {
         return 1;
+    }
+    // Detect obsolete protocols 
+    switch (smfProtocol) {
+    case SMF_CSMP:
+    case SMF_PUBMSG:
+    case SMF_XMLLINK:
+    case SMF_WSE:
+    case SMF_SUBCTRL:
+    case SMF_PUBCTRL:
+    case SMF_KEEPALIVE:
+        g_print("smf obsolete protocol detected in packet %d, protocol %s(%d)\n", pinfo->fd->num, 
+            try_val_to_str(smfProtocol, protocolnames), smfProtocol);
+        return 1;
+    default:
+        break;
     }
     guint32 headerlen = tvb_get_ntohl(tvb, offset + 4);
     guint32 msglen = tvb_get_ntohl(tvb, offset + 8);
@@ -861,7 +877,7 @@ static guint get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *
 }
 
 /* Add a base-64 encoded string to the tree */
-static void smf_proto_add_base64_string(proto_tree *tree, int id, tvbuff_t *tvb,
+static void smf_proto_add_base64_string(proto_tree *tree, packet_info *pinfo, int id, tvbuff_t *tvb,
     int offset, int size)
 {
     char* str;
@@ -869,24 +885,28 @@ static void smf_proto_add_base64_string(proto_tree *tree, int id, tvbuff_t *tvb,
    
     str = tvb_get_string_enc(NULL, tvb, offset, size, ENC_ASCII);
     if (len > 1) {
-        g_base64_decode_inplace(str, &len);
+        if (strlen(str) > 1) {
+            g_base64_decode_inplace(str, &len);
+        } else {
+            g_print("smf g_base64_decode_inplace failed at packet %d, strlen is < 1", pinfo->fd->num);
+        }
     }
     str[len] = '\0';
     proto_tree_add_string(tree, id, tvb, offset, size, str);
 }
 
 /* Add an SMF username to the tree */
-static void smf_proto_add_username_item(proto_tree *tree, tvbuff_t *tvb,
+static void smf_proto_add_username_item(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     int offset, int size)
 {
-    smf_proto_add_base64_string(tree, hf_smf_username_param, tvb, offset, size);
+    smf_proto_add_base64_string(tree, pinfo, hf_smf_username_param, tvb, offset, size);
 }
 
 /* Add an SMF password to the tree */
-static void smf_proto_add_password_item(proto_tree *tree, tvbuff_t *tvb,
+static void smf_proto_add_password_item(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     int offset, int size)
 {
-    smf_proto_add_base64_string(tree, hf_smf_password_param, tvb, offset, size);
+    smf_proto_add_base64_string(tree, pinfo, hf_smf_password_param, tvb, offset, size);
 }
 
 /* Add an SMF response to the tree */
@@ -1238,10 +1258,10 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             proto_tree_add_item(tree, hf_smf_message_id_param, tvb, offset, size, FALSE);
             break;
         case STANDARD_PARAM_USERNAME:
-            smf_proto_add_username_item(tree, tvb, offset, size);
+            smf_proto_add_username_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_PASSWORD:
-            smf_proto_add_password_item(tree, tvb, offset, size);
+            smf_proto_add_password_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_RESPONSE:
             smf_proto_add_response_item(tree, tvb, offset, size);
