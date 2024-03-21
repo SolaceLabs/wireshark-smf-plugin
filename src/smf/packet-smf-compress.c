@@ -103,7 +103,7 @@ static void init_stream(smf_compressed_stream_t *compressed_stream_p)
     compressed_stream_p->uncompressed_buf = NULL;
 }
 
-static int
+static void
 decompress_record(smf_compressed_stream_t* compressed_stream_p, const guchar* in, guint inl, guchar* out_str, guint* outl, char *errorMsg_p)
 {
     gint err = Z_OK;
@@ -147,13 +147,13 @@ DIAG_ON(cast-qual)
         
         init_stream(compressed_stream_p);
 
-        return 1;
+        return;
 
     }
 
     // The outl indicates how much data is compressed
     *outl = *outl - stream_p->avail_out;
-    return 0;
+    return;
 }
 
 /* Reassemble and dissect an SMF packet over TCP */
@@ -195,16 +195,12 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
         guint outl;
         guchar out_str[MAX_DECOMPRESS_LEN];
         outl = MAX_DECOMPRESS_LEN;
-        int err = decompress_record(currentStream_p,
-                                    (const guchar *)tvb_get_ptr(tvb, 0, -1),
-                                    tvb_captured_length_remaining(tvb, 0),
-                                    out_str,
-                                    &outl,
-                                    errorMsg);
-        if (err == -1) {
-            // Error is reported inside decompress_record()
-            return 0;
-        }
+        decompress_record(currentStream_p,
+                            (const guchar *)tvb_get_ptr(tvb, 0, -1),
+                            tvb_captured_length_remaining(tvb, 0),
+                            out_str,
+                            &outl,
+                            errorMsg);
 
         uncompressed_buf = (smf_uncompressed_buf_t *)wmem_alloc(wmem_file_scope(), sizeof(smf_uncompressed_buf_t));
         uncompressed_buf->len = outl;
