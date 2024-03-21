@@ -79,14 +79,26 @@ typedef struct _smf_compressed_conv_t {
     smf_compressed_stream_t stream2;
 } smf_compressed_conv_t;
 
+static voidpf stream_alloc(void * opaque, uInt num, uInt size)
+{
+    (void)opaque; // avoid compiler warning
+    return wmem_alloc0(wmem_file_scope(), num*size);
+}
+
+static void stream_free(void * opaque, voidpf address)
+{
+    (void)opaque; // avoid compiler warning
+    wmem_free(wmem_file_scope(), address);
+}
+
 static void init_stream(smf_compressed_stream_t *compressed_stream_p)
 {
     z_stream* stream_p = &compressed_stream_p->stream;
     gint z_rc;
     stream_p->next_in  = Z_NULL;
     stream_p->avail_in = 0;
-    stream_p->zalloc   = Z_NULL;
-    stream_p->zfree    = Z_NULL;
+    stream_p->zalloc   = stream_alloc;
+    stream_p->zfree    = stream_free;
     stream_p->opaque   = Z_NULL;
     inflateInit2(stream_p, -MAX_WBITS);
 
@@ -145,6 +157,8 @@ DIAG_ON(cast-qual)
         snprintf(errorMsg_p, ERROR_MSG_SIZE, "%s(%d): %s", outStr, err, stream_p->msg);
         *outl = *outl - stream_p->avail_out;
         
+        // Cleanup the decompressor and re-initialize
+        inflateEnd(&compressed_stream_p->stream);
         init_stream(compressed_stream_p);
 
         return;
