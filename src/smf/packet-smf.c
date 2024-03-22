@@ -808,16 +808,6 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
         // The message is too big.
         return 1;
     }
-    if ((guint32)remainingLength < msglen)
-    {
-        // Need more data to complete the message
-        if (pinfo->can_desegment) {
-            return 0;
-        } else {
-            // Cannot Desegment from TCP, so just do what we can...
-            return msglen;
-        }
-    }
     
     return msglen;
 }
