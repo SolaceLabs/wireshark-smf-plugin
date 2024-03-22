@@ -34,6 +34,16 @@
 
 #include <zlib.h>
 
+// ***********************************************************************
+// Decompression is done through the zlib library.
+// 1) The basic decompression is similar to the C API code for decompression
+// 2) To allow decompression to happen in the middle of a connection, we initialize the dictionary
+//      with default values.
+// 3) For wireshark, we perform the decompression on the first pass through the packet capture
+//      and remember the decompressed data so that we do not need to decompress again.
+// 4) To allow smf to assemble across packet boundary, we act on the pdu data stored in protocol data (pinfo)
+//      so that we know the size of the pdu (smf message length).
+
 #define MAX_DECOMPRESS_LEN 16384 // This comes from packet-tls-utils.c
 
 static int proto_smf_compressed = -1;
@@ -43,19 +53,22 @@ static int hf_smf_compressed_segment_data = -1;
 
 static dissector_handle_t smf_tcp_compressed_handle;
 
+// This is the decompressed data structure that is saved for each packet decompression
 typedef struct _smf_uncompressed_buf_t {
     guchar *buf;
     guint len;    // Total length of the buffer
-    guint smf_ready; // Ready to call SMF dissector
+    guint call_smf_dissector; // Ready to call SMF dissector
+    guint started_pdu_tracking;
 } smf_uncompressed_buf_t;
 
+// This is the data structure used in the first pass of the packet capture 
 typedef struct _smf_compressed_stream_t {
     z_stream stream; // Compression stream
-    int desegment_offset; // Lower level desegment offset of the uncompressed buffer
-    int desegment_len;    // The next PDU size
+    int desegment_offset_in_first_buffer; // Lower level desegment offset of the uncompressed buffer
+    int len;    // Size of data collected so far
     guint16 want_pdu_tracking;
     guint32 bytes_until_next_pdu;
-    smf_uncompressed_buf_t* uncompressed_buf;
+    wmem_queue_t *queue_of_uncompressed_buf;
 } smf_compressed_stream_t;
 
 /* This holds state information for a SMF compressed conversation */
@@ -96,11 +109,11 @@ static void init_stream(smf_compressed_stream_t *compressed_stream_p)
         g_print("inflateSetDictionary error: %d\n", z_rc);
     }
     free(dictionary);
-    compressed_stream_p->desegment_offset = 0;
-    compressed_stream_p->desegment_len = 0;
+    compressed_stream_p->desegment_offset_in_first_buffer = 0;
+    compressed_stream_p->len = 0;
     compressed_stream_p->want_pdu_tracking = 0;
     compressed_stream_p->bytes_until_next_pdu = 0;
-    compressed_stream_p->uncompressed_buf = NULL;
+    compressed_stream_p->queue_of_uncompressed_buf = wmem_queue_new(wmem_file_scope());
 }
 
 static int
@@ -201,45 +214,58 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
             return 0;
         }
 
-        int isSmfReady = 0;
+        uncompressed_buf = (smf_uncompressed_buf_t *)wmem_alloc(wmem_file_scope(), sizeof(smf_uncompressed_buf_t));
         // See if there is something left in the previous desegment
-        if (currentStream_p->uncompressed_buf) {
+        if (currentStream_p->want_pdu_tracking) {
             // There is data left from previous desegment.
             // Check if this there is still more to come
-            if (currentStream_p->want_pdu_tracking) {
-                guchar* bufEnd = currentStream_p->uncompressed_buf->buf + currentStream_p->uncompressed_buf->len;
-                // the uncompressed data may contain more than the pdu, but we have alocated more room just in case
-                memcpy(bufEnd, out_str, outl);
-                currentStream_p->uncompressed_buf->len += outl;
+            if (currentStream_p->bytes_until_next_pdu > outl) {   
+                // There is still more data to come. Let us put everthing into the buffer
+                // Reduce the size of data we are looking for
+                uncompressed_buf->len = outl;
+                uncompressed_buf->buf = (guchar*)wmem_alloc(wmem_file_scope(), uncompressed_buf->len);
+                memcpy(uncompressed_buf->buf, out_str, outl);
+                uncompressed_buf->call_smf_dissector = 0;
+                uncompressed_buf->started_pdu_tracking = 0;
 
-                if (currentStream_p->bytes_until_next_pdu > outl) {   
-                    // There is still more data to come. Let us put everthing into the buffer
-                    // Reduce the size of data we are looking for
-                    currentStream_p->bytes_until_next_pdu -= outl;
-                } else {
-                    // We have everything in the buffer, ready to dissect it
-                    uncompressed_buf = currentStream_p->uncompressed_buf;
-                    uncompressed_buf->smf_ready = 1;
-                    currentStream_p->uncompressed_buf = NULL;
-                }
+                currentStream_p->bytes_until_next_pdu -= outl;
+                currentStream_p->len += outl;
+                wmem_queue_push(currentStream_p->queue_of_uncompressed_buf, uncompressed_buf);
             } else {
-                // We have something in the previous segment, but we do not want pdu tracking
-                // This is unexpected...
-                g_print("Unexpected data in currentStream that is not tracked at packet %d\n", pinfo->num);
+                // We have everything in the buffer, ready to dissect it
+                uncompressed_buf->len = currentStream_p->len + outl;
+                uncompressed_buf->buf = (guchar*)wmem_alloc(wmem_file_scope(), uncompressed_buf->len);
+                uncompressed_buf->call_smf_dissector = 1;
+                uncompressed_buf->started_pdu_tracking = 0;
+                // Copy everything from the queue
+                smf_uncompressed_buf_t *cur_uncompressed_buf = 
+                    (smf_uncompressed_buf_t *)wmem_queue_pop(currentStream_p->queue_of_uncompressed_buf);
+                guchar *bufEnd = uncompressed_buf->buf;
+                // First item is special because it may have previously used data
+                guint sizeLeftInFirstBuffer = cur_uncompressed_buf->len - currentStream_p->desegment_offset_in_first_buffer;
+                memcpy(bufEnd, cur_uncompressed_buf->buf + currentStream_p->desegment_offset_in_first_buffer, 
+                        sizeLeftInFirstBuffer);
+                bufEnd += sizeLeftInFirstBuffer;
+                while (wmem_queue_count(currentStream_p->queue_of_uncompressed_buf)) {
+                    cur_uncompressed_buf = 
+                        (smf_uncompressed_buf_t *)wmem_queue_pop(currentStream_p->queue_of_uncompressed_buf);
+                    memcpy(bufEnd, cur_uncompressed_buf->buf, cur_uncompressed_buf->len);
+                    bufEnd += cur_uncompressed_buf->len;
+                }
+                // Finally, copy the newly decompressed buffer
+                memcpy(bufEnd, out_str, outl);
+
+                // Turn off pdu tracking
+                currentStream_p->want_pdu_tracking = 0;
             }
         } else {
             // This is a new buffer
-            isSmfReady = 1;
-        }
-
-        if (!uncompressed_buf) {
-            // There is nothing in the uncompressed buffer, let us create one and put the current uncompressed data in
-            // This is a new decompression, let us allocate it.
-            uncompressed_buf = (smf_uncompressed_buf_t *)wmem_alloc(wmem_file_scope(), sizeof(smf_uncompressed_buf_t));
-            uncompressed_buf->len = outl;
-            uncompressed_buf->buf = (guchar*)wmem_alloc(wmem_file_scope(), uncompressed_buf->len);
-            uncompressed_buf->smf_ready = isSmfReady;
+            // Just copy the data and call the smf dissector
+            uncompressed_buf->buf = (guchar*)wmem_alloc(wmem_file_scope(), outl);
             memcpy(uncompressed_buf->buf, out_str, outl);
+            uncompressed_buf->len = outl;
+            uncompressed_buf->call_smf_dissector = 1;
+            uncompressed_buf->started_pdu_tracking = 0;
         }
 
         // Save it so that we do not need to do uncompress when we revisit
@@ -249,6 +275,10 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     } else {
         uncompressed_buf = (smf_uncompressed_buf_t *)p_get_proto_data(wmem_file_scope(), pinfo,
                 proto_smf_compressed, (guint32)tvb_raw_offset(tvb));
+        if (!uncompressed_buf) {
+            // There is nothing in the decompression record. Just exit
+            return 0;
+        }
     }
 
     guint nbytes = uncompressed_buf->len;
@@ -256,7 +286,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     tvbuff_t *next_tvb = tvb_new_child_real_data(tvb, uncompressed_buf->buf, nbytes, nbytes);
     add_new_data_source(pinfo, next_tvb, "Decompressed Data");
 
-    if (!uncompressed_buf->smf_ready) {
+    if (!uncompressed_buf->call_smf_dissector) {
         // Not ready for SMF.
         // This means we are reassembling in later frame
         col_append_sep_str(pinfo->cinfo, COL_INFO, " ", "[SMF Compressed segment of a reassembled PDU]");
@@ -275,31 +305,21 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     call_dissector_only(find_dissector("smf"), next_tvb, pinfo, tree, data);
 
     if (!PINFO_FD_VISITED(pinfo)) {
-        // Remember what has been processed by smf
-        currentStream_p->desegment_offset = pinfo->desegment_offset;
-        currentStream_p->desegment_len = pinfo->desegment_len;
-        currentStream_p->want_pdu_tracking = pinfo->want_pdu_tracking;
-        currentStream_p->bytes_until_next_pdu = pinfo->bytes_until_next_pdu;
-        currentStream_p->uncompressed_buf = NULL;
-
         if (pinfo->want_pdu_tracking) {
-            // Keep a buffer big enough for the PDU.
-            // That is: what is left in the current buffer + expected bytes to come
-            guint32 leftInBuffer = uncompressed_buf->len - currentStream_p->desegment_offset;
-            guint32 pduSize = leftInBuffer + currentStream_p->desegment_len;
-            // Give more room at the end because the next smf message may be right there in the buffer
-            guchar * nextPduBuf = (guchar*)wmem_alloc(wmem_file_scope(), pduSize + MAX_DECOMPRESS_LEN);
-            memcpy(nextPduBuf, uncompressed_buf->buf + currentStream_p->desegment_offset, leftInBuffer);
-
-            // Create a new uncompressed buf to track the next pdu
-            uncompressed_buf = (smf_uncompressed_buf_t *)wmem_alloc(wmem_file_scope(), sizeof(smf_uncompressed_buf_t));
-            uncompressed_buf->buf = nextPduBuf;
-            uncompressed_buf->len = leftInBuffer;
-            uncompressed_buf->smf_ready = 0;
-
-            currentStream_p->uncompressed_buf = uncompressed_buf;
+            // Keep track of the buffer
+            currentStream_p->desegment_offset_in_first_buffer = pinfo->desegment_offset;
+            currentStream_p->len = uncompressed_buf->len - pinfo->desegment_offset;
+            currentStream_p->want_pdu_tracking = pinfo->want_pdu_tracking;
+            currentStream_p->bytes_until_next_pdu = pinfo->bytes_until_next_pdu;
+            wmem_queue_push(currentStream_p->queue_of_uncompressed_buf, uncompressed_buf);
+            uncompressed_buf->started_pdu_tracking = 1;
         }
     }
+
+    if (uncompressed_buf->started_pdu_tracking) {
+        col_append_sep_str(pinfo->cinfo, COL_INFO, " ", "[SMF Compressed segment of a reassembled PDU]");
+    }
+
     // Always clear the desegment information for parent tcp layer
     pinfo->desegment_offset = 0;
     pinfo->desegment_len = 0;
