@@ -1,4 +1,4 @@
 [submodule "wireshark"]
 	path = wireshark
 	url = https://gitlab.com/wireshark/wireshark.git
-	branch = wireshark-4.0.5
+	branch = release-4.2
