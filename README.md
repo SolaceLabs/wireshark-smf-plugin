@@ -3,8 +3,7 @@
 # Wireshark SMF Plugin
 
 ## Overview
-This project is ...
-TODO
+This project is a plugin for wireshark that will dissect Solace SMF protocol.
 
 ## Getting Started Quickly
 
@@ -44,7 +43,9 @@ See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/w
 TODO
 
 ## Version Naming Convention
-As this plugin is designed for use in Wireshark, versions borrow the MAJOR.MINOR Wireshark versions (e.g. SMF Plugin 4.0.x indicates support for all patches of Wireshark 4.0). PATCH versions differentiates versions of the SMF Plugin for the corresponding MAJOR.MINOR Wireshark version. 
+As this plugin is designed for use in Wireshark, the MAJOR.MINOR match the Wireshark versions. I.E. SMF Plugin 4.0.x indicates support for all patches of Wireshark 4.0.
+
+The PATCH version of the plugin differentiates versions of the SMF Plugin.  As long as the MAJOR.MINOR of the plugin match the corresponding MAJOR.MINOR Wireshark version, then they are compatible.
 
 ## Resources
 This is not an officially supported Solace product.
