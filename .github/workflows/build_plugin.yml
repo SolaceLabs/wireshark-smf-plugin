@@ -8,38 +8,48 @@ on:
     inputs:
       MAJOR_VERSION:
         description: "Version string for wireshark tag needed to build can be v#.#.# or v#.#.#-rc#"
-        required: true
-        default: "4"
+        required: false
+        default: ''
       MINOR_VERSION:
         description: "Minor version of the wireshark tag"
-        required: true
-        default: "0"
+        required: false
+        default: ''
       PATCH_VERSION:
         description: "Patch version of the wireshark tag"
-        required: true
-        default: "5"
+        required: false
+        default: ''
 jobs:
+<<<<<<< HEAD
   build_macos:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+=======
+  # Commenting out intel mac for regular builds as it is currently broken.
+  #build_macos:
+  #  uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos.yml@main
+  #  with:
+  #    MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
+  #    MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
+  #    PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+>>>>>>> 071dc07 (Updated CI for Wireshark 4.2.4 and added automation for releases)
   build_macos_arm64:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '2' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '4' }}
   build_windows:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/windows.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '2' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '4' }}
   build_linux:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/ubuntu.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '2' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '4' }}
