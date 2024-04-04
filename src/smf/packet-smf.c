@@ -885,6 +885,8 @@ static void smf_proto_add_base64_string(proto_tree *tree, packet_info *pinfo, in
         if (strlen(str) > 1) {
             gsize len = size; // This is for type conversion, g_base64_decode_inplace wants gsize for len
             g_base64_decode_inplace(str, &len);
+            str[len] = '\0'; // We now have a base64 decode string, let us null terminate it.
+            size = len;
         } else {
             g_print("invalid base64 string found in packet %d, strlen is < 1", pinfo->fd->num);
         }
