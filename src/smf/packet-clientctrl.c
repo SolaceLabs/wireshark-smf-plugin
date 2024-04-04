@@ -1081,7 +1081,7 @@ proto_register_clientctrl(void)
 	proto_register_field_array(proto_clientctrl, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("clientctrl", dissect_clientctrl, proto_clientctrl);
+    register_dissector("solace.clientctrl", dissect_clientctrl, proto_clientctrl);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */

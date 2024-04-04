@@ -741,7 +741,7 @@ proto_register_mama_payload(void)
     proto_register_field_array(proto_mama_payload, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("mama-payload", dissect_mama_payload, proto_mama_payload);
+    register_dissector("solace.mama-payload", dissect_mama_payload, proto_mama_payload);
 
 }
 

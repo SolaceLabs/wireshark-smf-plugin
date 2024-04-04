@@ -3167,7 +3167,7 @@ proto_register_assuredctrl(void)
     expert_module_t* expert_assuredctrl = expert_register_protocol(proto_assuredctrl);
     expert_register_field_array(expert_assuredctrl, ei, array_length(ei));
     proto_register_subtree_array(ett, array_length(ett));
-    register_dissector("assuredctrl", dissect_assuredctrl, proto_assuredctrl);
+    register_dissector("solace.assuredctrl", dissect_assuredctrl, proto_assuredctrl);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */

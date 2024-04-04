@@ -22,6 +22,10 @@
 #ifndef __PACKET_SMF_H__
 #define __PACKET_SMF_H__
 
+#include "epan/packet_info.h"
+#include "epan/proto.h"
+#include "epan/tvbuff.h"
+
 struct smfdata {
 	char *subtype;
 };

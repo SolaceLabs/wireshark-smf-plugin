@@ -69,6 +69,7 @@ IF PROTO exposes code to other dissectors, then it must be exported
 /* Forward declaration we need below */
 void proto_reg_handoff_smf(void);
 static void smf_proto_init(void);
+static void try_load_smf_subdissection_uat(void);
 
 /* Initialize the protocol and registered fields */
 static int proto_smf = -1;
@@ -546,6 +547,8 @@ typedef struct {
 
 static smf_subdissection_uat_entry_t* smf_subdissection_uat_entries = NULL;
 static guint num_smf_subdissection_uat_entries;
+static gboolean smf_subdissection_uat_loaded = 0;
+static uat_t* smf_subdissection_uat = NULL;
 
 static void* smf_subdissection_uat_entry_copy_cb(void* dest, const void* orig, size_t len _U_)
 {
@@ -561,7 +564,7 @@ static void* smf_subdissection_uat_entry_copy_cb(void* dest, const void* orig, s
     return d;
 }
 
-static gboolean smf_subdissection_uat_entry_update_cb(void* record, char** error)
+static bool smf_subdissection_uat_entry_update_cb(void* record, char** error)
 {
     smf_subdissection_uat_entry_t* u = (smf_subdissection_uat_entry_t*)record;
 
@@ -654,15 +657,15 @@ get_subdissector_from_uat(const char* topic)
     return NULL;
 }
 
-static void
+static int
 smf_call_subdissector(const smf_subdissection_uat_entry_t* subdissector, tvbuff_t* next_tvb, packet_info* pinfo, proto_tree* tree)
 {
-    call_dissector_only(subdissector->payload_proto, next_tvb, pinfo, tree, subdissector->proto_more_info);
+    return call_dissector_only(subdissector->payload_proto, next_tvb, pinfo, tree, subdissector->proto_more_info);
 }
 
 UAT_VS_DEF(smf_subdissection, match_criteria, smf_subdissection_uat_entry_t, smf_subdissection_match_criteria_t, MATCH_CRITERIA_EQUAL, "Equal to")
 UAT_CSTRING_CB_DEF(smf_subdissection, topic_pattern, smf_subdissection_uat_entry_t)
-UAT_PROTO_DEF(smf_subdissection, payload_proto, payload_proto, payload_proto_name, smf_subdissection_uat_entry_t)
+UAT_DISSECTOR_DEF(smf_subdissection, payload_proto, payload_proto, payload_proto_name, smf_subdissection_uat_entry_t)
 UAT_CSTRING_CB_DEF(smf_subdissection, proto_more_info, smf_subdissection_uat_entry_t)
 
 /* reassembly table used for calls into reassemble.h */
@@ -784,9 +787,23 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
     }
     // Check protocol
     guint8 secondByte = tvb_get_guint8(tvb, offset+1);
-    if ((secondByte & 0x3f) > SMF_PROTOCOL_MAX)
+    guint8 smfProtocol = secondByte & 0x3f;
+    if (smfProtocol > SMF_PROTOCOL_MAX)
     {
         return 1;
+    }
+    // Detect obsolete protocols 
+    switch (smfProtocol) {
+    case SMF_CSMP:
+    case SMF_PUBMSG:
+    case SMF_XMLLINK:
+    case SMF_WSE:
+    case SMF_SUBCTRL:
+    case SMF_PUBCTRL:
+    case SMF_KEEPALIVE:
+        return 1;
+    default:
+        break;
     }
     guint32 headerlen = tvb_get_ntohl(tvb, offset + 4);
     guint32 msglen = tvb_get_ntohl(tvb, offset + 8);
@@ -853,32 +870,37 @@ static guint get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *
 }
 
 /* Add a base-64 encoded string to the tree */
-static void smf_proto_add_base64_string(proto_tree *tree, int id, tvbuff_t *tvb,
+static void smf_proto_add_base64_string(proto_tree *tree, packet_info *pinfo, int id, tvbuff_t *tvb,
     int offset, int size)
 {
     char* str;
-    gsize len = size;
    
     str = tvb_get_string_enc(NULL, tvb, offset, size, ENC_ASCII);
-    if (len > 1) {
-        g_base64_decode_inplace(str, &len);
+    if (size > 1) {
+        if (strlen(str) > 1) {
+            gsize len = size; // This is for type conversion, g_base64_decode_inplace wants gsize for len
+            g_base64_decode_inplace(str, &len);
+            str[len] = '\0'; // We now have a base64 decode string, let us null terminate it.
+            size = len;
+        } else {
+            g_print("invalid base64 string found in packet %d, strlen is < 1", pinfo->fd->num);
+        }
     }
-    str[len] = '\0';
     proto_tree_add_string(tree, id, tvb, offset, size, str);
 }
 
 /* Add an SMF username to the tree */
-static void smf_proto_add_username_item(proto_tree *tree, tvbuff_t *tvb,
+static void smf_proto_add_username_item(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     int offset, int size)
 {
-    smf_proto_add_base64_string(tree, hf_smf_username_param, tvb, offset, size);
+    smf_proto_add_base64_string(tree, pinfo, hf_smf_username_param, tvb, offset, size);
 }
 
 /* Add an SMF password to the tree */
-static void smf_proto_add_password_item(proto_tree *tree, tvbuff_t *tvb,
+static void smf_proto_add_password_item(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     int offset, int size)
 {
-    smf_proto_add_base64_string(tree, hf_smf_password_param, tvb, offset, size);
+    smf_proto_add_base64_string(tree, pinfo, hf_smf_password_param, tvb, offset, size);
 }
 
 /* Add an SMF response to the tree */
@@ -1230,10 +1252,10 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             proto_tree_add_item(tree, hf_smf_message_id_param, tvb, offset, size, FALSE);
             break;
         case STANDARD_PARAM_USERNAME:
-            smf_proto_add_username_item(tree, tvb, offset, size);
+            smf_proto_add_username_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_PASSWORD:
-            smf_proto_add_password_item(tree, tvb, offset, size);
+            smf_proto_add_password_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_RESPONSE:
             smf_proto_add_response_item(tree, tvb, offset, size);
@@ -1894,58 +1916,73 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     }
                 }
 
-                switch (attachment_type) {
-                case _smf_attachment_type_sdt:
-                {
-                    /* Check if attach_item has already been created for perf tool data */
-                    if (attach_tree == NULL)
-                    {
-                        attach_item = proto_tree_add_item(smf_tree,
-                            hf_smf_attachment, tvb,
-                            payload_offset + param_info.attachment_start,
-                            -1, FALSE);
-
-                        attach_tree = proto_item_add_subtree(
-                            attach_item, ett_attachment_sdt);
-                    }
-
-                    add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
-                        payload_offset + param_info.attachment_start + 5,
-                        param_info.attachment_length - 5, 1, FALSE);
-
-
-                    break;
-                }
-                case _smf_attachment_type_openmama_payload:
-                {
-                    /* openMAMA payload */
+                int subdissectorSuccess = 0;
+                if (attach_item == NULL)
+                {  
+                    // Try the subdirector first...
                     next_tvb = tvb_new_subset_length_caplen(tvb,
                         payload_offset + param_info.attachment_start,
                         -1,
                         param_info.attachment_length);
-                    call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
-                    break;
+
+                    const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(topic_name);
+                    if (subdissector != NULL) {
+                        int rc;
+                        rc = smf_call_subdissector(subdissector, next_tvb, pinfo, tree);
+                        if (rc) {
+                            subdissectorSuccess = 1;
+                        }
+                    }
+                    else if (dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,TRUE,NULL))
+                    {
+                        subdissectorSuccess = 1;
+                    } else {
+                        // Subdissector did not work out
+                        subdissectorSuccess = 0;
+                    }
                 }
-                default:
-                    if (attach_item == NULL)
-                    {  
+
+                if (!subdissectorSuccess) {
+                    switch (attachment_type) {
+                    case _smf_attachment_type_sdt:
+                    {
+                        /* Check if attach_item has already been created for perf tool data */
+                        if (attach_tree == NULL)
+                        {
+                            attach_item = proto_tree_add_item(smf_tree,
+                                hf_smf_attachment, tvb,
+                                payload_offset + param_info.attachment_start,
+                                -1, FALSE);
+
+                            attach_tree = proto_item_add_subtree(
+                                attach_item, ett_attachment_sdt);
+                        }
+
+                        add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
+                            payload_offset + param_info.attachment_start + 5,
+                            param_info.attachment_length - 5, 1, FALSE);
+
+
+                        break;
+                    }
+                    case _smf_attachment_type_openmama_payload:
+                    {
+                        /* openMAMA payload */
                         next_tvb = tvb_new_subset_length_caplen(tvb,
                             payload_offset + param_info.attachment_start,
                             -1,
                             param_info.attachment_length);
-
-                        const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(topic_name);
-                        if (subdissector != NULL) {
-                            smf_call_subdissector(subdissector, next_tvb, pinfo, tree);
-                        }
-                        else if (!dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,TRUE,NULL))
-                        {
-                            proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
-                                payload_offset + param_info.attachment_start,
-                                -1, FALSE);
-                        }
+                        call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
+                        break;
                     }
-                    break;
+                    default:
+                    {
+                        proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
+                            payload_offset + param_info.attachment_start,
+                            -1, FALSE);
+                        break;
+                    }
+                    }
                 }
             }
 
@@ -2088,6 +2125,33 @@ static int dissect_smf_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo,
 /* this format is require because a script is used to build the C function
  that calls all the protocol registration.
  */
+
+static void try_load_smf_subdissection_uat(void)
+{
+    if (!smf_subdissection_uat_loaded) {
+    char* err_p;
+    gboolean rc = uat_load(smf_subdissection_uat,NULL,&err_p);
+    if (!rc) {
+        g_print("uat_load failed: %s\n", err_p);
+    }
+    else {
+        const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(default_subdissector_uat_topic);
+        if (subdissector == NULL) {
+            smf_subdissection_uat_entry_t initial_rec = {
+                MATCH_CRITERIA_STARTS_WITH,
+                g_strdup(default_subdissector_uat_topic),
+                NULL,
+                g_strdup(default_subdissector_uat_protocol),
+                find_dissector(default_subdissector_uat_protocol),
+                g_strdup(default_subdissector_uat_extra_data)
+            };
+
+            uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
+        }
+        smf_subdissection_uat_loaded = 1;
+    }
+}
+}
 
 void proto_register_smf(void)
 {
@@ -2806,7 +2870,7 @@ void proto_register_smf(void)
     expert_module_t* expert_smf = expert_register_protocol(proto_smf);
     expert_register_field_array(expert_smf, ei, array_length(ei));
 
-    smf_handle = register_dissector("smf", dissect_smf_tcp_pdu, proto_smf);
+    smf_handle = register_dissector("solace.smf", dissect_smf_tcp_pdu, proto_smf);
 
     register_init_routine(&smf_proto_init);
 
@@ -2820,12 +2884,12 @@ void proto_register_smf(void)
     static uat_field_t smf_subdissection_table_columns[] = {
         UAT_FLD_VS(smf_subdissection, match_criteria, "Match criteria", smf_subdissection_match_criteria, "Match criteria"),
         UAT_FLD_CSTRING(smf_subdissection, topic_pattern, "Topic pattern", "Pattern to match for the topic"),
-        UAT_FLD_PROTO(smf_subdissection, payload_proto, "Payload protocol",
-                      "Protocol to be used for the message part of the matching topic"),
+        UAT_FLD_DISSECTOR(smf_subdissection, payload_proto, "Payload dissector",
+                      "Dissector to be used for the message part of the matching topic"),
         UAT_FLD_CSTRING(smf_subdissection, proto_more_info, "Additional Data", "Additional Data to pass to the disector"),
         UAT_END_FIELDS
     };
-    uat_t* smf_subdissection_uat = uat_new("Message Decoding",
+    smf_subdissection_uat = uat_new("Message Decoding",
         sizeof(smf_subdissection_uat_entry_t),
         "smf_subdissection",
         TRUE,
@@ -2843,23 +2907,6 @@ void proto_register_smf(void)
         "SMF Subdissection Table",
         "A table that maps topics to protocols used to further subdissect a message.",
         smf_subdissection_uat);
-
-    //load default UAT entry if not present
-    char* err_p;
-    uat_load(smf_subdissection_uat,NULL,&err_p);
-    const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(default_subdissector_uat_topic);
-    if (subdissector == NULL) {
-        smf_subdissection_uat_entry_t initial_rec = {
-            MATCH_CRITERIA_STARTS_WITH,
-            g_strdup(default_subdissector_uat_topic),
-            NULL,
-            g_strdup(default_subdissector_uat_protocol),
-            find_dissector(default_subdissector_uat_protocol),
-            g_strdup(default_subdissector_uat_extra_data)
-        };
-
-        uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
-    }
 
     // Register scan smf in stream
     prefs_register_bool_preference(smf_module, "scan_smf_in_stream", "Scan for SMF in TCP Stream", 
@@ -2889,12 +2936,15 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
     gboolean needMore = TRUE;
     guint32 pduLen;
     tvbuff_t* newTvb;
-    fragment_item* fdHead = NULL;
+    fragment_head* fdHead = NULL;
     gboolean savedFragmented = pinfo->fragmented;
-    fragment_item* fragmentData =
+    fragment_head* fragmentData =
         fragment_get(&smf_gen_reassembly_table, pinfo, id, data);
-    fragment_item* assembledData =
+    fragment_head* assembledData =
         fragment_get_reassembled_id(&smf_gen_reassembly_table, pinfo, id);
+
+    // Try load the uat subdissection
+    try_load_smf_subdissection_uat();
 
     if (// If fragments were assembled in the current frame, then display the
         // assembled data
@@ -3121,11 +3171,11 @@ static int dissect_smf_bd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     gboolean needMore = TRUE;
     guint32 pduLen;
     tvbuff_t *newTvb;
-    fragment_item *fdHead = NULL;
+    fragment_head *fdHead = NULL;
     gboolean savedFragmented = pinfo->fragmented;
-    fragment_item *fragmentData =
+    fragment_head *fragmentData =
         fragment_get(&reasTable, pinfo, bdChannel, data);
-    fragment_item *assembledData =
+    fragment_head *assembledData =
         fragment_get_reassembled_id(&reasTable, pinfo, bdChannel);
 
     if (bdChannel < 0)
@@ -3281,15 +3331,15 @@ void proto_reg_handoff_smf(void)
         heur_dissector_add("tls", dissect_smf_heur_tls, "SMF over TLS/SSL", "smf_tls", proto_smf, (heuristic_enable_e)TRUE);
 
         xml_handle = find_dissector("xml");
-        pubctrl_handle = find_dissector("pubctrl");
-        subctrl_handle = find_dissector("subctrl");
-        xmllink_handle = find_dissector("xmllink");
-        assuredctrl_handle = find_dissector("assuredctrl");
-        smp_handle = find_dissector("smp");
-        smrp_handle = find_dissector("smrp");
-        clientctrl_handle = find_dissector("clientctrl");
-        bm_handle = find_dissector("smf-bm");
-        mama_payload_handle = find_dissector("mama-payload");
+        pubctrl_handle = find_dissector("solace.pubctrl");
+        subctrl_handle = find_dissector("solace.subctrl");
+        xmllink_handle = find_dissector("solace.xmllink");
+        assuredctrl_handle = find_dissector("solace.assuredctrl");
+        smp_handle = find_dissector("solace.smp");
+        smrp_handle = find_dissector("solace.smrp");
+        clientctrl_handle = find_dissector("solace.clientctrl");
+        bm_handle = find_dissector("solace.smf-bm");
+        mama_payload_handle = find_dissector("solace.mama-payload");
         protobuf_handle = find_dissector("protobuf");
         dissector_add_for_decode_as("smf_payload_dissector_table", protobuf_handle);
         smf_reas_init();

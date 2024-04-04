@@ -675,5 +675,5 @@ void proto_register_matelink(void)
     proto_register_field_array(proto_matelink, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("matelink", dissect_matelink, proto_matelink);
+    register_dissector("solace.matelink", dissect_matelink, proto_matelink);
 }

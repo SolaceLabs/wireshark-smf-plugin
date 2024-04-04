@@ -813,7 +813,7 @@ proto_register_smrp(void)
     proto_register_field_array(proto_smrp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("smrp", dissect_smrp, proto_smrp);
+    register_dissector("solace.smrp", dissect_smrp, proto_smrp);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */

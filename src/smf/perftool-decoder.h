@@ -26,6 +26,9 @@
 #ifndef PERFTOOL_DECODER_H_
 #define PERFTOOL_DECODER_H_
 
+#include "epan/proto.h"
+#include "epan/tvbuff.h"
+
 void
 add_tooldata_block(proto_tree *bm_tree, int headerFieldIndex, tvbuff_t *tvb, int start_offset, int* length);
 

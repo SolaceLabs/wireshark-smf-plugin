@@ -64,7 +64,7 @@ register_plugin_files(plugin.c
 	${DISSECTOR_SRC}
 )
 
-add_plugin_library(smf epan)
+add_wireshark_plugin_library(smf epan)
 target_include_directories(smf SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(smf epan ${ZLIB_LIBRARIES})
 
