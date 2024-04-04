@@ -798,8 +798,6 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
     case SMF_SUBCTRL:
     case SMF_PUBCTRL:
     case SMF_KEEPALIVE:
-        g_print("smf obsolete protocol detected in packet %d, protocol %s(%d)\n", pinfo->fd->num, 
-            try_val_to_str(smfProtocol, protocolnames), smfProtocol);
         return 1;
     default:
         break;
@@ -881,17 +879,16 @@ static void smf_proto_add_base64_string(proto_tree *tree, packet_info *pinfo, in
     int offset, int size)
 {
     char* str;
-    gsize len = size;
    
     str = tvb_get_string_enc(NULL, tvb, offset, size, ENC_ASCII);
-    if (len > 1) {
+    if (size > 1) {
         if (strlen(str) > 1) {
+            gsize len = size; // This is for type conversion, g_base64_decode_inplace wants gsize for len
             g_base64_decode_inplace(str, &len);
         } else {
-            g_print("smf g_base64_decode_inplace failed at packet %d, strlen is < 1", pinfo->fd->num);
+            g_print("invalid base64 string found in packet %d, strlen is < 1", pinfo->fd->num);
         }
     }
-    str[len] = '\0';
     proto_tree_add_string(tree, id, tvb, offset, size, str);
 }
 
