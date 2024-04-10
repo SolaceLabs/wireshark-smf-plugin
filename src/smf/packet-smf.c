@@ -69,6 +69,7 @@ IF PROTO exposes code to other dissectors, then it must be exported
 /* Forward declaration we need below */
 void proto_reg_handoff_smf(void);
 static void smf_proto_init(void);
+static void try_load_smf_subdissection_uat(void);
 
 /* Initialize the protocol and registered fields */
 static int proto_smf = -1;
@@ -546,6 +547,8 @@ typedef struct {
 
 static smf_subdissection_uat_entry_t* smf_subdissection_uat_entries = NULL;
 static guint num_smf_subdissection_uat_entries;
+static gboolean smf_subdissection_uat_loaded = 0;
+static uat_t* smf_subdissection_uat = NULL;
 
 static void* smf_subdissection_uat_entry_copy_cb(void* dest, const void* orig, size_t len _U_)
 {
@@ -654,10 +657,10 @@ get_subdissector_from_uat(const char* topic)
     return NULL;
 }
 
-static void
+static int
 smf_call_subdissector(const smf_subdissection_uat_entry_t* subdissector, tvbuff_t* next_tvb, packet_info* pinfo, proto_tree* tree)
 {
-    call_dissector_only(subdissector->payload_proto, next_tvb, pinfo, tree, subdissector->proto_more_info);
+    return call_dissector_only(subdissector->payload_proto, next_tvb, pinfo, tree, subdissector->proto_more_info);
 }
 
 UAT_VS_DEF(smf_subdissection, match_criteria, smf_subdissection_uat_entry_t, smf_subdissection_match_criteria_t, MATCH_CRITERIA_EQUAL, "Equal to")
@@ -1913,58 +1916,73 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     }
                 }
 
-                switch (attachment_type) {
-                case _smf_attachment_type_sdt:
-                {
-                    /* Check if attach_item has already been created for perf tool data */
-                    if (attach_tree == NULL)
-                    {
-                        attach_item = proto_tree_add_item(smf_tree,
-                            hf_smf_attachment, tvb,
-                            payload_offset + param_info.attachment_start,
-                            -1, FALSE);
-
-                        attach_tree = proto_item_add_subtree(
-                            attach_item, ett_attachment_sdt);
-                    }
-
-                    add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
-                        payload_offset + param_info.attachment_start + 5,
-                        param_info.attachment_length - 5, 1, FALSE);
-
-
-                    break;
-                }
-                case _smf_attachment_type_openmama_payload:
-                {
-                    /* openMAMA payload */
+                int subdissectorSuccess = 0;
+                if (attach_item == NULL)
+                {  
+                    // Try the subdirector first...
                     next_tvb = tvb_new_subset_length_caplen(tvb,
                         payload_offset + param_info.attachment_start,
                         -1,
                         param_info.attachment_length);
-                    call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
-                    break;
+
+                    const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(topic_name);
+                    if (subdissector != NULL) {
+                        int rc;
+                        rc = smf_call_subdissector(subdissector, next_tvb, pinfo, tree);
+                        if (rc) {
+                            subdissectorSuccess = 1;
+                        }
+                    }
+                    else if (dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,TRUE,NULL))
+                    {
+                        subdissectorSuccess = 1;
+                    } else {
+                        // Subdissector did not work out
+                        subdissectorSuccess = 0;
+                    }
                 }
-                default:
-                    if (attach_item == NULL)
-                    {  
+
+                if (!subdissectorSuccess) {
+                    switch (attachment_type) {
+                    case _smf_attachment_type_sdt:
+                    {
+                        /* Check if attach_item has already been created for perf tool data */
+                        if (attach_tree == NULL)
+                        {
+                            attach_item = proto_tree_add_item(smf_tree,
+                                hf_smf_attachment, tvb,
+                                payload_offset + param_info.attachment_start,
+                                -1, FALSE);
+
+                            attach_tree = proto_item_add_subtree(
+                                attach_item, ett_attachment_sdt);
+                        }
+
+                        add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
+                            payload_offset + param_info.attachment_start + 5,
+                            param_info.attachment_length - 5, 1, FALSE);
+
+
+                        break;
+                    }
+                    case _smf_attachment_type_openmama_payload:
+                    {
+                        /* openMAMA payload */
                         next_tvb = tvb_new_subset_length_caplen(tvb,
                             payload_offset + param_info.attachment_start,
                             -1,
                             param_info.attachment_length);
-
-                        const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(topic_name);
-                        if (subdissector != NULL) {
-                            smf_call_subdissector(subdissector, next_tvb, pinfo, tree);
-                        }
-                        else if (!dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,TRUE,NULL))
-                        {
-                            proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
-                                payload_offset + param_info.attachment_start,
-                                -1, FALSE);
-                        }
+                        call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
+                        break;
                     }
-                    break;
+                    default:
+                    {
+                        proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
+                            payload_offset + param_info.attachment_start,
+                            -1, FALSE);
+                        break;
+                    }
+                    }
                 }
             }
 
@@ -2107,6 +2125,33 @@ static int dissect_smf_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo,
 /* this format is require because a script is used to build the C function
  that calls all the protocol registration.
  */
+
+static void try_load_smf_subdissection_uat(void)
+{
+    if (!smf_subdissection_uat_loaded) {
+    char* err_p;
+    gboolean rc = uat_load(smf_subdissection_uat,NULL,&err_p);
+    if (!rc) {
+        g_print("uat_load failed: %s\n", err_p);
+    }
+    else {
+        const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(default_subdissector_uat_topic);
+        if (subdissector == NULL) {
+            smf_subdissection_uat_entry_t initial_rec = {
+                MATCH_CRITERIA_STARTS_WITH,
+                g_strdup(default_subdissector_uat_topic),
+                NULL,
+                g_strdup(default_subdissector_uat_protocol),
+                find_dissector(default_subdissector_uat_protocol),
+                g_strdup(default_subdissector_uat_extra_data)
+            };
+
+            uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
+        }
+        smf_subdissection_uat_loaded = 1;
+    }
+}
+}
 
 void proto_register_smf(void)
 {
@@ -2844,7 +2889,7 @@ void proto_register_smf(void)
         UAT_FLD_CSTRING(smf_subdissection, proto_more_info, "Additional Data", "Additional Data to pass to the disector"),
         UAT_END_FIELDS
     };
-    uat_t* smf_subdissection_uat = uat_new("Message Decoding",
+    smf_subdissection_uat = uat_new("Message Decoding",
         sizeof(smf_subdissection_uat_entry_t),
         "smf_subdissection",
         TRUE,
@@ -2862,23 +2907,6 @@ void proto_register_smf(void)
         "SMF Subdissection Table",
         "A table that maps topics to protocols used to further subdissect a message.",
         smf_subdissection_uat);
-
-    //load default UAT entry if not present
-    char* err_p;
-    uat_load(smf_subdissection_uat,NULL,&err_p);
-    const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(default_subdissector_uat_topic);
-    if (subdissector == NULL) {
-        smf_subdissection_uat_entry_t initial_rec = {
-            MATCH_CRITERIA_STARTS_WITH,
-            g_strdup(default_subdissector_uat_topic),
-            NULL,
-            g_strdup(default_subdissector_uat_protocol),
-            find_dissector(default_subdissector_uat_protocol),
-            g_strdup(default_subdissector_uat_extra_data)
-        };
-
-        uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
-    }
 
     // Register scan smf in stream
     prefs_register_bool_preference(smf_module, "scan_smf_in_stream", "Scan for SMF in TCP Stream", 
@@ -2914,6 +2942,9 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
         fragment_get(&smf_gen_reassembly_table, pinfo, id, data);
     fragment_item* assembledData =
         fragment_get_reassembled_id(&smf_gen_reassembly_table, pinfo, id);
+
+    // Try load the uat subdissection
+    try_load_smf_subdissection_uat();
 
     if (// If fragments were assembled in the current frame, then display the
         // assembled data
