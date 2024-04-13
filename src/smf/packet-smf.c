@@ -2129,12 +2129,6 @@ static int dissect_smf_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo,
 static void try_load_smf_subdissection_uat(void)
 {
     if (!smf_subdissection_uat_loaded) {
-    char* err_p;
-    gboolean rc = uat_load(smf_subdissection_uat,NULL,&err_p);
-    if (!rc) {
-        g_print("uat_load failed: %s\n", err_p);
-    }
-    else {
         const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(default_subdissector_uat_topic);
         if (subdissector == NULL) {
             smf_subdissection_uat_entry_t initial_rec = {
@@ -2150,7 +2144,6 @@ static void try_load_smf_subdissection_uat(void)
         }
         smf_subdissection_uat_loaded = 1;
     }
-}
 }
 
 void proto_register_smf(void)
