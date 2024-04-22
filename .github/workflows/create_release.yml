@@ -24,23 +24,22 @@ env:
   MACOS_ARM64_PLUGIN_NAME: wireshark-smf-macos-arm64.tar.gz
 
 jobs:
-  # TODO: Change NeelPatel-Solace to SolaceLabs
   build_linux:
-    uses: NeelPatel-Solace/wireshark-smf-plugin/.github/workflows/ubuntu.yml@main
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/ubuntu.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '2' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '4' }}
   
   build_windows:
-    uses: NeelPatel-Solace/wireshark-smf-plugin/.github/workflows/windows.yml@main
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/windows.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '2' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '4' }}
     
   build_macos:
-    uses: NeelPatel-Solace/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '2' }}
