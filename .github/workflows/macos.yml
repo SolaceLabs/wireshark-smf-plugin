@@ -1,5 +1,7 @@
 name: Build MacOS
-
+# This is a workflow specifically for Intel macOS.
+# This workflow has last been updated to work for Wireshark 4.0.5 and is currently not being used.
+# Modifications to this file will be needed to get it working with later versions of Wireshark.
 on:
   workflow_call:
     inputs:
