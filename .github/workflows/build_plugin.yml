@@ -19,12 +19,22 @@ on:
         required: true
         default: "5"
 jobs:
+<<<<<<< HEAD
   build_macos:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+=======
+  # Commenting out intel mac for regular builds as it is currently broken.
+  #build_macos:
+  #  uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos.yml@main
+  #  with:
+  #    MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
+  #    MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
+  #    PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
+>>>>>>> 92cdd57 (Fixing merge conflicts for PR)
   build_macos_arm64:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
     with:

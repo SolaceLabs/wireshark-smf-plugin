@@ -24,14 +24,33 @@ jobs:
     name: Build on MacOS
     runs-on: macos-latest-xlarge
     steps:
+<<<<<<< HEAD
       - name: Checkout
         uses: actions/checkout@v3
       - name: Checkout Wireshark
+=======
+      #- name: Checkout with Submodule
+      #  if: ${{ inputs.MAJOR_VERSION == '' }}
+      #  uses: actions/checkout@v4
+      #  with:
+      #    submodules: recursive
+     - name: Checkout with Specified Input
+        if : ${{ inputs.MAJOR_VERSION != '' }}
+>>>>>>> 92cdd57 (Fixing merge conflicts for PR)
         uses: actions/checkout@v4
         with:
           repository: wireshark/wireshark
           path: "./wireshark"
           ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
+<<<<<<< HEAD
+=======
+
+      - name: Install Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+>>>>>>> 92cdd57 (Fixing merge conflicts for PR)
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
