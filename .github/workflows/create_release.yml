@@ -65,5 +65,6 @@ jobs:
             name: "Wireshark SMF Plugin ${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.RELEASE_PATCH_VERSION }}"
             tag: "${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.RELEASE_PATCH_VERSION }}"
             artifacts: "${{ env.LINUX_x86_64_PLUGIN_NAME }}/*, ${{ env.WINDOWS_x64_PLUGIN_NAME }}/*, ${{ env.MACOS_ARM64_PLUGIN_NAME }}/*"
+            bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}-x_instructions.md"
             draft: true
           
