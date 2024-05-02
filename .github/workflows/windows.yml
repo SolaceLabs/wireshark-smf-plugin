@@ -99,7 +99,7 @@ jobs:
       # This means that the artifact is double-zipped as a result
       - name: Create Zip
         working-directory: ${{ github.workspace }}/build/run/RelWithDebInfo/plugins
-        run: Compress-Archive ./* -Destination ${{ github.workspace }}\${{ env.PLUGIN_NAME }}
+        run: Compress-Archive ./*/epan/smf.* -Destination ${{ github.workspace }}\${{ env.PLUGIN_NAME }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
