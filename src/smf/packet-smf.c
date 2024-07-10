@@ -1990,8 +1990,9 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             if (param_info.binary_metadata_length > 0)
             {
                 int metadata_start = payload_offset + param_info.binary_metadata_start;
+                gint remaining_len = tvb_reported_length_remaining(tvb, metadata_start);
                 // Check to see still have data to dissect
-                if (tvb_captured_length(tvb) > (guint)metadata_start) {
+                if (remaining_len > (guint)param_info.binary_metadata_length) {
                     next_tvb = tvb_new_subset_length_caplen(tvb,
                         metadata_start,
                         -1,
