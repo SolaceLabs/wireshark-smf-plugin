@@ -3004,7 +3004,7 @@ proto_register_assuredctrl(void)
             "", HFILL }
         },
         { &hf_assuredctrl_ackSequenceNum_param,
-            { "Ack Seqeunce Number",           "assuredctrl.ackSequenceNum",
+            { "Ack Sequence Number",           "assuredctrl.ackSequenceNum",
             FT_UINT16, BASE_DEC, NULL, 0x0,          
             "", HFILL } 
         },
