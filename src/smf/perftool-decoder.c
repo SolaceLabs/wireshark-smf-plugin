@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -43,7 +41,7 @@ add_tooldata_block(proto_tree *bm_tree, int headerFieldIndex, tvbuff_t *tvb, int
 	int pos;			/* position in payload */
 	char *buffer;       /* temp buffer to hold our decode string */
     char *pad_buf;		/* buffer to use for left-padding our decode string */
-	guint32 field_bitmap;
+	uint32_t field_bitmap;
 
     /* Generate a padding leader */
     pad_buf = (char*)malloc(2);
@@ -108,13 +106,13 @@ add_tooldata_block(proto_tree *bm_tree, int headerFieldIndex, tvbuff_t *tvb, int
 	}
 	if (field_bitmap & 0x40)
 	{
-		g_snprintf(buffer, 300, "%sRepublished Flag = TRUE",
+		g_snprintf(buffer, 300, "%sRepublished Flag = true",
                                pad_buf);
 		proto_tree_add_string(bm_tree, headerFieldIndex, tvb, start_offset + 7, 1, buffer);
 	}
 	else
 	{
-		g_snprintf(buffer, 300, "%sRepublished Flag = FALSE",
+		g_snprintf(buffer, 300, "%sRepublished Flag = false",
                                pad_buf);
 		proto_tree_add_string(bm_tree, headerFieldIndex, tvb, start_offset + 7, 1, buffer);
 	}

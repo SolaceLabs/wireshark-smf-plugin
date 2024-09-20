@@ -54,7 +54,7 @@ static int global_matelink_port = 8741;
 
 static dissector_handle_t matelink_handle;
 
-static gboolean matelink_desegment = TRUE;
+static bool matelink_desegment = true;
 
 /* Header */
 static int hf_matelink_type = -1;
@@ -105,7 +105,7 @@ static int  hf_matelink_transheader_checksum= -1;
 static int  hf_matelink_transheader_sequence= -1;
 
 /* Initialize the subtree pointers */
-static gint ett_matelink = -1;
+static int ett_matelink = -1;
 
 enum MateLinkMessage
 {
@@ -179,7 +179,7 @@ static const value_string adbChkSumType_name[] =
 { CHKSUM_MD5, "MD5"},
 };
 
-static const guint32 MAX_MSG_SIZE_30MB = 32 * 1024 * 1024;
+static const uint32_t MAX_MSG_SIZE_30MB = 32 * 1024 * 1024;
 
 /* if we return 0, it means the current PDU is deferred until we
 * get the next packet.
@@ -188,7 +188,7 @@ static const guint32 MAX_MSG_SIZE_30MB = 32 * 1024 * 1024;
 * and we move on to the next packet.
 * If everything is OK return the length of the smf message
 */
-static guint32 test_matelink(tvbuff_t *tvb, packet_info* pinfo, int offset)
+static uint32_t test_matelink(tvbuff_t *tvb, packet_info* pinfo, int offset)
 {
     // If the remaining length is less then 12, we do not have enough to test
     int remainingLength = tvb_captured_length(tvb) - offset;
@@ -198,13 +198,13 @@ static guint32 test_matelink(tvbuff_t *tvb, packet_info* pinfo, int offset)
         return 1;
     }
     // Check type
-    guint8 firstByte = tvb_get_guint8(tvb, offset);
+    uint8_t firstByte = tvb_get_uint8(tvb, offset);
     if (firstByte > MAX_MATELINK_TYPE)
     {
         return 1;
     }
     // Check length
-    guint32 msglen = tvb_get_guint32(tvb, offset + 4, ENC_LITTLE_ENDIAN);
+    uint32_t msglen = tvb_get_uint32(tvb, offset + 4, ENC_LITTLE_ENDIAN);
     if (msglen < MATELINK_HDR_SIZE) {
         // The message is too small.
         return 1;
@@ -213,7 +213,7 @@ static guint32 test_matelink(tvbuff_t *tvb, packet_info* pinfo, int offset)
         // The message is too big.
         return 1;
     }
-    if ((guint32)remainingLength < msglen)
+    if ((uint32_t)remainingLength < msglen)
     {
         // Need more data to complete the message
         if (pinfo->can_desegment) {
@@ -231,7 +231,7 @@ static void dissect_matelink_hello(tvbuff_t * tvb, packet_info* pinfo _U_, proto
     col_set_str(pinfo->cinfo, COL_INFO, "Hello");
     // Header already dissected
 
-    gint size = 8;
+    int size = 8;
     proto_tree_add_item(tree, hf_matelink_hello_magic, tvb, offset, size, ENC_LITTLE_ENDIAN);
     offset += size;
     size = 8;
@@ -286,7 +286,7 @@ static void dissect_matelink_journalWrite(tvbuff_t * tvb, packet_info* pinfo _U_
 {
     col_set_str(pinfo->cinfo, COL_INFO, "JournalWrite");
     // Header already dissected
-    gint size = 4;
+    int size = 4;
     proto_tree_add_item(tree, hf_matelink_journalwrite_requestId, tvb, offset, size, ENC_LITTLE_ENDIAN);
     offset += size;
     size = 4;
@@ -294,7 +294,7 @@ static void dissect_matelink_journalWrite(tvbuff_t * tvb, packet_info* pinfo _U_
     offset += size;
     // The rest
     while (offset < len) {
-        guint32 curlen;
+        uint32_t curlen;
         size = 4;
         proto_tree_add_item_ret_uint(tree, hf_matelink_transheader_length, tvb, offset, size, ENC_LITTLE_ENDIAN, &curlen);
         proto_tree_add_item(tree, hf_matelink_transheader_type, tvb, offset, size, ENC_LITTLE_ENDIAN);
@@ -317,7 +317,7 @@ static void dissect_matelink_journalWriteAck(tvbuff_t * tvb, packet_info* pinfo 
 {
     col_set_str(pinfo->cinfo, COL_INFO, "JournalWriteAck");
     // Header already dissected
-    gint size = 4;
+    int size = 4;
     proto_tree_add_item(tree, hf_matelink_journalwriteack_requestId, tvb, offset, size, ENC_LITTLE_ENDIAN);
     offset += size;
     size = 4;
@@ -331,7 +331,7 @@ static void dissect_matelink_doorBell(tvbuff_t * tvb, packet_info* pinfo _U_, pr
 {
     col_set_str(pinfo->cinfo, COL_INFO, "DoorBell");
     // Header already dissected
-    gint size = 4;
+    int size = 4;
     proto_tree_add_item(tree, hf_matelink_doorbell_queueId, tvb, offset, size, ENC_LITTLE_ENDIAN);
     offset += size;
     size = 4;
@@ -344,7 +344,7 @@ static void dissect_matelink_SyncWrite(tvbuff_t * tvb, packet_info* pinfo _U_, p
 {
     col_set_str(pinfo->cinfo, COL_INFO, "SyncWrite");
     // Header already dissected
-    gint size = 4;
+    int size = 4;
     proto_tree_add_item(tree, hf_matelink_syncwrite_offset, tvb, offset, size, ENC_LITTLE_ENDIAN);
     offset += size;
     size = 4;
@@ -355,7 +355,7 @@ static void dissect_matelink_SyncWrite(tvbuff_t * tvb, packet_info* pinfo _U_, p
 }
 
 /* Determine the total length of an matelink packet, given the message header */
-static guint get_matelink_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *data _U_)
+static unsigned int get_matelink_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *data _U_)
 {
     /* msglen initialze to 1 because
      * if we return 0, it means the current PDU is deferred until we
@@ -364,7 +364,7 @@ static guint get_matelink_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, v
      * it means the current PDU is an error and we will be marked as error
      * and we move on to the next packet.
      */
-    guint32 msglen = test_matelink(tvb, inf, offset);
+    uint32_t msglen = test_matelink(tvb, inf, offset);
     return msglen;
 }
 
@@ -379,8 +379,8 @@ static int dissect_matelink_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo,
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "Matelink");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    guint8 matelinktype = tvb_get_guint8(tvb, 0);
-    guint32 msglen = tvb_get_guint32(tvb, 4, ENC_LITTLE_ENDIAN);
+    uint8_t matelinktype = tvb_get_uint8(tvb, 0);
+    uint32_t msglen = tvb_get_uint32(tvb, 4, ENC_LITTLE_ENDIAN);
     ti = proto_tree_add_item(tree, proto_matelink, tvb, 0, msglen, ENC_LITTLE_ENDIAN);
     matelink_tree = proto_item_add_subtree(ti, ett_matelink);
 
@@ -392,7 +392,7 @@ static int dissect_matelink_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo,
     offset += 1;
     proto_tree_add_item(matelink_tree, hf_matelink_pad0, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
-    guint32 len;
+    uint32_t len;
     proto_tree_add_item_ret_uint(matelink_tree, hf_matelink_len, tvb, offset, 4, ENC_LITTLE_ENDIAN, &len);
     offset += 4;
     proto_tree_add_item(matelink_tree, hf_matelink_seq, tvb, offset, 8, ENC_LITTLE_ENDIAN);
@@ -440,7 +440,7 @@ static int dissect_matelink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 void proto_reg_handoff_matelink(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
         
 	if (!inited) {
         matelink_handle = create_dissector_handle(dissect_matelink, proto_matelink);
@@ -665,7 +665,7 @@ void proto_register_matelink(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_matelink,
     };

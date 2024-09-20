@@ -160,9 +160,9 @@ extern int ett_assuredctrl_analysis;
 
 int smf_analysis(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree);
 
-void smf_analysis_param(tvbuff_t *tvb, packet_info* pinfo, guint8 param_type, int offset);
+void smf_analysis_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t param_type, int offset);
 
-void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, guint8 param_type, int offset, int size);
+void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t param_type, int offset, int size);
 
 void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tree);
 

@@ -33,8 +33,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/tvbuff.h>
 #include <epan/dissectors/packet-tcp.h>
@@ -75,7 +73,7 @@ static void try_load_smf_subdissection_uat(void);
 static int proto_smf = -1;
 static int global_smf_port = 55555;
 static int global_smf_rtg_port = 55556;
-static int scan_smf_in_stream = 1;
+static bool scan_smf_in_stream = true;
 
 /* Header v3 */
 
@@ -222,23 +220,23 @@ static expert_field ei_trace_span_unsupported_version = EI_INIT;
 static expert_field ei_trace_span_invalid_length = EI_INIT;
 
 /* desegmentation of SMF over TCP */
-static gboolean smf_desegment = TRUE;
+static bool smf_desegment = true;
 
-static gboolean extractAdMsgId = FALSE;
+static bool extractAdMsgId = false;
  
 #if 0
 /* Global sample preference ("controls" display of numbers) */
-static gboolean gPREF_HEX = FALSE;
+static bool gPREF_HEX = false;
 #endif
 
 /* Initialize the subtree pointers */
-static gint ett_smf = -1;
-static gint ett_message_contents_summary = -1;
-static gint ett_consumer_id_list = -1;
-static gint ett_smf_fragments = -1;
-static gint ett_smf_fragment = -1;
-static gint ett_attachment_sdt = -1;
-static gint ett_trace_span_transport_context = -1;
+static int ett_smf = -1;
+static int ett_message_contents_summary = -1;
+static int ett_consumer_id_list = -1;
+static int ett_smf_fragments = -1;
+static int ett_smf_fragment = -1;
+static int ett_attachment_sdt = -1;
+static int ett_trace_span_transport_context = -1;
 
 
 static const fragment_items smf_frag_items =
@@ -425,7 +423,7 @@ static const value_string trace_span_context_injection_standard_names[] =
 /* A structure that keeps track of information parsed from SMF parameters */
 struct param_info_t
 {
-    gboolean is_response;
+    bool is_response;
     int metadata_start;
     int metadata_length;
     int xml_payload_start;
@@ -436,8 +434,8 @@ struct param_info_t
     int cidlist_length;
     int binary_metadata_start;
     int binary_metadata_length;
-    gint32 correlation_tag;
-    gboolean ack_immediately_tag;
+    int32_t correlation_tag;
+    bool ack_immediately_tag;
 };
 
 /* Dissector handles for external dissectors */
@@ -469,12 +467,12 @@ static int hf_smf_gen_reassembled_in = -1;
 static int hf_smf_gen_reassembled_length = -1;
 //static int hf_smf_gen_segment_data = -1;
 
-static gint ett_smf_gen_fragment = -1;
-static gint ett_smf_gen_fragments = -1;
+static int ett_smf_gen_fragment = -1;
+static int ett_smf_gen_fragments = -1;
 
-//static gboolean isFragmented = FALSE;
+//static bool isFragmented = false;
 //static fragment_head* fd_head = NULL;
-//static gboolean more_frags = FALSE;
+//static bool more_frags = false;
 //static int total_msg_length = -1;
 
 static const fragment_items smf_gen_frag_items = {
@@ -502,7 +500,7 @@ static const fragment_items smf_gen_frag_items = {
 
 struct bd_reas_info_t
 {
-    gboolean inProgress;
+    bool inProgress;
     int seqNum;
     int pduLength;
     int curLength;
@@ -546,8 +544,8 @@ typedef struct {
 } smf_subdissection_uat_entry_t;
 
 static smf_subdissection_uat_entry_t* smf_subdissection_uat_entries = NULL;
-static guint num_smf_subdissection_uat_entries;
-static gboolean smf_subdissection_uat_loaded = 0;
+static unsigned int num_smf_subdissection_uat_entries;
+static bool smf_subdissection_uat_loaded = 0;
 static uat_t* smf_subdissection_uat = NULL;
 
 static void* smf_subdissection_uat_entry_copy_cb(void* dest, const void* orig, size_t len _U_)
@@ -570,23 +568,23 @@ static bool smf_subdissection_uat_entry_update_cb(void* record, char** error)
 
     if (u->topic_pattern == NULL || strlen(u->topic_pattern) == 0) {
         *error = g_strdup("Missing topic pattern");
-        return FALSE;
+        return false;
     }
 
     if (u->payload_proto_name == NULL || strlen(u->payload_proto_name) == 0) {
         *error = g_strdup("Missing payload protocol");
-        return FALSE;
+        return false;
     }
 
     if (u->match_criteria == MATCH_CRITERIA_REGEX) {
         u->topic_regex = g_regex_new(u->topic_pattern, (GRegexCompileFlags)G_REGEX_OPTIMIZE, (GRegexMatchFlags)0, NULL);
         if (!u->topic_regex) {
             *error = g_strdup_printf("Invalid regex: %s", u->topic_pattern);
-            return FALSE;
+            return false;
         }
     }
 
-    return TRUE;
+    return true;
 }
 
 static void smf_subdissection_uat_entry_free_cb(void* record)
@@ -607,9 +605,9 @@ get_subdissector_from_uat(const char* topic)
     smf_subdissection_uat_entry_t* uat_entry = NULL;
     size_t topic_str_len;
     size_t topic_pattern_len;
-    gboolean match_found = FALSE;
+    bool match_found = false;
 
-    for (guint i = 0; i < num_smf_subdissection_uat_entries; i++) {
+    for (unsigned int i = 0; i < num_smf_subdissection_uat_entries; i++) {
         uat_entry = &smf_subdissection_uat_entries[i];
         switch (uat_entry->match_criteria) {
 
@@ -676,9 +674,9 @@ static dissector_table_t smf_payload_dissector_table;
 static int call_dissector_no_protocol_change(dissector_handle_t handle, tvbuff_t *tvb,
     packet_info *pinfo, proto_tree *tree) {
     int rc;
-    col_set_writable(pinfo->cinfo, COL_PROTOCOL, FALSE);
+    col_set_writable(pinfo->cinfo, COL_PROTOCOL, false);
     rc = call_dissector(handle, tvb, pinfo, tree);
-    col_set_writable(pinfo->cinfo, COL_PROTOCOL, TRUE);
+    col_set_writable(pinfo->cinfo, COL_PROTOCOL, true);
     return rc;
 }
  
@@ -692,17 +690,17 @@ static void smf_reas_init(void)
 
     for (i = 0; i <= MAX_BD_CHANNEL; i++)
     {
-        bdReasInfo[i].inProgress = FALSE;
+        bdReasInfo[i].inProgress = false;
         bdReasInfo[i].seqNum = 0;
         bdReasInfo[i].pduLength = 0;
         bdReasInfo[i].curLength = 0;
     }
 }
 /*
-static gboolean smf_reas_in_progress(int bdChannel)
+static bool smf_reas_in_progress(int bdChannel)
 {
     if (bdChannel > MAX_BD_CHANNEL)
-        return FALSE;
+        return false;
     return bdReasInfo[bdChannel].inProgress;
 }
 */
@@ -710,7 +708,7 @@ static void stop_smf_reas(int bdChannel)
 {
     if (bdChannel > MAX_BD_CHANNEL)
         return;
-    bdReasInfo[bdChannel].inProgress = FALSE;
+    bdReasInfo[bdChannel].inProgress = false;
     bdReasInfo[bdChannel].seqNum = 0;
     return;
 }
@@ -721,18 +719,18 @@ static void start_smf_reas(tvbuff_t *tvb, packet_info *pinfo _U_, int bdChannel,
     if (bdChannel > MAX_BD_CHANNEL)
         return;
 //    if (!tvb || !pinfo) return;  // get rid of warning...
-    bdReasInfo[bdChannel].inProgress = TRUE;
+    bdReasInfo[bdChannel].inProgress = true;
     bdReasInfo[bdChannel].seqNum = 0;
     bdReasInfo[bdChannel].curLength = tvb_reported_length_remaining(tvb, 0);
     bdReasInfo[bdChannel].pduLength = pduLength;
     return;
 }
 
-static gboolean smf_reas_add_fragment(int bdChannel, tvbuff_t *tvb,
+static bool smf_reas_add_fragment(int bdChannel, tvbuff_t *tvb,
     packet_info *pinfo _U_, int * seqNum)
 {
     if (bdChannel > MAX_BD_CHANNEL)
-        return FALSE;
+        return false;
     bdReasInfo[bdChannel].seqNum += 1;
     *seqNum = bdReasInfo[bdChannel].seqNum;
     bdReasInfo[bdChannel].curLength += tvb_reported_length_remaining(tvb, 0);
@@ -741,8 +739,8 @@ static gboolean smf_reas_add_fragment(int bdChannel, tvbuff_t *tvb,
 
 static int get_smf_bd_channel(packet_info *pinfo)
 {
-    guint16 bdchannel;
-    guint8 direction;
+    uint16_t bdchannel;
+    uint8_t direction;
     void *bdchannelPtr;
 
     if (!pinfo)
@@ -750,7 +748,7 @@ static int get_smf_bd_channel(packet_info *pinfo)
     if (pinfo->dl_src.len != 6)
         return -1;
     /* Channel number is least significant 10 bits of Ethernet source address */
-    // return  ((guint8*)(pinfo->dl_src.data)[5]) + ((guint8*)((pinfo->dl_src.data)[4] & 0x3) << 8);
+    // return  ((uint8_t*)(pinfo->dl_src.data)[5]) + ((uint8_t*)((pinfo->dl_src.data)[4] & 0x3) << 8);
     bdchannelPtr = &bdchannel;
     memcpy(bdchannelPtr, (char*) (pinfo->dl_src.data) + 4, 2);
     bdchannel = pntoh16(&bdchannel);
@@ -766,7 +764,7 @@ static int get_smf_bd_channel(packet_info *pinfo)
 * and we move on to the next packet.
 * If everything is OK return the length of the smf message
 */
-static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
+static uint32_t test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
 {
     // If the remaining length is less then MIN_SMF_HEADER_LEN, we do not have enough to test
     int remainingLength = tvb_captured_length(tvb) - offset;
@@ -780,14 +778,14 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
         }
     }
     // Check SMF version
-    guint8 firstByte = tvb_get_guint8(tvb, offset);
+    uint8_t firstByte = tvb_get_uint8(tvb, offset);
     if ((firstByte & 0x07) != 0x03)
     {
         return 1;
     }
     // Check protocol
-    guint8 secondByte = tvb_get_guint8(tvb, offset+1);
-    guint8 smfProtocol = secondByte & 0x3f;
+    uint8_t secondByte = tvb_get_uint8(tvb, offset+1);
+    uint8_t smfProtocol = secondByte & 0x3f;
     if (smfProtocol > SMF_PROTOCOL_MAX)
     {
         return 1;
@@ -805,8 +803,8 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
     default:
         break;
     }
-    guint32 headerlen = tvb_get_ntohl(tvb, offset + 4);
-    guint32 msglen = tvb_get_ntohl(tvb, offset + 8);
+    uint32_t headerlen = tvb_get_ntohl(tvb, offset + 4);
+    uint32_t msglen = tvb_get_ntohl(tvb, offset + 8);
     if (headerlen < MIN_SMF_HEADER_LEN) {
         return 1;
     }
@@ -830,7 +828,7 @@ static guint32 test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
 }
 
 /* Determine the total length of an SMF packet, given the first 8 or 12 bytes */
-static guint get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *randomPointer _U_)
+static unsigned int get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *randomPointer _U_)
 {
     /* msglen initialze to 1 because
      * if we return 0, it means the current PDU is deferred until we
@@ -839,16 +837,16 @@ static guint get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset, void *
      * it means the current PDU is an error and we will be marked as error
      * and we move on to the next packet.
      */
-    guint32 msglen = test_smf(tvb, inf, offset);
+    uint32_t msglen = test_smf(tvb, inf, offset);
 
     if (msglen == 1) {
         // Packet is not valid. One possibility is that the packet capture not done at from the beginning.
         // As SMF could start somewhere inside a TCP packet, we look for the next potential starting point
         if (scan_smf_in_stream) {
-            guint captured_length_remaining = tvb_ensure_captured_length_remaining(tvb, offset);
+            unsigned int captured_length_remaining = tvb_ensure_captured_length_remaining(tvb, offset);
             // Start from the MIN_SMF_HEADER_LEN byte. Returning anything less than MIN_SMF_HEADER_LEN is an error
-            guint32 index = offset + MIN_SMF_HEADER_LEN;
-            guint32 found = 0;
+            uint32_t index = offset + MIN_SMF_HEADER_LEN;
+            uint32_t found = 0;
             // The reason for not checking the last 12 bytes of the packet is because it would trigger some 
             // other errors in decoding. The exact reason has not been studied.
             while (!found && ((index + MIN_SMF_HEADER_LEN) < captured_length_remaining) ) {
@@ -908,7 +906,7 @@ static void smf_proto_add_response_item(proto_tree *tree, tvbuff_t *tvb,
     int offset, int size)
 {
     char* buffer;
-    guint32 code;
+    uint32_t code;
     char* str;
 
     /* Get the response code and string */
@@ -930,8 +928,8 @@ static void smf_proto_add_response_item(proto_tree *tree, tvbuff_t *tvb,
 static void smf_proto_add_router_id_item(proto_tree *tree, int id1, int id2,
     tvbuff_t *tvb, int offset)
 {
-    proto_tree_add_item(tree, id1, tvb, offset + 3, 4, FALSE);
-    proto_tree_add_item(tree, id2, tvb, offset + 7, 2, FALSE);
+    proto_tree_add_item(tree, id1, tvb, offset + 3, 4, false);
+    proto_tree_add_item(tree, id2, tvb, offset + 7, 2, false);
 }
 */
 /* Add an list of UINT16s to the tree */
@@ -940,7 +938,7 @@ static void smf_proto_add_uint16_list_item(proto_tree *tree, int id,
 {
     int i;
     char* buffer;
-    guint16 list_item;
+    uint16_t list_item;
 
     buffer = (char*)wmem_alloc(wmem_packet_scope(), 510);
     buffer[0] = '\0';
@@ -977,7 +975,7 @@ static void smf_proto_add_uint32_list_item(proto_tree *tree, int id,
     int i;
     for (i = 0; i < size; i += 4)
     {
-        proto_tree_add_item(tree, id, tvb, offset + i, 4, FALSE);
+        proto_tree_add_item(tree, id, tvb, offset + i, 4, false);
     }
 }
 
@@ -995,7 +993,7 @@ static void smf_proto_add_cid_list_item(proto_tree *tree, tvbuff_t *tvb,
     proto_item* item;
 
     item = proto_tree_add_item(tree, hf_smf_cidlist_param, tvb, offset, size,
-        FALSE);
+        false);
 
     sub_tree = proto_item_add_subtree(item, ett_consumer_id_list);
 
@@ -1011,9 +1009,9 @@ static void smf_proto_add_ip_address_and_port_list_item(proto_tree *tree,
     for (i = 0; i < size; i += 6)
     {
         /* Add the address */
-        proto_tree_add_item(tree, id1, tvb, offset + i, 4, FALSE);
+        proto_tree_add_item(tree, id1, tvb, offset + i, 4, false);
         /* Add the port */
-        proto_tree_add_item(tree, id2, tvb, offset + i + 4, 2, FALSE);
+        proto_tree_add_item(tree, id2, tvb, offset + i + 4, 2, false);
     }
 }
 
@@ -1025,11 +1023,11 @@ static void smf_proto_add_ip_address_port_and_msgid_list_item(proto_tree *tree,
     for (i = 0; i < size; i += 14)
     {
         /* Add the address */
-        proto_tree_add_item(tree, id1, tvb, offset + i, 4, FALSE);
+        proto_tree_add_item(tree, id1, tvb, offset + i, 4, false);
         /* Add the port */
-        proto_tree_add_item(tree, id2, tvb, offset + i + 4, 2, FALSE);
+        proto_tree_add_item(tree, id2, tvb, offset + i + 4, 2, false);
         /* Add the msgid */
-        proto_tree_add_item(tree, id3, tvb, offset + i + 6, 8, FALSE);
+        proto_tree_add_item(tree, id3, tvb, offset + i + 6, 8, false);
     }
 }
 
@@ -1058,12 +1056,12 @@ static int smf_proto_add_variable_size_item(proto_tree* tree, tvbuff_t* tvb,
     int retval = 0;
     if (tree)
     {
-        proto_tree_add_item(tree, hfindex, tvb, offset, len, FALSE);
+        proto_tree_add_item(tree, hfindex, tvb, offset, len, false);
     }
     switch (len)
     {
         case 1:
-            retval = tvb_get_guint8(tvb, offset);
+            retval = tvb_get_uint8(tvb, offset);
             break;
         case 2:
             retval = tvb_get_ntohs(tvb, offset);
@@ -1083,8 +1081,8 @@ static int smf_proto_add_variable_size_item(proto_tree* tree, tvbuff_t* tvb,
 static void smf_proto_add_message_contents_summary_item(proto_tree *tree,
     tvbuff_t *tvb, int offset, int size, struct param_info_t* param_info_p)
 {
-    guint8 type;
-    guint8 len;
+    uint8_t type;
+    uint8_t len;
     int current_size = 0;
     int cumulative_size = 0;
     proto_tree* sub_tree;
@@ -1099,14 +1097,14 @@ static void smf_proto_add_message_contents_summary_item(proto_tree *tree,
     param_info_p->attachment_length = 0;
 
     item = proto_tree_add_item(tree, hf_smf_message_contents_summary_param, tvb,
-        offset, size, FALSE);
+        offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_message_contents_summary);
 
     for (i = 2; i < size; i += len)
     {
-        type = (tvb_get_guint8(tvb, offset + i) & 0xF0) >> 4;
-        len = tvb_get_guint8(tvb, offset + i) & 0x0F;
+        type = (tvb_get_uint8(tvb, offset + i) & 0xF0) >> 4;
+        len = tvb_get_uint8(tvb, offset + i) & 0x0F;
         if (len < 2)
             len = 2;
 
@@ -1154,7 +1152,7 @@ static void smf_proto_add_message_contents_summary_item(proto_tree *tree,
 
             default:
                 proto_tree_add_item(sub_tree, hf_smf_unknown_param, tvb,
-                    offset + i, len, FALSE);
+                    offset + i, len, false);
                 break;
         }
     }
@@ -1177,23 +1175,23 @@ static void smf_proto_add_trace_span_transport_context_value_v1(proto_tree *tree
     }
 
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_sampled_flag,
-            tvb, offset, 1, FALSE);
+            tvb, offset, 1, false);
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_rfu_flag,
-            tvb, offset, 1, FALSE);
+            tvb, offset, 1, false);
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_trace_id,
-            tvb, offset+1, 16, FALSE);
+            tvb, offset+1, 16, false);
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_span_id,
-            tvb, offset+17, 8, FALSE);
+            tvb, offset+17, 8, false);
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_injection_standard,
-            tvb, offset+25, 1, FALSE);
+            tvb, offset+25, 1, false);
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_rfu,
-            tvb, offset+26, 4, FALSE);
+            tvb, offset+26, 4, false);
     proto_tree_add_item(tree, hf_smf_trace_span_context_struct_trace_state_length,
-            tvb, offset+30, 2, FALSE);
+            tvb, offset+30, 2, false);
 
     if (trace_state_len) {
         proto_tree_add_item(tree, hf_smf_trace_span_context_struct_trace_state,
-                tvb, offset+32, trace_state_len, FALSE);
+                tvb, offset+32, trace_state_len, false);
     }
 }
 
@@ -1205,9 +1203,9 @@ void smf_proto_add_trace_span_transport_context_value(proto_tree* tree, packet_i
             "Length must be >= 1. Length was %i", size);
         return;
     }
-    guint8 version = (tvb_get_guint8(tvb, offset) & 0xf0) >> 4;
+    uint8_t version = (tvb_get_uint8(tvb, offset) & 0xf0) >> 4;
     proto_item* version_item = proto_tree_add_item(tree, hf_smf_trace_span_context_struct_version,
-        tvb, offset, 1, FALSE);
+        tvb, offset, 1, false);
 
     switch (version) {
     case 1:
@@ -1226,7 +1224,7 @@ void smf_proto_add_trace_span_transport_context_value(proto_tree* tree, packet_i
  * Will determine the parameter type and add the appropriate object to the
  * tree.
  */
-static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree, guint8 param_type,
+static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree, uint8_t param_type,
         int offset, int size, int header_overhead, struct param_info_t* param_info_p)
 {
 
@@ -1237,19 +1235,19 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
     switch (param_type)
     {
         case STANDARD_PARAM_PUBLISHER_ID:
-            proto_tree_add_item(tree, hf_smf_publisherid_param, tvb, offset, size, FALSE);
+            proto_tree_add_item(tree, hf_smf_publisherid_param, tvb, offset, size, false);
             break;
         case STANDARD_PARAM_PUBLISHER_MSG_ID:
-            proto_tree_add_item(tree, hf_smf_publisher_msgid_param, tvb, offset, size, FALSE);
+            proto_tree_add_item(tree, hf_smf_publisher_msgid_param, tvb, offset, size, false);
             break;
         case STANDARD_PARAM_MESSAGE_PRIORITY:
-            proto_tree_add_item(tree, hf_smf_message_prio_param, tvb, offset, size, FALSE);
+            proto_tree_add_item(tree, hf_smf_message_prio_param, tvb, offset, size, false);
             break;
         case STANDARD_PARAM_USER_DATA:
-            proto_tree_add_item(tree, hf_smf_userdata_param, tvb, offset, size, FALSE);
+            proto_tree_add_item(tree, hf_smf_userdata_param, tvb, offset, size, false);
             break;
         case STANDARD_PARAM_MESSAGE_ID:
-            proto_tree_add_item(tree, hf_smf_message_id_param, tvb, offset, size, FALSE);
+            proto_tree_add_item(tree, hf_smf_message_id_param, tvb, offset, size, false);
             break;
         case STANDARD_PARAM_USERNAME:
             smf_proto_add_username_item(tree, pinfo, tvb, offset, size);
@@ -1259,7 +1257,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             break;
         case STANDARD_PARAM_RESPONSE:
             smf_proto_add_response_item(tree, tvb, offset, size);
-            param_info_p->is_response = TRUE;
+            param_info_p->is_response = true;
             break;
         case STANDARD_PARAM_ENTITLEMENT_LIST:
             smf_proto_add_enttl_list_item(tree, tvb, offset, size);
@@ -1278,11 +1276,11 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             break;
         case STANDARD_PARAM_ORIGINATOR_ADDRESS:
             proto_tree_add_item(tree, hf_smf_originator_address_param, tvb,
-                offset, 4, FALSE);
+                offset, 4, false);
             if (size == 6)
             {
                 proto_tree_add_item(tree, hf_smf_originator_port_param, tvb,
-                    offset + 4, 2, FALSE);
+                    offset + 4, 2, false);
             }
             break;
         case STANDARD_PARAM_DESTINATION_ADDRESS_LIST:
@@ -1294,27 +1292,27 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             break;
         case STANDARD_PARAM_DEELIVERY_MODE:
             proto_tree_add_item(tree, hf_smf_delivery_mode_param, tvb, offset,
-                size, FALSE);
+                size, false);
             break;
         case STANDARD_PARAM_AD_MESSAGE_ID:
             CSV_WRITE_LONG_VALUE(extractAdMsgId, 0, "c:\\msgIdResults.txt",
                 tvb, offset+4);
             proto_tree_add_item(tree, hf_smf_ad_msg_id_param, tvb, offset, size,
-                FALSE);
+                false);
             break;
         case STANDARD_PARAM_AD_PREV_MESSAGE_ID:
             CSV_WRITE_LONG_VALUE(extractAdMsgId, 0, "c:\\msgIdResults.txt",
                 tvb, offset+4);
             proto_tree_add_item(tree, hf_smf_ad_prev_msg_id_param, tvb, offset,
-                size, FALSE);
+                size, false);
             break;
         case STANDARD_PARAM_AD_REDELIVERED_FLAG:
             proto_tree_add_item(tree, hf_smf_ad_redelivered_param, tvb, offset,
-                size, FALSE);
+                size, false);
             break;
         case STANDARD_PARAM_AD_TTL_DEPRICATED:
             proto_tree_add_item(tree, hf_smf_ad_ttl_deprecated_param, tvb, offset, size,
-                FALSE);
+                false);
             break;
         case STANDARD_PARAM_AD_DESTINATION_SET:
             smf_proto_add_ad_destination_set_item(tree, tvb, offset, size);
@@ -1327,54 +1325,54 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             CSV_WRITE_LONG_VALUE(extractAdMsgId, 1, "c:\\msgIdResults.txt",
                 tvb, offset);
             proto_tree_add_item(tree, hf_smf_ad_flow_id_param, tvb, offset,
-                size, FALSE);
+                size, false);
             // hf_assuredctrl_flow_id_hidden_param is for easier search with assuredctrl flow id
             item = proto_tree_add_item(tree, hf_assuredctrl_flow_id_hidden_param, tvb, offset,
-                size, FALSE);
+                size, false);
             proto_item_set_hidden(item);
             break;
         case STANDARD_PARAM_TOPIC_NAME:           
             topic_name = tvb_get_string_enc(NULL, tvb, offset, size, ENC_ASCII);
             proto_tree_add_item(tree, hf_smf_topic_name_param, tvb, offset,
-                size, FALSE);
+                size, false);
             break;
         case STANDARD_PARAM_AD_FLOW_REDELIVERED_FLAG:
             proto_tree_add_item(tree, hf_smf_ad_flow_redelivered_flag, tvb,
-                offset, size, FALSE);
+                offset, size, false);
             break;
         case STANDARD_PARAM_POINT_OF_ENTRY_UNIQUE_ID:
             // This is a fixed size param of 20 bytes
             proto_tree_add_item(tree, hf_smf_point_of_entry_unique_id_client_id, tvb,
-                offset, 2, FALSE);
+                offset, 2, false);
             proto_tree_add_item(tree, hf_smf_point_of_entry_unique_id_ingress_vrid_hash, tvb,
-                offset+2, 8, FALSE);
+                offset+2, 8, false);
             proto_tree_add_item(tree, hf_smf_point_of_entry_unique_id_vpn_name_hash, tvb,
-                offset+10, 8, FALSE);            
+                offset+10, 8, false);            
             break;
         case STANDARD_PARAM_DELIVERY_ALWAYS_ONLY:
             proto_tree_add_item(tree, hf_smf_deliver_always_only, tvb,
-                offset, size, FALSE);
+                offset, size, false);
             break;
         case STANDARD_PARAM_AD_TTL:
             proto_tree_add_item(tree, hf_smf_ad_ttl_param, tvb, offset,
-                size, FALSE);
+                size, false);
             break;
         case STANDARD_PARAM_RETRYABLE_ERROR:
-            proto_tree_add_item(tree, hf_smf_retryable_error, tvb, offset, size, FALSE);
+            proto_tree_add_item(tree, hf_smf_retryable_error, tvb, offset, size, false);
             break;
         case STANDARD_PARAM_SEQUENCE_NUMBER:
             proto_tree_add_item(tree, hf_smf_sequence_number_param, tvb, offset,
-                size, FALSE);
+                size, false);
             break;
         case STANDARD_PARAM_EXTENDED_TYPE_STREAM:
             {   
                 for (int local_offset = offset; local_offset < size + offset;)
                 {
-                    guint8 format;
-                    guint16 type;
+                    uint8_t format;
+                    uint16_t type;
                     int paramSize = 0;
                     int headerSize = 2;
-                    format = (tvb_get_guint8(tvb, local_offset)  & 0x70) >>4 ;
+                    format = (tvb_get_uint8(tvb, local_offset)  & 0x70) >>4 ;
                     type = tvb_get_ntohs(tvb, local_offset) & 0xFFF;
                     switch (format)
                     {
@@ -1394,7 +1392,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                             paramSize = 8;
                             break;
                         case 5:
-                            paramSize = (int)tvb_get_guint8(tvb, local_offset + headerSize);
+                            paramSize = (int)tvb_get_uint8(tvb, local_offset + headerSize);
                             headerSize++;
                             paramSize -= headerSize;
                             break;
@@ -1405,7 +1403,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                             break;
                         default:
                             proto_tree_add_item(tree, hf_smf_unknown_param, tvb,
-                                            local_offset, size + offset - local_offset, FALSE);
+                                            local_offset, size + offset - local_offset, false);
                             return;
                     }
 
@@ -1414,65 +1412,65 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                     switch (type)
                     {
                         case SMF_EXTENDED_PARAM_GSS_API_TOKEN:
-                            proto_tree_add_item(tree, hf_smf_gss_api_token_param, tvb, local_offset, paramSize, FALSE);
+                            proto_tree_add_item(tree, hf_smf_gss_api_token_param, tvb, local_offset, paramSize, false);
                             break;
                         
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_ACK_MESSAGE_ID:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_ack_message_id_param, tvb, local_offset, 8, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_ack_message_id_param, tvb, local_offset, 8, false);
                             break;
                         
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_TRANSACTION_ID:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_trans_id_param, tvb, local_offset, 4, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_trans_id_param, tvb, local_offset, 4, false);
                             break;
                         
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_TRANSACTION_FLAGS:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_trans_sr_flag, tvb, local_offset, 1, FALSE);
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_trans_pr_flag, tvb, local_offset, 1, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_trans_sr_flag, tvb, local_offset, 1, false);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_trans_pr_flag, tvb, local_offset, 1, false);
                             break;
                         
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_SPOOLER_UNIQUE_ID:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_spooler_unique_id, tvb, local_offset, 8, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_spooler_unique_id, tvb, local_offset, 8, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_REP_MATE_ACK_MES_ID:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_rep_mate_ack_id, tvb, local_offset, 8, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_rep_mate_ack_id, tvb, local_offset, 8, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_REDELIVERY_COUNT:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_redelivery_count, tvb, local_offset, 4, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_redelivery_count, tvb, local_offset, 4, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_ELIGIBLE_TIME:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_eligible_time, tvb, local_offset, 4, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_eligible_time, tvb, local_offset, 4, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_QUEUED_FOR_REDELIVERY:
-                            proto_tree_add_item(tree, hf_smf_assured_delivery_queued_for_redelivery, tvb, local_offset, 0, FALSE);
+                            proto_tree_add_item(tree, hf_smf_assured_delivery_queued_for_redelivery, tvb, local_offset, 0, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_OAUTH_ISSUE_IDENTIFIER:
-                            proto_tree_add_item(tree, hf_smf_oauth_issuer_identifier, tvb, local_offset, paramSize, FALSE);
+                            proto_tree_add_item(tree, hf_smf_oauth_issuer_identifier, tvb, local_offset, paramSize, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_OPENID_CONNECT_ID_TOKEN:
-                            proto_tree_add_item(tree, hf_smf_openid_connect_id_token, tvb, local_offset, paramSize, FALSE);
+                            proto_tree_add_item(tree, hf_smf_openid_connect_id_token, tvb, local_offset, paramSize, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_OAUTH_ACCESS_TOKEN:
-                            proto_tree_add_item(tree, hf_smf_oauth_access_token, tvb, local_offset, paramSize, FALSE);
+                            proto_tree_add_item(tree, hf_smf_oauth_access_token, tvb, local_offset, paramSize, false);
                             break;
 
                         case SMF_EXTENDED_PARAM_TRACE_SPAN_TRANSPORT_CONTEXT:
                         {
                             proto_item* transport_context_item = proto_tree_add_item(tree, hf_smf_trace_span_transport_context_param,
-                                tvb, local_offset, paramSize, FALSE);
+                                tvb, local_offset, paramSize, false);
                             proto_tree* subtree = proto_item_add_subtree(transport_context_item, ett_trace_span_transport_context);
 
                             smf_proto_add_trace_span_transport_context_value(subtree, pinfo, tvb, local_offset, paramSize);
                             break;
                         }
                         default:
-                            proto_tree_add_item(tree, hf_smf_unknown_param, tvb, local_offset - headerSize, size + offset - local_offset + headerSize, FALSE);
+                            proto_tree_add_item(tree, hf_smf_unknown_param, tvb, local_offset - headerSize, size + offset - local_offset + headerSize, false);
                             return;
                     }
                     local_offset += paramSize;
@@ -1482,7 +1480,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
 
         default:
             proto_tree_add_item(tree, hf_smf_unknown_param, tvb,
-                offset - header_overhead, size + header_overhead, FALSE);
+                offset - header_overhead, size + header_overhead, false);
             break;
     }
     smf_analysis_param(tvb, pinfo, param_type, offset);
@@ -1496,56 +1494,56 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
  * tree.
  */
 static void add_lightweight_smf_param(tvbuff_t *tvb, proto_tree *tree,
-    guint8 param_type, int offset, int size, struct param_info_t* param_info_p)
+    uint8_t param_type, int offset, int size, struct param_info_t* param_info_p)
 {
 
     switch (param_type)
     {
         case LIGHTWEIGHT_PARAM_CORRELATION_TAG:
             proto_tree_add_item(tree, hf_smf_correlation_tag_param, tvb, offset,
-                size, FALSE);
+                size, false);
             param_info_p->correlation_tag = tvb_get_ntoh24(tvb, offset);
             break;
 
         case LIGHTWEIGHT_PARAM_TOPIC_NAME_OFFSET:
             proto_tree_add_item(tree, hf_smf_topic_name_offset_param, tvb,
-                offset, 1, FALSE);
+                offset, 1, false);
             offset += 1;
             proto_tree_add_item(tree, hf_smf_topic_name_length_param, tvb,
-                offset, 1, FALSE);
+                offset, 1, false);
             break;
 
         case LIGHTWEIGHT_PARAM_QUEUE_NAME_OFFSET:
             proto_tree_add_item(tree, hf_smf_queue_name_offset_param, tvb,
-                offset, 1, FALSE);
+                offset, 1, false);
             offset += 1;
             proto_tree_add_item(tree, hf_smf_queue_name_length_param, tvb,
-                offset, 1, FALSE);
+                offset, 1, false);
             break;
 
         case LIGHTWEIGHT_PARAM_ACK_IMMEDIATELY:
             proto_tree_add_item(tree, hf_smf_ack_immediately_tag_param, tvb,
-                offset-1, 1, FALSE);
-            param_info_p->ack_immediately_tag = TRUE;
+                offset-1, 1, false);
+            param_info_p->ack_immediately_tag = true;
             break;
 
         case LIGHTWEIGHT_PARAM_HEADER_EXTENSION:
             offset -= 1;
             proto_tree_add_item(tree, hf_smf_header_extension_param, tvb,
-                offset, 4, FALSE);
+                offset, 4, false);
             offset += 1;
             proto_tree_add_item(tree, hf_smf_header_extension_param_rffu, tvb,
-                offset, 3, FALSE);
+                offset, 3, false);
             offset += 2;
             proto_tree_add_item(tree, hf_smf_header_extension_param_odf, tvb,
-                offset, 1, TRUE);
+                offset, 1, true);
             proto_tree_add_item(tree, hf_smf_header_extension_param_fac, tvb,
-                offset, 1, FALSE);
+                offset, 1, false);
             break;
 
         default:
             proto_tree_add_item(tree, hf_smf_unknown_param, tvb, offset - 1,
-                size + 1, FALSE);
+                size + 1, false);
             break;
     }
 }
@@ -1561,22 +1559,22 @@ static int dissect_smf_param(tvbuff_t * tvb, packet_info* pinfo, int offset, pro
 
     int param_len;
     int param_offset;
-    gboolean is_lightweight_param;
-    guint8 param_type;
+    bool is_lightweight_param;
+    uint8_t param_type;
 
     /* Is it a pad byte? */
-    if (tvb_get_guint8(tvb, offset) == 0)
+    if (tvb_get_uint8(tvb, offset) == 0)
     {
-        proto_tree_add_item(tree, hf_smf_pad_byte, tvb, offset, 1, FALSE);
+        proto_tree_add_item(tree, hf_smf_pad_byte, tvb, offset, 1, false);
         return 1;
     }
 
-    is_lightweight_param = tvb_get_guint8(tvb, offset) & 0x20;
+    is_lightweight_param = tvb_get_uint8(tvb, offset) & 0x20;
 
     if (is_lightweight_param)
     {
-        param_type = (tvb_get_guint8(tvb, offset) & 0x1c) >> 2;
-        param_len = (tvb_get_guint8(tvb, offset) & 0x3);
+        param_type = (tvb_get_uint8(tvb, offset) & 0x1c) >> 2;
+        param_len = (tvb_get_uint8(tvb, offset) & 0x3);
 
         add_lightweight_smf_param(tvb, tree, param_type, offset + 1, param_len, param_info_p);
 
@@ -1584,8 +1582,8 @@ static int dissect_smf_param(tvbuff_t * tvb, packet_info* pinfo, int offset, pro
         param_len += 1;
     } else
     {
-        param_type = tvb_get_guint8(tvb, offset) & 0x1f;
-        param_len = tvb_get_guint8(tvb, offset + 1);
+        param_type = tvb_get_uint8(tvb, offset) & 0x1f;
+        param_len = tvb_get_uint8(tvb, offset + 1);
         param_offset = 2;
 
         if (param_len == 0)
@@ -1632,25 +1630,25 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
     tvbuff_t* next_tvb;
     int payload_offset;
     int param_offset;
-    guint8 smf_version;
-    guint32 msg_len = -1;// hdr_len = -1;
-    guint8 encap_protocol;
+    uint8_t smf_version;
+    uint32_t msg_len = -1;// hdr_len = -1;
+    uint8_t encap_protocol;
     const char* encap_protocol_name;
     struct param_info_t param_info;
     char* buffer0;
     char* buffer1;
     char* encap_name_buf;
     struct smfdata encap_smfdata;
-    //guint32 dst_ref = 0;
+    //uint32_t dst_ref = 0;
 
     /* String to check against "magic number" of perf tool data */
-    guint32 magicNumber;
+    uint32_t magicNumber;
 
     memset(&param_info, 0, sizeof(param_info));
     param_info.correlation_tag = -1;
 
     /* Boolean flag to indicate whether the Assured Control (AC) Flag is set */
-    gboolean acflag_set = FALSE;
+    bool acflag_set = false;
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SMF");
@@ -1687,7 +1685,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
     col_clear(pinfo->cinfo, COL_INFO);
 
-    encap_protocol = tvb_get_guint8(tvb, 1) & 0x3f;
+    encap_protocol = tvb_get_uint8(tvb, 1) & 0x3f;
 
     encap_protocol_name = try_val_to_str(encap_protocol, protocolnames);
     /*
@@ -1711,7 +1709,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
     encap_smfdata.subtype = encap_name_buf;
 
     /* Dissect the SMF header */
-    smf_version = tvb_get_guint8(tvb, 0) & 0x7;
+    smf_version = tvb_get_uint8(tvb, 0) & 0x7;
     if (smf_version == 3)
     {
         msg_len = tvb_get_ntohl(tvb, 8);
@@ -1777,36 +1775,36 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             offset to the end of the packet. */
 
             /* create display subtree for the protocol */
-    ti = proto_tree_add_item(tree, proto_smf, tvb, 0, msg_len, FALSE);
+    ti = proto_tree_add_item(tree, proto_smf, tvb, 0, msg_len, false);
 
     smf_tree = proto_item_add_subtree(ti, ett_smf);
 
-    proto_tree_add_item(smf_tree, hf_smf_di, tvb, 0, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_ee, tvb, 0, 1, FALSE);
+    proto_tree_add_item(smf_tree, hf_smf_di, tvb, 0, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_ee, tvb, 0, 1, false);
 
-    proto_tree_add_item(smf_tree, hf_smf_dto, tvb, 0, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_adf, tvb, 0, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_dmqe, tvb, 0, 1, FALSE);
+    proto_tree_add_item(smf_tree, hf_smf_dto, tvb, 0, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_adf, tvb, 0, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_dmqe, tvb, 0, 1, false);
 
-    proto_tree_add_item(smf_tree, hf_smf_version, tvb, 0, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_uh, tvb, 1, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_encap_protocol, tvb, 1, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_priority, tvb, 2, 1, FALSE);
+    proto_tree_add_item(smf_tree, hf_smf_version, tvb, 0, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_uh, tvb, 1, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_encap_protocol, tvb, 1, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_priority, tvb, 2, 1, false);
 
     param_offset = MIN_SMF_HEADER_LEN;
     if (tvb_captured_length_remaining(tvb, 0) < param_offset) {
         return -1;
     }
     /* Determines if the Assured Control (AC) Flag is set or not */
-    if (tvb_get_guint8(tvb, 2) & 0x02) { acflag_set = TRUE; }
-    else { acflag_set = FALSE; }
+    if (tvb_get_uint8(tvb, 2) & 0x02) { acflag_set = true; }
+    else { acflag_set = false; }
 
-    proto_tree_add_item(smf_tree, hf_smf_retain, tvb, 2, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_acf, tvb, 2, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_sni, tvb, 2, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_ttl, tvb, 3, 1, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_header_len_v3, tvb, 4, 4, FALSE);
-    proto_tree_add_item(smf_tree, hf_smf_msg_len_v3, tvb, 8, 4, FALSE);
+    proto_tree_add_item(smf_tree, hf_smf_retain, tvb, 2, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_acf, tvb, 2, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_sni, tvb, 2, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_ttl, tvb, 3, 1, false);
+    proto_tree_add_item(smf_tree, hf_smf_header_len_v3, tvb, 4, 4, false);
+    proto_tree_add_item(smf_tree, hf_smf_msg_len_v3, tvb, 8, 4, false);
 
     payload_offset = tvb_get_ntohl(tvb, 4);
 
@@ -1880,37 +1878,37 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     magicNumber = tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start);
 
                     if (magicNumber == 0x501ACE01) {
-                        attach_item = proto_tree_add_item(smf_tree, hf_smf_attachment, tvb, payload_offset + param_info.attachment_start, param_info.attachment_length, FALSE);
+                        attach_item = proto_tree_add_item(smf_tree, hf_smf_attachment, tvb, payload_offset + param_info.attachment_start, param_info.attachment_length, false);
                         attach_tree = proto_item_add_subtree(attach_item, ett_attachment_sdt);
                     }
                 }
                 if (param_info.attachment_length > 5) {
-                    guint8 type = tvb_get_guint8(tvb, payload_offset + param_info.attachment_start);
+                    uint8_t type = tvb_get_uint8(tvb, payload_offset + param_info.attachment_start);
                     /* Within this if statement, length is compared to param_info.attachment_length. the length is encoded as an 
                      * unsigned 32-bit integer value on the wire, so it is necessary to use tvb_get_ntohl since it fetches an 
                      * unsigned 32-bit value from the packet. However, param_info.attachment_length is declared as a regular int 
                      * and is referenced in many places, so it would be at least tedious if not difficult to change its declaration 
                      * from type 'int' to type 'unsigned int'. The easiest solution was to declare length as an unsigned 64-bit 
-                     * variable, and typecast any assignments or comparisons to type 'guint64' so that there is no overflow like 
+                     * variable, and typecast any assignments or comparisons to type 'uint64_t' so that there is no overflow like 
                      * there might be if we typecasted int to unsigned int or vice versa. 
                      */
-                    guint64 length = (guint64)tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start + 1);
+                    uint64_t length = (uint64_t)tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start + 1);
 
                     if ((type == 0x2f || //Decode as SDT if an SDT stream is contained
                         type == 0x2b || //Decode as SDT if an SDT map is contained
                         type == 0x1f    //Decode as SDT if an SDT string is contained
                         )
-                        && length == (guint64)param_info.attachment_length) {
+                        && length == (uint64_t)param_info.attachment_length) {
                         attachment_type = _smf_attachment_type_sdt;
                     }
                     else if ((type == 0x31) && (param_info.attachment_length > 7)) { /* 0x31 = Solace openMAMA payload*/
-                        type = tvb_get_guint8(tvb,
+                        type = tvb_get_uint8(tvb,
                             payload_offset + param_info.attachment_start + 2);
-                        length = (guint64)tvb_get_ntohl(tvb,
+                        length = (uint64_t)tvb_get_ntohl(tvb,
                             payload_offset + param_info.attachment_start + 3);
 
 
-                        if ((type == 0x2F) && (length + 2 == (guint64)param_info.attachment_length)) { /* Stream of fields starts with 0x2F */
+                        if ((type == 0x2F) && (length + 2 == (uint64_t)param_info.attachment_length)) { /* Stream of fields starts with 0x2F */
                             attachment_type = _smf_attachment_type_openmama_payload;
                         }
                     }
@@ -1933,7 +1931,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                             subdissectorSuccess = 1;
                         }
                     }
-                    else if (dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,TRUE,NULL))
+                    else if (dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,true,NULL))
                     {
                         subdissectorSuccess = 1;
                     } else {
@@ -1952,7 +1950,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                             attach_item = proto_tree_add_item(smf_tree,
                                 hf_smf_attachment, tvb,
                                 payload_offset + param_info.attachment_start,
-                                -1, FALSE);
+                                -1, false);
 
                             attach_tree = proto_item_add_subtree(
                                 attach_item, ett_attachment_sdt);
@@ -1960,7 +1958,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
                         add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
                             payload_offset + param_info.attachment_start + 5,
-                            param_info.attachment_length - 5, 1, FALSE);
+                            param_info.attachment_length - 5, 1, false);
 
 
                         break;
@@ -1979,7 +1977,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     {
                         proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
                             payload_offset + param_info.attachment_start,
-                            -1, FALSE);
+                            -1, false);
                         break;
                     }
                     }
@@ -1990,9 +1988,9 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             if (param_info.binary_metadata_length > 0)
             {
                 int metadata_start = payload_offset + param_info.binary_metadata_start;
-                gint remaining_len = tvb_reported_length_remaining(tvb, metadata_start);
+                int remaining_len = tvb_reported_length_remaining(tvb, metadata_start);
                 // Check to see still have data to dissect
-                if (remaining_len > (guint)param_info.binary_metadata_length) {
+                if (remaining_len > param_info.binary_metadata_length) {
                     next_tvb = tvb_new_subset_length_caplen(tvb,
                         metadata_start,
                         -1,
@@ -2081,7 +2079,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             if (param_info.xml_payload_length > 0)
             {
                 proto_tree_add_item(smf_tree, hf_smf_payload, tvb,
-                    payload_offset, -1, FALSE);
+                    payload_offset, -1, false);
             }
             break;
         }
@@ -2141,7 +2139,7 @@ static void try_load_smf_subdissection_uat(void)
                 g_strdup(default_subdissector_uat_extra_data)
             };
 
-            uat_add_record(smf_subdissection_uat, &initial_rec, TRUE);
+            uat_add_record(smf_subdissection_uat, &initial_rec, true);
         }
         smf_subdissection_uat_loaded = 1;
     }
@@ -2825,7 +2823,7 @@ void proto_register_smf(void)
         };
 
     /* Setup protocol subtree array */
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_smf,
         &ett_message_contents_summary,
@@ -2886,7 +2884,7 @@ void proto_register_smf(void)
     smf_subdissection_uat = uat_new("Message Decoding",
         sizeof(smf_subdissection_uat_entry_t),
         "smf_subdissection",
-        TRUE,
+        true,
         &smf_subdissection_uat_entries,
         &num_smf_subdissection_uat_entries,
         UAT_AFFECTS_DISSECTION,
@@ -2926,12 +2924,12 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
     int id = 0;
     int seqNum = 0;
     int parsed = 0;
-    gboolean updateColInfo = TRUE;
-    gboolean needMore = TRUE;
-    guint32 pduLen;
+    bool updateColInfo = true;
+    bool needMore = true;
+    uint32_t pduLen;
     tvbuff_t* newTvb;
     fragment_head* fdHead = NULL;
-    gboolean savedFragmented = pinfo->fragmented;
+    bool savedFragmented = pinfo->fragmented;
     fragment_head* fragmentData =
         fragment_get(&smf_gen_reassembly_table, pinfo, id, data);
     fragment_head* assembledData =
@@ -2964,7 +2962,7 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
     else if (fragmentData)
     {
         needMore = smf_reas_add_fragment(id, tvb, pinfo, &seqNum);
-        pinfo->fragmented = TRUE;
+        pinfo->fragmented = true;
         fdHead = fragment_add_seq_next(&smf_gen_reassembly_table, tvb, 0, pinfo, id, data,
             tvb_reported_length_remaining(tvb, 0), needMore);
         newTvb = process_reassembled_data(tvb, 0, pinfo, "SMF Backdoor", fdHead,
@@ -2986,7 +2984,7 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
     else
     {
         tvbuff_t* next_tvb = tvb;
-        guint offset = 0;
+        unsigned int offset = 0;
 
         do
         {
@@ -2998,9 +2996,9 @@ static int dissect_and_reassemble_smf_over_tls(tvbuff_t* tvb, packet_info* pinfo
                 if (pduLen >= MIN_SMF_HEADER_LEN)
                 {
                     //start_smf_reas(next_tvb, pinfo, id, pduLen);
-                    pinfo->fragmented = TRUE;
+                    pinfo->fragmented = true;
                     fragment_add_seq(&smf_gen_reassembly_table, next_tvb, 0, pinfo, id,
-                        data, 0, tvb_reported_length_remaining(next_tvb, 0), TRUE, 0);
+                        data, 0, tvb_reported_length_remaining(next_tvb, 0), true, 0);
                     // Create an INFO column that resembles the one
                     // created in dissect_smf_common
                     col_append_fstr(pinfo->cinfo, COL_INFO,
@@ -3098,43 +3096,43 @@ static int dissect_smf_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     return tvb_captured_length(tvb);
 }
 
-static int dissect_smf_heur_ws(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
+static bool dissect_smf_heur_ws(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
 {
     if (test_smf(tvb, pinfo, 0) < MIN_SMF_HEADER_LEN)
     {
-        return FALSE;
+        return false;
     }
 
     tcp_dissect_pdus(tvb, pinfo, tree, smf_desegment, MIN_SMF_HEADER_LEN, get_smf_pdu_len,
         dissect_smf_tcp_pdu, data);
 
-    return 1;
+    return true;
 }
 
-static int dissect_smf_heur_http(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
+static bool dissect_smf_heur_http(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
 {
     if (test_smf(tvb, pinfo, 0) < MIN_SMF_HEADER_LEN)
     {
-        return FALSE;
+        return false;
     }
 
     tcp_dissect_pdus(tvb, pinfo, tree, smf_desegment, MIN_SMF_HEADER_LEN, get_smf_pdu_len,
         dissect_smf_tcp_pdu, data);
 
-    return 1;
+    return true;
 }
 
-static int dissect_smf_heur_tls(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
+static bool dissect_smf_heur_tls(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)
 {
     if (test_smf(tvb, pinfo, 0) < MIN_SMF_HEADER_LEN)
     {
-        return FALSE;
+        return false;
     }
 
     tcp_dissect_pdus(tvb, pinfo, tree, smf_desegment, MIN_SMF_HEADER_LEN, get_smf_pdu_len,
         dissect_smf_tcp_pdu, data);
 
-    return 1;
+    return true;
 }
 
 /* Dissect an SMF packet over the backdoor bus. These appear as SMF
@@ -3161,12 +3159,12 @@ static int dissect_smf_bd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     int seqNum = 0;
     int bdChannel = get_smf_bd_channel(pinfo);
     int parsed = 0;
-    gboolean updateColInfo = TRUE;
-    gboolean needMore = TRUE;
-    guint32 pduLen;
+    bool updateColInfo = true;
+    bool needMore = true;
+    uint32_t pduLen;
     tvbuff_t *newTvb;
     fragment_head *fdHead = NULL;
-    gboolean savedFragmented = pinfo->fragmented;
+    bool savedFragmented = pinfo->fragmented;
     fragment_head *fragmentData =
         fragment_get(&reasTable, pinfo, bdChannel, data);
     fragment_head *assembledData =
@@ -3201,7 +3199,7 @@ static int dissect_smf_bd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     else if (fragmentData)
     {
         needMore = smf_reas_add_fragment(bdChannel, tvb, pinfo, &seqNum);
-        pinfo->fragmented = TRUE;
+        pinfo->fragmented = true;
         fdHead = fragment_add_seq_next(&reasTable, tvb, 0, pinfo, bdChannel, data,
             tvb_reported_length_remaining(tvb, 0), needMore);
         newTvb = process_reassembled_data(tvb, 0, pinfo, "SMF Backdoor", fdHead,
@@ -3223,7 +3221,7 @@ static int dissect_smf_bd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     else
     {
         tvbuff_t *next_tvb = tvb;
-        guint offset = 0;
+        unsigned int offset = 0;
 
         do
         {
@@ -3236,9 +3234,9 @@ static int dissect_smf_bd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
                 if (pduLen > 0)
                 {
                     start_smf_reas(next_tvb, pinfo, bdChannel, pduLen);
-                    pinfo->fragmented = TRUE;
+                    pinfo->fragmented = true;
                     fragment_add_seq(&reasTable, next_tvb, 0, pinfo, bdChannel,
-                        data, 0, tvb_reported_length_remaining(next_tvb, 0), TRUE, 0);
+                        data, 0, tvb_reported_length_remaining(next_tvb, 0), true, 0);
                     // Create an INFO column that resembles the one
                     // created in dissect_smf_common
                     col_append_fstr(pinfo->cinfo, COL_INFO,
@@ -3286,7 +3284,7 @@ static const char* get_env(const char* varName) {
 static void smf_proto_init(void)
 {
     if (strcmp(get_env("WS_EXTRACT_AD_MSG_ID"), "1")==0) {
-        extractAdMsgId = TRUE;
+        extractAdMsgId = true;
     }
 
     smf_reas_init();
@@ -3302,7 +3300,7 @@ static void smf_proto_init(void)
  */
 void proto_reg_handoff_smf(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
 
     if (!inited)
     {
@@ -3320,9 +3318,9 @@ void proto_reg_handoff_smf(void)
         dissector_add_uint("tcp.port", global_smf_rtg_port, smf_tcp_handle);
         dissector_add_uint("udp.port", global_smf_port, smf_udp_handle);
         dissector_add_uint("ethertype", ETHERTYPE_SMF_BACKDOOR, smf_bd_handle);
-        heur_dissector_add("ws", dissect_smf_heur_ws, "SMF over Web-Socket", "smf_ws", proto_smf, (heuristic_enable_e)TRUE);
-        heur_dissector_add("http", dissect_smf_heur_http, "SMF over HTTP", "smf_http", proto_smf, (heuristic_enable_e)TRUE);
-        heur_dissector_add("tls", dissect_smf_heur_tls, "SMF over TLS/SSL", "smf_tls", proto_smf, (heuristic_enable_e)TRUE);
+        heur_dissector_add("ws", dissect_smf_heur_ws, "SMF over Web-Socket", "smf_ws", proto_smf, (heuristic_enable_e)true);
+        heur_dissector_add("http", dissect_smf_heur_http, "SMF over HTTP", "smf_http", proto_smf, (heuristic_enable_e)true);
+        heur_dissector_add("tls", dissect_smf_heur_tls, "SMF over TLS/SSL", "smf_tls", proto_smf, (heuristic_enable_e)true);
 
         xml_handle = find_dissector("xml");
         pubctrl_handle = find_dissector("solace.pubctrl");
@@ -3338,7 +3336,7 @@ void proto_reg_handoff_smf(void)
         dissector_add_for_decode_as("smf_payload_dissector_table", protobuf_handle);
         smf_reas_init();
         sdt_decoder_init();
-        inited = TRUE;
+        inited = true;
    }
 
     /*

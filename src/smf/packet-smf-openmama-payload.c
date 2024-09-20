@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/exceptions.h>
@@ -117,11 +115,11 @@ static int hf_mama_field_value_vector = -1;
 #define MAMA_PAYLOAD_SUBTAG_TYPE_FIELDNAME  101
 
 /* Initialize the subtree pointers */
-static gint ett_mama_payload = -1;
-static gint ett_mama_payload_field = -1;
-static gint ett_mama_payload_field_price = -1;
-static gint ett_mama_payload_field_vector = -1;
-static gint ett_mama_payload_field_datetime = -1;
+static int ett_mama_payload = -1;
+static int ett_mama_payload_field = -1;
+static int ett_mama_payload_field_price = -1;
+static int ett_mama_payload_field_vector = -1;
+static int ett_mama_payload_field_datetime = -1;
 
 static int
 dissect_mama_field_str(
@@ -130,22 +128,22 @@ dissect_mama_field_str(
     proto_tree *tree,
     packet_info *pinfo _U_)
 {
-    guint8 type;
-    guint32 value_len;
-    guint8 len_bytes;
+    uint8_t type;
+    uint32_t value_len;
+    uint8_t len_bytes;
     int loop;
 
     /* field name (optional) or field value */
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
 
     len_bytes = (type & SMF_PARAM_LENGTH_IN_BYTES_MASK) + 1 ;
     value_len = 0;
     for (loop=0; loop <len_bytes; loop++) {
-        value_len = (value_len << 8) +  tvb_get_guint8(tvb, offset + 1 +loop );
+        value_len = (value_len << 8) +  tvb_get_uint8(tvb, offset + 1 +loop );
     }
     value_len -= (len_bytes+1); /* */
 
-    proto_tree_add_item(tree, hf_mama_field_value_string, tvb, offset+len_bytes +1, value_len, FALSE);
+    proto_tree_add_item(tree, hf_mama_field_value_string, tvb, offset+len_bytes +1, value_len, false);
 
     return value_len + len_bytes +1;
 }
@@ -157,18 +155,18 @@ dissect_mama_field_msg(
     proto_tree *tree,
     packet_info *pinfo)
 {
-    guint8 type;
-    guint32 value_len;
-    guint8 len_bytes;
+    uint8_t type;
+    uint32_t value_len;
+    uint8_t len_bytes;
     tvbuff_t *next_tvb;
     int loop;
 
     /* field name (optional) or field value */
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
     len_bytes = (type & SMF_PARAM_LENGTH_IN_BYTES_MASK) + 1 ;
     value_len = 0;
     for (loop=0; loop <len_bytes; loop++) {
-        value_len = (value_len << 8) +  tvb_get_guint8(tvb, offset + 1 +loop );
+        value_len = (value_len << 8) +  tvb_get_uint8(tvb, offset + 1 +loop );
     }
     value_len -= (len_bytes+2);
 
@@ -186,7 +184,7 @@ dissect_vector_param(
     tvbuff_t *tvb,
     int offset,
     int value_len,
-    guint8 tag,
+    uint8_t tag,
     proto_tree *tree,
     packet_info *pinfo)
 {
@@ -196,7 +194,7 @@ dissect_vector_param(
     int count;
     int local_offset;
 
-    ti = proto_tree_add_item(tree, hf_mama_field_value_vector, tvb, offset, value_len, FALSE);
+    ti = proto_tree_add_item(tree, hf_mama_field_value_vector, tvb, offset, value_len, false);
     field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field_vector);
 
     switch (tag) 
@@ -204,86 +202,86 @@ dissect_vector_param(
 
     case MAMA_PAYLOAD_SUBTAG_TYPE_BOOLEAN_VECTOR:
         for (loop =0; loop < value_len; loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_bool, tvb, offset+loop, 1, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_bool, tvb, offset+loop, 1, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_CHAR_VECTOR:
         for (loop =0; loop < (value_len/2); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_char, tvb, offset+2*loop, 2, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_char, tvb, offset+2*loop, 2, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_INTEGER_1BYTE_VECTOR:
         for (loop =0; loop < value_len; loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_i8, tvb, offset+loop, 1, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i8, tvb, offset+loop, 1, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_UNSIGNED_INTEGER_1BYTE_VECTOR:
         for (loop =0; loop < value_len; loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_u8, tvb, offset+loop, 1, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u8, tvb, offset+loop, 1, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_INTEGER_2BYTE_VECTOR:
         for (loop =0; loop < (value_len/2); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_i16, tvb, offset+2*loop, 2, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i16, tvb, offset+2*loop, 2, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_UNSIGNED_INTEGER_2BYTE_VECTOR:
         for (loop =0; loop < (value_len/2); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_u16, tvb, offset+2*loop, 2, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u16, tvb, offset+2*loop, 2, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_INTEGER_4BYTE_VECTOR:
         for (loop =0; loop < (value_len/4); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_i32, tvb, offset+4*loop, 4, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i32, tvb, offset+4*loop, 4, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_UNSIGNED_INTEGER_4BYTE_VECTOR:
         for (loop =0; loop < (value_len/4); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_u32, tvb, offset+4*loop, 4, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u32, tvb, offset+4*loop, 4, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_INTEGER_8BYTE_VECTOR:
         for (loop =0; loop < (value_len/8); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_i64, tvb, offset+8*loop, 8, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i64, tvb, offset+8*loop, 8, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_UNSIGNED_INTEGER_8BYTE_VECTOR:
         for (loop =0; loop < (value_len/8); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_u64, tvb, offset+8*loop, 8, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u64, tvb, offset+8*loop, 8, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_FLOAT_4BYTE_VECTOR:
         for (loop =0; loop < (value_len/4); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_f32, tvb, offset+4*loop, 4, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_f32, tvb, offset+4*loop, 4, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_FLOAT_8BYTE_VECTOR:
         for (loop =0; loop < (value_len/8); loop++) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_f64, tvb, offset+8*loop, 8, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_f64, tvb, offset+8*loop, 8, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_DATETIME_VECTOR:
         for (loop =0; loop < (value_len/8); loop++) {
-            ti = proto_tree_add_item(field_tree, hf_mama_field_value_datetime, tvb, offset+8*loop, 8, FALSE);
+            ti = proto_tree_add_item(field_tree, hf_mama_field_value_datetime, tvb, offset+8*loop, 8, false);
             field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field_datetime);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_seconds, tvb, offset+8*loop, 4, FALSE);
+                hf_mama_field_value_datetime_seconds, tvb, offset+8*loop, 4, false);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_precision, tvb, offset+8*loop+4, 1, FALSE); 
+                hf_mama_field_value_datetime_precision, tvb, offset+8*loop+4, 1, false); 
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_hints, tvb, offset+8*loop+4, 1, FALSE); 
+                hf_mama_field_value_datetime_hints, tvb, offset+8*loop+4, 1, false); 
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_microseconds, tvb, offset+8*loop+5, 3, FALSE); 
+                hf_mama_field_value_datetime_microseconds, tvb, offset+8*loop+5, 3, false); 
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_PRICE_VECTOR:
         for (loop =0; loop < (value_len/9); loop++) {
-            ti = proto_tree_add_item(field_tree, hf_mama_field_value_price, tvb, offset+9*loop, 9, FALSE);
+            ti = proto_tree_add_item(field_tree, hf_mama_field_value_price, tvb, offset+9*loop, 9, false);
             field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field_price);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_price_f64, tvb, offset+9*loop, 8, FALSE);
+                hf_mama_field_value_price_f64, tvb, offset+9*loop, 8, false);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_price_u8, tvb, offset+9*loop+8, 1, FALSE);	
+                hf_mama_field_value_price_u8, tvb, offset+9*loop+8, 1, false);	
         }
         break;
 
@@ -312,7 +310,7 @@ dissect_byte_array_param(
     tvbuff_t *tvb,
     int offset,
     int value_len,
-    guint8 tag,
+    uint8_t tag,
     proto_tree *tree,
     packet_info *pinfo)
 {
@@ -331,28 +329,28 @@ dissect_byte_array_param(
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_OPAQUE:
         proto_tree_add_item(tree,
-            hf_mama_field_value_opaque, tvb, offset, value_len, FALSE);
+            hf_mama_field_value_opaque, tvb, offset, value_len, false);
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_DATETIME:
-        ti = proto_tree_add_item(tree, hf_mama_field_value_datetime, tvb, offset, value_len, FALSE);
+        ti = proto_tree_add_item(tree, hf_mama_field_value_datetime, tvb, offset, value_len, false);
         field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field_datetime);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_seconds, tvb, offset, 4, FALSE);
+            hf_mama_field_value_datetime_seconds, tvb, offset, 4, false);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_precision, tvb, offset+4, 1, FALSE); 
+            hf_mama_field_value_datetime_precision, tvb, offset+4, 1, false); 
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_hints, tvb, offset+4, 1, FALSE); 
+            hf_mama_field_value_datetime_hints, tvb, offset+4, 1, false); 
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_microseconds, tvb, offset+5, 3, FALSE); 
+            hf_mama_field_value_datetime_microseconds, tvb, offset+5, 3, false); 
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_PRICE:
         ti = proto_tree_add_item(tree,
-            hf_mama_field_value_price, tvb, offset, value_len, FALSE);
+            hf_mama_field_value_price, tvb, offset, value_len, false);
         field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field_price);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_price_f64, tvb, offset, 8, FALSE);
+            hf_mama_field_value_price_f64, tvb, offset, 8, false);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_price_u8, tvb, offset+8, 1, FALSE);
+            hf_mama_field_value_price_u8, tvb, offset+8, 1, false);
         break;
 
     case MAMA_PAYLOAD_SUBTAG_TYPE_BOOLEAN_VECTOR:
@@ -384,40 +382,40 @@ static int mama_field_length(
     int offset)
 {
     int field_len = 0;
-    guint8 tag;
-    guint8 param_type;
-    guint32 param_value_len;
-    guint8 param_len_bytes;
+    uint8_t tag;
+    uint8_t param_type;
+    uint32_t param_value_len;
+    uint8_t param_len_bytes;
     int loop;
 
     /* field id*/
     field_len =4;
 
     /* field name (optional) or field value */
-    param_type = tvb_get_guint8(tvb, offset+field_len);
+    param_type = tvb_get_uint8(tvb, offset+field_len);
     field_len++;
     param_len_bytes = (param_type & SMF_PARAM_LENGTH_IN_BYTES_MASK) + 1 ;
     param_value_len = 0;
     for (loop=0; loop <param_len_bytes; loop++) {
-        param_value_len = (param_value_len << 8) +  tvb_get_guint8(tvb, offset + field_len+loop );
+        param_value_len = (param_value_len << 8) +  tvb_get_uint8(tvb, offset + field_len+loop );
     }
     param_value_len -= (param_len_bytes+1); /* */
     field_len += param_len_bytes;
 
     /*  check for optional field name  */
     if ( (param_type & SMF_PARAM_MASK)  == SMF_PARAM_TYPE_BYTE_ARRAY  ) {
-        tag = tvb_get_guint8(tvb, offset + field_len );
+        tag = tvb_get_uint8(tvb, offset + field_len );
         /* check for field name */
         if (tag == MAMA_PAYLOAD_SUBTAG_TYPE_FIELDNAME) {
             field_len++;
             param_value_len--;
             field_len += param_value_len;
-            param_type = tvb_get_guint8(tvb, offset + field_len);
+            param_type = tvb_get_uint8(tvb, offset + field_len);
             field_len++;
             param_len_bytes = (param_type & SMF_PARAM_LENGTH_IN_BYTES_MASK) +1;
             param_value_len = 0;
             for (loop=0; loop <param_len_bytes; loop++) {
-                param_value_len = (param_value_len << 8) +  tvb_get_guint8(tvb, offset + field_len+loop );
+                param_value_len = (param_value_len << 8) +  tvb_get_uint8(tvb, offset + field_len+loop );
             }
             param_value_len -= (param_len_bytes+1);
             field_len += param_len_bytes;
@@ -428,7 +426,7 @@ static int mama_field_length(
     switch (param_type & SMF_PARAM_MASK)
     {
     case SMF_PARAM_TYPE_BYTE_ARRAY:
-        tag=tvb_get_guint8(tvb, offset + field_len );
+        tag=tvb_get_uint8(tvb, offset + field_len );
         field_len++;
         param_value_len--;
         break;
@@ -447,50 +445,50 @@ dissect_mama_field(
     packet_info *pinfo)
 {
     int field_len = 0;
-    guint8 tag;
-    guint8 param_type;
-    guint32 param_value_len;
-    guint8 param_len_bytes;
+    uint8_t tag;
+    uint8_t param_type;
+    uint32_t param_value_len;
+    uint8_t param_len_bytes;
     int loop;
     proto_tree   *field_tree;
     proto_item   *ti;
     field_len = mama_field_length(tvb, offset);
-    ti = proto_tree_add_item(tree, hf_mama_payload_field, tvb, offset, field_len, FALSE);
+    ti = proto_tree_add_item(tree, hf_mama_payload_field, tvb, offset, field_len, false);
     field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field);
 
     /* field id: skip the 1st 2 bytes */
     field_len =2;
     proto_tree_add_item(field_tree,
-        hf_mama_field_id, tvb, offset+field_len, 2, FALSE);
+        hf_mama_field_id, tvb, offset+field_len, 2, false);
     field_len +=2;
 
     /* field name (optional) or field value */
-    param_type = tvb_get_guint8(tvb, offset+field_len);
+    param_type = tvb_get_uint8(tvb, offset+field_len);
     field_len++;
     param_len_bytes = (param_type & SMF_PARAM_LENGTH_IN_BYTES_MASK) + 1 ;
     param_value_len = 0;
     for (loop=0; loop <param_len_bytes; loop++) {
-        param_value_len = (param_value_len << 8) +  tvb_get_guint8(tvb, offset + field_len+loop );
+        param_value_len = (param_value_len << 8) +  tvb_get_uint8(tvb, offset + field_len+loop );
     }
     param_value_len -= (param_len_bytes+1); /* */
     field_len += param_len_bytes;
 
     /*  check for optional field name  */
     if ( (param_type & SMF_PARAM_MASK)  == SMF_PARAM_TYPE_BYTE_ARRAY  ) {
-        tag = tvb_get_guint8(tvb, offset + field_len );
+        tag = tvb_get_uint8(tvb, offset + field_len );
         /* check for field name */
         if (tag == MAMA_PAYLOAD_SUBTAG_TYPE_FIELDNAME) {
             field_len++;
             param_value_len--;
             proto_tree_add_item(field_tree,
-                hf_mama_field_name, tvb, offset+field_len, param_value_len, FALSE);
+                hf_mama_field_name, tvb, offset+field_len, param_value_len, false);
             field_len += param_value_len;
-            param_type = tvb_get_guint8(tvb, offset + field_len);
+            param_type = tvb_get_uint8(tvb, offset + field_len);
             field_len++;
             param_len_bytes = (param_type & SMF_PARAM_LENGTH_IN_BYTES_MASK) +1;
             param_value_len = 0;
             for (loop=0; loop <param_len_bytes; loop++) {
-                param_value_len = (param_value_len << 8) +  tvb_get_guint8(tvb, offset + field_len+loop );
+                param_value_len = (param_value_len << 8) +  tvb_get_uint8(tvb, offset + field_len+loop );
             }
             param_value_len -= (param_len_bytes+1);
             field_len += param_len_bytes;
@@ -501,24 +499,24 @@ dissect_mama_field(
     switch (param_type & SMF_PARAM_MASK)
     {
     case SMF_PARAM_TYPE_BOOLEAN:
-        proto_tree_add_item(field_tree, hf_mama_field_value_bool, tvb, offset+field_len, param_value_len, FALSE);
+        proto_tree_add_item(field_tree, hf_mama_field_value_bool, tvb, offset+field_len, param_value_len, false);
         break;
 
     case SMF_PARAM_TYPE_INTEGER:
         switch (param_value_len)
         {
         case 1:
-            proto_tree_add_item(field_tree, hf_mama_field_value_i8, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i8, tvb, offset+field_len, param_value_len, false);
             break;
         case 2:
-            proto_tree_add_item(field_tree, hf_mama_field_value_i16, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i16, tvb, offset+field_len, param_value_len, false);
             break;
         case 4:
-            proto_tree_add_item(field_tree, hf_mama_field_value_i32, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i32, tvb, offset+field_len, param_value_len, false);
             break;		
         case 8:
         default:
-            proto_tree_add_item(field_tree, hf_mama_field_value_i64, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_i64, tvb, offset+field_len, param_value_len, false);
             break;
         }
         break;
@@ -526,41 +524,41 @@ dissect_mama_field(
         switch (param_value_len)
         {
         case 1:
-            proto_tree_add_item(field_tree, hf_mama_field_value_u8, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u8, tvb, offset+field_len, param_value_len, false);
             break;
         case 2:
-            proto_tree_add_item(field_tree, hf_mama_field_value_u16, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u16, tvb, offset+field_len, param_value_len, false);
             break;
         case 4:
-            proto_tree_add_item(field_tree, hf_mama_field_value_u32, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u32, tvb, offset+field_len, param_value_len, false);
             break;		
         case 8:
         default:
-            proto_tree_add_item(field_tree, hf_mama_field_value_u64, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_u64, tvb, offset+field_len, param_value_len, false);
             break;
         }
         break;
     case SMF_PARAM_TYPE_FLOAT:
         if (param_value_len == 4) {
-            proto_tree_add_item(field_tree, hf_mama_field_value_f32, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_f32, tvb, offset+field_len, param_value_len, false);
         }
         else {
-            proto_tree_add_item(field_tree, hf_mama_field_value_f64, tvb, offset+field_len, param_value_len, FALSE);
+            proto_tree_add_item(field_tree, hf_mama_field_value_f64, tvb, offset+field_len, param_value_len, false);
         }
         break;
     case SMF_PARAM_TYPE_CHAR:
-        proto_tree_add_item(field_tree, hf_mama_field_value_char, tvb, offset+field_len, param_value_len, FALSE);
+        proto_tree_add_item(field_tree, hf_mama_field_value_char, tvb, offset+field_len, param_value_len, false);
         break;
 
     case SMF_PARAM_TYPE_BYTE_ARRAY:
-        tag=tvb_get_guint8(tvb, offset + field_len );
+        tag=tvb_get_uint8(tvb, offset + field_len );
         field_len++;
         param_value_len--;
         dissect_byte_array_param(tvb, offset+field_len, param_value_len, tag, field_tree, pinfo);	
         break;
 
     case SMF_PARAM_TYPE_STRING:
-        proto_tree_add_item(field_tree, hf_mama_field_value_string, tvb, offset+field_len, param_value_len, FALSE);
+        proto_tree_add_item(field_tree, hf_mama_field_value_string, tvb, offset+field_len, param_value_len, false);
         break;
     case SMF_PARAM_TYPE_DESTINATION:
     case SMF_PARAM_TYPE_SMF_MSG:
@@ -600,18 +598,18 @@ dissect_mama_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     int stream_len;
 
     /* create display subtree for the protocol */
-    ti = proto_tree_add_item(tree, proto_mama_payload, tvb, 0, -1, FALSE);
+    ti = proto_tree_add_item(tree, proto_mama_payload, tvb, 0, -1, false);
     payload_tree = proto_item_add_subtree(ti, ett_mama_payload);
 
     stream_len = tvb_get_ntohl(tvb, 3);
     proto_tree_add_item(payload_tree,
-        hf_mama_payload_type, tvb, 0, 1, FALSE);
+        hf_mama_payload_type, tvb, 0, 1, false);
 
     proto_tree_add_item(payload_tree,
-        hf_mama_payload_version, tvb, 1, 1, FALSE);
+        hf_mama_payload_version, tvb, 1, 1, false);
 
     proto_tree_add_item(payload_tree,
-        hf_mama_stream_length, tvb, 3, 4, FALSE);
+        hf_mama_stream_length, tvb, 3, 4, false);
 
     dissect_mama_fields(tvb, 7, stream_len-5, payload_tree, pinfo); 
 
@@ -724,7 +722,7 @@ proto_register_mama_payload(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mama_payload,
         &ett_mama_payload_field,
         &ett_mama_payload_field_price,
@@ -757,11 +755,11 @@ proto_register_mama_payload(void)
 void
 proto_reg_handoff_mama_payload(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
 
     if (!inited) {
         mama_payload_handle = create_dissector_handle(dissect_mama_payload, proto_mama_payload);
-        inited = TRUE;
+        inited = true;
     }
 }
 
