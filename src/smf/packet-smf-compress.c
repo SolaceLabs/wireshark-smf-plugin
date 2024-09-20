@@ -85,10 +85,10 @@ static voidpf stream_alloc(void * opaque, uInt num, uInt size)
     return wmem_alloc0(wmem_file_scope(), num*size);
 }
 
-static void stream_free(void * opaque, voidpf address)
+static void stream_free(void * opaque, voidpf stream_address)
 {
     (void)opaque; // avoid compiler warning
-    wmem_free(wmem_file_scope(), address);
+    wmem_free(wmem_file_scope(), stream_address);
 }
 
 static void init_stream(smf_compressed_stream_t *compressed_stream_p)
