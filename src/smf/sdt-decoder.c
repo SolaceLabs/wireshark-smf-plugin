@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/wmem_scopes.h>
@@ -78,7 +76,7 @@ static char *strqueue = "Queue";
 static dissector_handle_t xml_handle;
 static dissector_handle_t smrp_handle;
 
-gint ett_trace_span_message_creation_context = -1;
+int ett_trace_span_message_creation_context = -1;
 
 void get_embedded_smf_info(tvbuff_t* tvb, int offset, int length, int* embedded_smf_info)
 {
@@ -93,13 +91,13 @@ void get_embedded_smf_info(tvbuff_t* tvb, int offset, int length, int* embedded_
         int payloadlen; /* Length of item payload */
 
         /* Parse the current tag */
-        tag = (tvb_get_guint8(tvb, pos) & 0xFC) >> 2;
-        taglen = (tvb_get_guint8(tvb, pos) & 0x03) + 1;
+        tag = (tvb_get_uint8(tvb, pos) & 0xFC) >> 2;
+        taglen = (tvb_get_uint8(tvb, pos) & 0x03) + 1;
         pos++;
         switch (taglen)
         {
         case 1:
-            itemlen = tvb_get_guint8(tvb, pos);
+            itemlen = tvb_get_uint8(tvb, pos);
             break;
         case 2:
             itemlen = tvb_get_ntohs(tvb, pos);
@@ -139,7 +137,7 @@ static void get_destination_string(tvbuff_t *tvb, int offset, int length, char *
     char *dest_name;
     char *strdest_type;
 
-    dest_type = tvb_get_guint8(tvb, offset);
+    dest_type = tvb_get_uint8(tvb, offset);
     dest_name = tvb_get_string_enc(NULL, tvb, offset+1, length-1, ENC_ASCII);
 
     switch(dest_type) {
@@ -174,7 +172,7 @@ static void get_destination_string(tvbuff_t *tvb, int offset, int length, char *
 
 void
 add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvbuff_t *tvb, int offset, int length, int indent, 
-	 gboolean is_in_map)
+	 bool is_in_map)
 {
 	int pos;        /* position in payload */
     char *pad_buf;  /* buffer to use for left-padding our decode string */
@@ -203,7 +201,7 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
         char *dest_payload; /* use to build a destination string */
         const char *in_map_str;     /*   "Key/", "Val/" or ""   */
         enum { KEY, VALUE, NOT_IN_MAP } map_entry_type; /* if inside a map alternates between KEY and VALUE. Outside a map is NOT_IN_MAP */
-        guint64 int_payload = 0;
+        uint64_t int_payload = 0;
         tvbuff_t* next_tvb;
         //int payload_offset;
         int embedded_smf_info[2] = { 0, 0 };
@@ -224,13 +222,13 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
         }
 
         /* Parse the current tag */
-        tag = (tvb_get_guint8(tvb, pos) & 0xFC) >> 2;
-        taglen = (tvb_get_guint8(tvb, pos) & 0x03) + 1;
+        tag = (tvb_get_uint8(tvb, pos) & 0xFC) >> 2;
+        taglen = (tvb_get_uint8(tvb, pos) & 0x03) + 1;
         pos++;
         switch (taglen)
         {
             case 1:
-                itemlen = tvb_get_guint8(tvb, pos);
+                itemlen = tvb_get_uint8(tvb, pos);
                 break;
             case 2:
                 itemlen = tvb_get_ntohs(tvb, pos);
@@ -252,16 +250,16 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
         switch (payloadlen)
         {
             case 1:
-                int_payload = (guint64)tvb_get_guint8(tvb, pos);
+                int_payload = (uint64_t)tvb_get_uint8(tvb, pos);
             break;
             case 2:
-                int_payload = (guint64)tvb_get_ntohs(tvb, pos);
+                int_payload = (uint64_t)tvb_get_ntohs(tvb, pos);
             break;
             case 3:
-                int_payload = (guint64)tvb_get_ntoh24(tvb, pos);
+                int_payload = (uint64_t)tvb_get_ntoh24(tvb, pos);
             break;
             case 4:
-                int_payload = (guint64)tvb_get_ntohl(tvb, pos);
+                int_payload = (uint64_t)tvb_get_ntohl(tvb, pos);
             break;
             case 5:
                 int_payload = tvb_get_ntoh40(tvb, pos);
@@ -281,7 +279,7 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
             switch(tag) {
                 case SDT_BOOLEAN:
                     g_snprintf(buffer, 300, "%s%s%s Length=%d, Payload=%d Value=%s",
-                               pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, int_payload == 0 ? "FALSE" : "TRUE");
+                               pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, int_payload == 0 ? "false" : "true");
                     /* We highlight from 'pos' (beginning of payload) to end of payload */
                     proto_tree_add_string(bm_tree, headerFieldIndex, tvb, pos, payloadlen, buffer);
                     break;
@@ -320,12 +318,12 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
                     if (payloadlen==2)
                     {
                         g_snprintf(buffer, 300, "%s%s%s Length=%d, Payload=%d Value=%lc",
-                                   pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, (guint16)int_payload);
+                                   pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, (uint16_t)int_payload);
                     }
                     else
                     {
                         g_snprintf(buffer, 300, "%s%s%s Length=%d, Payload=%d Value=%c",
-                                   pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, (guint8)int_payload);
+                                   pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, (uint8_t)int_payload);
                     }
                     /* We highlight from 'pos' (beginning of payload) to end of payload */
                     proto_tree_add_string(bm_tree, headerFieldIndex, tvb, pos, payloadlen, buffer);
@@ -411,10 +409,10 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
         /* If we're starting a MAP or STREAM, we call ourselves recursively to parse its contents. */
         switch(tag) {
             case SDT_MAP:
-                add_sdt_block(bm_tree, pinfo, headerFieldIndex, tvb, pos, payloadlen, indent+4, TRUE);
+                add_sdt_block(bm_tree, pinfo, headerFieldIndex, tvb, pos, payloadlen, indent+4, true);
                 break;
             case SDT_STREAM:
-                add_sdt_block(bm_tree, pinfo, headerFieldIndex, tvb, pos, payloadlen, indent+4, FALSE);
+                add_sdt_block(bm_tree, pinfo, headerFieldIndex, tvb, pos, payloadlen, indent+4, false);
                 break;
         }
 

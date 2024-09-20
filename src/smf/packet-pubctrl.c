@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -56,10 +54,10 @@ static int hf_pubctrl_platform_param = -1;
 static int hf_pubctrl_csmp_vrid_param = -1;
 
 /* Global sample preference ("controls" display of numbers) */
-//static gboolean gPREF_HEX = FALSE;
+//static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_pubctrl = -1;
+static int ett_pubctrl = -1;
 
 #define PUBCTRL_UDP_PORT_PARAM 0x1
 #define PUBCTRL_EXPLICIT_ACK_MODE_PARAM 0x2
@@ -79,13 +77,13 @@ clientctrl_dissect_rtr_capabilities_param(
     	proto_tree *tree,
     	int offset,
     	int size,
-        gboolean extended);
+        bool extended);
 
 static void
 add_pubctrl_param(
     tvbuff_t *tvb,
     proto_tree *tree,
-    guint8 param_type,
+    uint8_t param_type,
     int offset,
     int size)
 {
@@ -97,53 +95,53 @@ add_pubctrl_param(
         case PUBCTRL_UDP_PORT_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_udp_port_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case PUBCTRL_EXPLICIT_ACK_MODE_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_explicit_ack_mode_param,
-                tvb, offset-2, size+2, FALSE);
+                tvb, offset-2, size+2, false);
             break;
 
         case PUBCTRL_UDP_SOURCE_ADDRESS_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_udp_source_addr_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case PUBCTRL_RTR_CAPABILITIES_PARAM:
-            clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, FALSE);
+            clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, false);
             break;
 
         case PUBCTRL_SOFTWARE_VERSION_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_software_version_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case PUBCTRL_SOFTWARE_DATE_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_software_date_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case PUBCTRL_PLATFORM_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_platform_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
 		case PUBCTRL_CSMP_VRID_PARAM:
             proto_tree_add_item(tree,
                 hf_pubctrl_csmp_vrid_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         default:
             proto_tree_add_item(tree,
                 hf_pubctrl_unknown_param,
-                tvb, offset-2, size+2, FALSE);
+                tvb, offset-2, size+2, false);
             break;
     }
 }
@@ -155,18 +153,18 @@ dissect_pubctrl_param(
     proto_tree *tree)
 {
     int param_len;
-    guint8 param_type;
+    uint8_t param_type;
 
     /* Is it a pad byte? */
-    if (tvb_get_guint8(tvb, offset) == 0)
+    if (tvb_get_uint8(tvb, offset) == 0)
     {
         proto_tree_add_item(tree,
-            hf_pubctrl_pad_byte, tvb, offset, 1, FALSE);
+            hf_pubctrl_pad_byte, tvb, offset, 1, false);
         return 1;
     }
 
-    param_type = tvb_get_guint8(tvb, offset) & 0x1f;
-    param_len  = tvb_get_guint8(tvb, offset+1);
+    param_type = tvb_get_uint8(tvb, offset) & 0x1f;
+    param_len  = tvb_get_uint8(tvb, offset+1);
 
     add_pubctrl_param(tvb, tree, param_type, offset, param_len);
 
@@ -291,15 +289,15 @@ dissect_pubctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* d
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_pubctrl, tvb, 0, -1, FALSE);
+		ti = proto_tree_add_item(tree, proto_pubctrl, tvb, 0, -1, false);
 
 		pubctrl_tree = proto_item_add_subtree(ti, ett_pubctrl);
 
         /* Dissect header fields */
 		proto_tree_add_item(pubctrl_tree,
-		    hf_pubctrl_version, tvb, 0, 1, FALSE);
+		    hf_pubctrl_version, tvb, 0, 1, false);
         proto_tree_add_item(pubctrl_tree,
-            hf_pubctrl_msg_len, tvb, 1, 2, FALSE);
+            hf_pubctrl_msg_len, tvb, 1, 2, false);
 
         /* Dissect parameters */
         header_len = tvb_get_ntohs(tvb, 1) & 0xfff;
@@ -382,7 +380,7 @@ proto_register_pubctrl(void)
         	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pubctrl
 	};
 
@@ -421,7 +419,7 @@ proto_register_pubctrl(void)
 void
 proto_reg_handoff_pubctrl(void)
 {
-	static gboolean inited = FALSE;
+	static bool inited = false;
         
 	if (!inited) {
 
@@ -430,7 +428,7 @@ proto_reg_handoff_pubctrl(void)
 	    (void)create_dissector_handle(dissect_pubctrl, proto_pubctrl);
 	    //dissector_add("smf.encap_proto", 0x8, pubctrl_handle);
         
-	    inited = TRUE;
+	    inited = true;
 	}
         
         /* 

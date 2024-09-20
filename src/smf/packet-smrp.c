@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -105,10 +103,10 @@ static int hf_smrp_parm_subs_info_topic_string = -1;
 static int hf_smrp_parm_unknown = -1;
      
 /* Global sample preference ("controls" display of numbers) */
-//static gboolean gPREF_HEX = FALSE;
+//static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_smrp = -1;
+static int ett_smrp = -1;
 
 #define SMRP_MSG_HEADER_LEN          36
 #define SMRP_DB_SUMMARY_MSG          0x00
@@ -138,12 +136,12 @@ dissect_db_summary(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree,
 
   if (tvb_captured_length_remaining(tvb, offset) < 12) return -1;
 
-  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_cs_flag, tvb, offset, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_rfu, tvb, offset, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_rq_flag, tvb, offset, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_num_blocks_in_db, tvb, offset+2, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_block_summary_cs, tvb, offset+4, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_num_subs_in_db, tvb, offset+8, 4, FALSE);
+  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_cs_flag, tvb, offset, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_rfu, tvb, offset, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_rq_flag, tvb, offset, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_num_blocks_in_db, tvb, offset+2, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_block_summary_cs, tvb, offset+4, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_db_summary_num_subs_in_db, tvb, offset+8, 4, false);
   *offset_ptr = offset+12;
 
   return 0;
@@ -161,7 +159,7 @@ dissect_block_summary(tvbuff_t *tvb, packet_info *pinfo, proto_tree *smrp_tree, 
   int offset = *offset_ptr;
   if (tvb_captured_length_remaining(tvb, offset) < 8) return -1;
 
-  proto_tree_add_item(smrp_tree, hf_smrp_block_summary_rfu, tvb, offset, 8, FALSE);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_summary_rfu, tvb, offset, 8, false);
   *offset_ptr = offset+8;
 
   return 0;
@@ -176,20 +174,20 @@ dissect_block_contents(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_t
 
   if (tvb_captured_length_remaining(tvb, offset) < 48) return -1;
 
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_block_id, tvb, offset, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_seq_num, tvb, offset+4, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_block_key, tvb, offset+8, 8, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_block_cs, tvb, offset+16, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_cs, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_rfu0, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_p, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_rfu1, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_u, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_rfu2, tvb, offset+20, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_num_subs_in_block, tvb, offset+22, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_msg_vpn_hash, tvb, offset+24, 8, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_rfu, tvb, offset+32, 16, FALSE);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_block_id, tvb, offset, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_seq_num, tvb, offset+4, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_block_key, tvb, offset+8, 8, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_block_cs, tvb, offset+16, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_cs, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_rfu0, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_p, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_rfu1, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_u, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_flags_rfu2, tvb, offset+20, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_num_subs_in_block, tvb, offset+22, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_msg_vpn_hash, tvb, offset+24, 8, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_rfu, tvb, offset+32, 16, false);
   *offset_ptr = offset+48;
 
   return 0;
@@ -208,11 +206,11 @@ dissect_block_update(tvbuff_t *tvb, packet_info *pinfo, proto_tree *smrp_tree, i
   // Next dissect the  Block Update Header
   if (tvb_captured_length_remaining(tvb, offset) < 24) return -1;
 
-  proto_tree_add_item(smrp_tree, hf_smrp_block_update_pu, tvb, offset, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_update_rfu0, tvb, offset, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_update_num_adds_in_update, tvb, offset+4, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_update_num_removes_in_update, tvb, offset+6, 2, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_update_rfu1, tvb, offset+8, 16, FALSE);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_update_pu, tvb, offset, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_update_rfu0, tvb, offset, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_update_num_adds_in_update, tvb, offset+4, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_update_num_removes_in_update, tvb, offset+6, 2, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_update_rfu1, tvb, offset+8, 16, false);
   *offset_ptr = offset+24;
 
   return 0;
@@ -227,10 +225,10 @@ dissect_block_contents_req(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *sm
 
   if (tvb_captured_length_remaining(tvb, offset) < 16) return -1;
 
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_block_id, tvb, offset, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_rfu0, tvb, offset+4, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_rfu1, tvb, offset+8, 4, FALSE);
-  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_rfu2, tvb, offset+12, 4, FALSE);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_block_id, tvb, offset, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_rfu0, tvb, offset+4, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_rfu1, tvb, offset+8, 4, false);
+  proto_tree_add_item(smrp_tree, hf_smrp_block_contents_req_rfu2, tvb, offset+12, 4, false);
   *offset_ptr = offset+16;
   return 0;
 }
@@ -248,8 +246,8 @@ dissect_smrp_parms(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree,
      // Check whether we can extract the tag and length
      if (tvb_captured_length_remaining(tvb, offset) < 2) return numParms;
 
-     parm = tvb_get_guint8(tvb, offset);
-     parm_len = tvb_get_guint8(tvb, offset+1);
+     parm = tvb_get_uint8(tvb, offset);
+     parm_len = tvb_get_uint8(tvb, offset+1);
      // Check for 
      if (parm_len == 0) {
         if (tvb_captured_length_remaining(tvb, offset) < 6) return numParms;
@@ -257,7 +255,7 @@ dissect_smrp_parms(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree,
         parm_len -= 6;
 		if (parm_len <= 0) {
 			// invalid length
-			proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, FALSE);
+			proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, false);
 			return numParms;
 		}
         offset += 6;
@@ -268,59 +266,59 @@ dissect_smrp_parms(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree,
 
      // Make sure there is actually enough data
      if (tvb_captured_length_remaining(tvb, offset) < parm_len) {
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, FALSE);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, false);
          return numParms;
      }
 
      switch(parm)
      {
      case SMRP_ROUTER_NAME_PARM:
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_router_name, tvb, offset, parm_len, FALSE);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_router_name, tvb, offset, parm_len, false);
          break;
 
      case SMRP_VPN_NAME_PARM:
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_vpn_name, tvb, offset, parm_len, FALSE);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_vpn_name, tvb, offset, parm_len, false);
          break;
 
      case SMRP_BLOCK_INFO_PARM:
          // Min size of the Block Info structure is 24 bytes
          if (parm_len < 24) {
-            proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, FALSE);
+            proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, false);
             break;
          }
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info, tvb, offset, parm_len, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_block_id, tvb, offset, 4, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_seq_num, tvb, offset+4, 4, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_block_key, tvb, offset+8, 8, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_block_cs, tvb, offset+16, 4, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_cs, tvb, offset+20, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_rfu0, tvb, offset+20, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_p, tvb, offset+20, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_rfu1, tvb, offset+20, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_u, tvb, offset+20, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_num_subs, tvb, offset+22, 2, FALSE);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info, tvb, offset, parm_len, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_block_id, tvb, offset, 4, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_seq_num, tvb, offset+4, 4, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_block_key, tvb, offset+8, 8, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_block_cs, tvb, offset+16, 4, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_cs, tvb, offset+20, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_rfu0, tvb, offset+20, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_p, tvb, offset+20, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_rfu1, tvb, offset+20, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_flags_u, tvb, offset+20, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_block_info_num_subs, tvb, offset+22, 2, false);
          break;
 
      case SMRP_SUBS_INFO_PARM:
          // Min size of the Subscription Info structure is 20 bytes
          if (parm_len < 20) {
-            proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, FALSE);
+            proto_tree_add_item(smrp_tree, hf_smrp_parm_bad_format, tvb, offset, -1, false);
             break;
          }
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info, tvb, offset, parm_len, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_flags_r, tvb, offset, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_flags_da, tvb, offset, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_flags_rfu, tvb, offset, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_subs_index, tvb, offset+2, 2, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_dto_weight, tvb, offset+4, 4, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_rfu, tvb, offset+8, 8, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_dto_pri, tvb, offset+16, 1, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_topic_size, tvb, offset+17, 1, FALSE);
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_topic_string, tvb, offset+18, parm_len-18, FALSE);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info, tvb, offset, parm_len, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_flags_r, tvb, offset, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_flags_da, tvb, offset, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_flags_rfu, tvb, offset, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_subs_index, tvb, offset+2, 2, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_dto_weight, tvb, offset+4, 4, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_rfu, tvb, offset+8, 8, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_dto_pri, tvb, offset+16, 1, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_topic_size, tvb, offset+17, 1, false);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_subs_info_topic_string, tvb, offset+18, parm_len-18, false);
          break;
 
      default:
-         proto_tree_add_item(smrp_tree, hf_smrp_parm_unknown, tvb, offset, parm_len, FALSE);
+         proto_tree_add_item(smrp_tree, hf_smrp_parm_unknown, tvb, offset, parm_len, false);
          break;
      }
      offset += parm_len;
@@ -424,22 +422,22 @@ dissect_smrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-        ti = proto_tree_add_item(tree, proto_smrp, tvb, 0, -1, FALSE);
+        ti = proto_tree_add_item(tree, proto_smrp, tvb, 0, -1, false);
 
         smrp_tree = proto_item_add_subtree(ti, ett_smrp);
 
         /* Dissect header fields */
-        proto_tree_add_item(smrp_tree, hf_smrp_ver, tvb, 0, 2, FALSE);
-        proto_tree_add_item(smrp_tree, hf_smrp_min_compat_ver, tvb, 2, 2, FALSE);
-        proto_tree_add_item(smrp_tree, hf_smrp_msg_len, tvb, 4, 4, FALSE);
-        proto_tree_add_item(smrp_tree, hf_smrp_rfu0, tvb, 8, 4, FALSE);
-        proto_tree_add_item(smrp_tree, hf_smrp_msg_type, tvb, 11, 1, FALSE);
-        proto_tree_add_item(smrp_tree, hf_smrp_router_name_hash, tvb, 12, 8, FALSE);
-        proto_tree_add_item(smrp_tree, hf_smrp_rfu1, tvb, 20, 16, FALSE);
+        proto_tree_add_item(smrp_tree, hf_smrp_ver, tvb, 0, 2, false);
+        proto_tree_add_item(smrp_tree, hf_smrp_min_compat_ver, tvb, 2, 2, false);
+        proto_tree_add_item(smrp_tree, hf_smrp_msg_len, tvb, 4, 4, false);
+        proto_tree_add_item(smrp_tree, hf_smrp_rfu0, tvb, 8, 4, false);
+        proto_tree_add_item(smrp_tree, hf_smrp_msg_type, tvb, 11, 1, false);
+        proto_tree_add_item(smrp_tree, hf_smrp_router_name_hash, tvb, 12, 8, false);
+        proto_tree_add_item(smrp_tree, hf_smrp_rfu1, tvb, 20, 16, false);
 
         /* Dissect contents */
         //msg_len = tvb_get_ntohl(tvb, 4); Commented out on July 24, 2019, since it is not being used. Seemed useful though, so I didn't delete it.
-        msg_type = tvb_get_guint8(tvb, 11) & 0x0f;
+        msg_type = tvb_get_uint8(tvb, 11) & 0x0f;
         offset = SMRP_MSG_HEADER_LEN;
 
         switch(msg_type)
@@ -800,7 +798,7 @@ proto_register_smrp(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_smrp
     };
 
@@ -840,13 +838,13 @@ proto_register_smrp(void)
 void
 proto_reg_handoff_smrp(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
         
     if (!inited) {
         //dissector_handle_t smrp_handle;
         //smrp_handle = create_dissector_handle(dissect_smrp, proto_smrp);        
         (void)create_dissector_handle(dissect_smrp, proto_smrp);
-	inited = TRUE;
+	inited = true;
     }
         
         /* 

@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -71,11 +69,11 @@ static int hf_subctrl_csmp_vrid_param = -1;
 
 #if 0
 /* Global sample preference ("controls" display of numbers) */
-static gboolean gPREF_HEX = FALSE;
+static bool gPREF_HEX = false;
 #endif
 
 /* Initialize the subtree pointers */
-static gint ett_subctrl = -1;
+static int ett_subctrl = -1;
 
 #define SUBCTRL_UDP_PORT_PARAM 0x1
 #define SUBCTRL_UDP_MCAST_PARAM 0x2
@@ -100,13 +98,13 @@ clientctrl_dissect_rtr_capabilities_param(
     	proto_tree *tree,
     	int offset,
     	int size,
-        gboolean extended);
+        bool extended);
 
 static void
 add_subctrl_param(
     tvbuff_t *tvb,
     proto_tree *tree,
-    guint8 param_type,
+    uint8_t param_type,
     int offset,
     int size)
 {
@@ -118,110 +116,110 @@ add_subctrl_param(
         case SUBCTRL_UDP_PORT_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_udp_port_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case SUBCTRL_UDP_MCAST_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_udp_mcast_param,
-                tvb, offset-2, size+2, FALSE);
+                tvb, offset-2, size+2, false);
             break;
 
         case SUBCTRL_SUBSCRIPTION_SUMMARY_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_num_param,
-                tvb, offset, 3, FALSE);
+                tvb, offset, 3, false);
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_isfilter_param,
-                tvb, offset+3, 1, FALSE);
+                tvb, offset+3, 1, false);
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_xpelen_param,
-                tvb, offset+4, 2, FALSE);
+                tvb, offset+4, 2, false);
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_lastxpe_param,
-                tvb, offset+6, size-6, FALSE);
+                tvb, offset+6, size-6, false);
             break;
 
         case SUBCTRL_XPE_SEGMENT_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_xpe_segment_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case SUBCTRL_UDP_MCAST_ADDR_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_udp_mcast_addr_param,
-                tvb, offset, 4, FALSE);
+                tvb, offset, 4, false);
             proto_tree_add_item(tree,
                 hf_subctrl_udp_mcast_port_param,
-                tvb, offset+4, 2, FALSE);
+                tvb, offset+4, 2, false);
             proto_tree_add_item(tree,
                 hf_subctrl_udp_mcast_subid_param,
-                tvb, offset+6, 2, FALSE);
+                tvb, offset+6, 2, false);
             break;
 
         case SUBCTRL_REFRESH_REQUIRED_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_refresh_required_param,
-                tvb, offset-2, size+2, FALSE);
+                tvb, offset-2, size+2, false);
             break;
 
         case SUBCTRL_UDP_UNICAST_ADDR_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_udp_unicast_addr_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case SUBCTRL_SUBSCRIPTION_SUMMARY_V2_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_v2_num_param,
-                tvb, offset, 3, FALSE);
+                tvb, offset, 3, false);
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_v2_isfilter_param,
-                tvb, offset+3, 1, FALSE);
+                tvb, offset+3, 1, false);
 			proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_v2_cid_param,
-                tvb, offset+4, 4, FALSE);
+                tvb, offset+4, 4, false);
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_v2_xpelen_param,
-                tvb, offset+8, 2, FALSE);
+                tvb, offset+8, 2, false);
             proto_tree_add_item(tree,
                 hf_subctrl_subscription_summary_v2_lastxpe_param,
-                tvb, offset+10, size-10, FALSE);
+                tvb, offset+10, size-10, false);
             break;
 
         case SUBCTRL_RTR_CAPABILITIES_PARAM:
-            clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, FALSE);
+            clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, false);
             break;
 
         case SUBCTRL_SOFTWARE_VERSION_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_software_version_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case SUBCTRL_SOFTWARE_DATE_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_software_date_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case SUBCTRL_PLATFORM_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_platform_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
 		case SUBCTRL_CSMP_VRID_PARAM:
             proto_tree_add_item(tree,
                 hf_subctrl_csmp_vrid_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         default:
             proto_tree_add_item(tree,
                 hf_subctrl_unknown_param,
-                tvb, offset-2, size+2, FALSE);
+                tvb, offset-2, size+2, false);
             break;
 
     }
@@ -235,18 +233,18 @@ dissect_subctrl_param(
     proto_tree *tree)
 {
     int param_len;
-    guint8 param_type;
+    uint8_t param_type;
 
     /* Is it a pad byte? */
-    if (tvb_get_guint8(tvb, offset) == 0)
+    if (tvb_get_uint8(tvb, offset) == 0)
     {
         proto_tree_add_item(tree,
-            hf_subctrl_pad_byte, tvb, offset, 1, FALSE);
+            hf_subctrl_pad_byte, tvb, offset, 1, false);
         return 1;
     }
 
-    param_type = tvb_get_guint8(tvb, offset) & 0x1f;
-    param_len  = tvb_get_guint8(tvb, offset+1);
+    param_type = tvb_get_uint8(tvb, offset) & 0x1f;
+    param_len  = tvb_get_uint8(tvb, offset+1);
 
     add_subctrl_param(tvb, tree, param_type, offset, param_len);
 
@@ -379,15 +377,15 @@ dissect_subctrl(
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_subctrl, tvb, 0, -1, FALSE);
+		ti = proto_tree_add_item(tree, proto_subctrl, tvb, 0, -1, false);
 
 		subctrl_tree = proto_item_add_subtree(ti, ett_subctrl);
 
         /* Dissect header fields */
 		proto_tree_add_item(subctrl_tree,
-		    hf_subctrl_version, tvb, 0, 1, FALSE);
+		    hf_subctrl_version, tvb, 0, 1, false);
         proto_tree_add_item(subctrl_tree,
-            hf_subctrl_msg_len, tvb, 1, 2, FALSE);
+            hf_subctrl_msg_len, tvb, 1, 2, false);
 
         /* Dissect parameters */
         header_len = tvb_get_ntohs(tvb, 1) & 0xfff;
@@ -549,7 +547,7 @@ proto_register_subctrl(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_subctrl
 	};
 
@@ -588,7 +586,7 @@ proto_register_subctrl(void)
 void
 proto_reg_handoff_subctrl(void)
 {
-	static gboolean inited = FALSE;
+	static bool inited = false;
         
 	if (!inited) {
 
@@ -597,7 +595,7 @@ proto_reg_handoff_subctrl(void)
 	    (void)create_dissector_handle(dissect_subctrl, proto_subctrl);
 	    //dissector_add("smf.encap_proto", 0x8, subctrl_handle);
         
-	    inited = TRUE;
+	    inited = true;
 	}
         
         /* 

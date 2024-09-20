@@ -30,8 +30,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -205,42 +203,42 @@ static int hf_assuredctrl_redelivery_delay_config_rfu = -1;
 static expert_field ei_assuredctrl_smf_expert_transport_window_zero = EI_INIT;
 
 /* Global sample preference ("controls" display of numbers) */
-// static gboolean gPREF_HEX = FALSE;
+// static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_assuredctrl                         = -1;
-static gint ett_FD_suback_list                      = -1;
-static gint ett_FD_puback_list                      = -1;
-static gint ett_FD_pubnotify_list                   = -1;
-static gint ett_EP_behaviour_list                   = -1;
-static gint ett_XA_msg_openXaSessionRequest_list    = -1;
-static gint ett_XA_msg_openXaSessionResponse_list   = -1;
-static gint ett_XA_msg_resumeXaSessionRequest_list  = -1;
-static gint ett_XA_msg_resumeXaSessionResponse_list = -1;
-static gint ett_XA_msg_closeXaSessionRequest_list   = -1;
-static gint ett_XA_msg_closeXaSessionResponse_list  = -1;
-static gint ett_XA_msg_xaResponse_list              = -1;
-static gint ett_XA_msg_xaStartRequest_list          = -1;
-static gint ett_XA_msg_xaEndRequest_list            = -1;
-static gint ett_XA_msg_xaPrepareRequest_list        = -1;
-static gint ett_XA_msg_xaCommitRequest_list         = -1;
-static gint ett_XA_msg_xaRollbackRequest_list       = -1;
-static gint ett_XA_msg_xaForgetRequest_list         = -1;
-static gint ett_XA_msg_xaRecoverRequest_list        = -1;
-static gint ett_XA_msg_xaRecoverResponse_list       = -1;
+static int ett_assuredctrl                         = -1;
+static int ett_FD_suback_list                      = -1;
+static int ett_FD_puback_list                      = -1;
+static int ett_FD_pubnotify_list                   = -1;
+static int ett_EP_behaviour_list                   = -1;
+static int ett_XA_msg_openXaSessionRequest_list    = -1;
+static int ett_XA_msg_openXaSessionResponse_list   = -1;
+static int ett_XA_msg_resumeXaSessionRequest_list  = -1;
+static int ett_XA_msg_resumeXaSessionResponse_list = -1;
+static int ett_XA_msg_closeXaSessionRequest_list   = -1;
+static int ett_XA_msg_closeXaSessionResponse_list  = -1;
+static int ett_XA_msg_xaResponse_list              = -1;
+static int ett_XA_msg_xaStartRequest_list          = -1;
+static int ett_XA_msg_xaEndRequest_list            = -1;
+static int ett_XA_msg_xaPrepareRequest_list        = -1;
+static int ett_XA_msg_xaCommitRequest_list         = -1;
+static int ett_XA_msg_xaRollbackRequest_list       = -1;
+static int ett_XA_msg_xaForgetRequest_list         = -1;
+static int ett_XA_msg_xaRecoverRequest_list        = -1;
+static int ett_XA_msg_xaRecoverResponse_list       = -1;
 
-static gint ett_TXN_msg_txnResponse_list            = -1;
-static gint ett_TXN_msg_syncPrepareRequest_list     = -1;
-static gint ett_TXN_msg_asyncCommitRequest_list     = -1;
-static gint ett_TXN_msg_syncCommitRequest_list      = -1;
-static gint ett_TXN_msg_syncCommitStart_list        = -1;
-static gint ett_TXN_msg_syncCommitEnd_list          = -1;
-static gint ett_TXN_msg_syncRespoolRequest_list     = -1;
-static gint ett_TXN_msg_asyncRollbackRequest_list   = -1;
-static gint ett_TXN_msg_syncUncommitRequest_list    = -1;
+static int ett_TXN_msg_txnResponse_list            = -1;
+static int ett_TXN_msg_syncPrepareRequest_list     = -1;
+static int ett_TXN_msg_asyncCommitRequest_list     = -1;
+static int ett_TXN_msg_syncCommitRequest_list      = -1;
+static int ett_TXN_msg_syncCommitStart_list        = -1;
+static int ett_TXN_msg_syncCommitEnd_list          = -1;
+static int ett_TXN_msg_syncRespoolRequest_list     = -1;
+static int ett_TXN_msg_asyncRollbackRequest_list   = -1;
+static int ett_TXN_msg_syncUncommitRequest_list    = -1;
 
-static gint ett_assuredctrl_start_replay_param      = -1;
-static gint ett_assuredctrl_timestamp_param = -1;
+static int ett_assuredctrl_start_replay_param      = -1;
+static int ett_assuredctrl_timestamp_param = -1;
 
 #define ASSUREDCTRL_LAST_MSGID_SENT_PARAM   0x01
 #define ASSUREDCTRL_LAST_MSGID_ACKED_PARAM  0x02
@@ -599,7 +597,7 @@ static const value_string app_ack_outcome_names[] = {
 };
 
 /* ---------- Custom Format Fields Functions ----------- */
-static void redelivery_delay_back_off_multiplier_format(gchar* s, guint16 v)
+static void redelivery_delay_back_off_multiplier_format(gchar* s, uint16_t v)
 {
     g_snprintf(s, ITEM_LABEL_LENGTH, "%u (%.2f)", v, (float)v / 100.f);
 }
@@ -611,7 +609,7 @@ static int get_8_bit_value (
     int offset,
     char const * const field_name)
 {
-    guint8 value = tvb_get_guint8(tvb, offset);                 /* gets value of the 8-bit field */
+    uint8_t value = tvb_get_uint8(tvb, offset);                 /* gets value of the 8-bit field */
     proto_tree_add_string_format(                               /* adds formatted string to proto tree*/
         tree, hf_assuredctrl_8_bit_field, tvb, offset, 1, NULL, "%s: %d", field_name, value
     );
@@ -624,7 +622,7 @@ static int get_16_bit_value (
     int offset,
     char const * const field_name)
 {
-    guint16 value = tvb_get_ntohs(tvb, offset);                 /* gets value of the 16-bit field */
+    uint16_t value = tvb_get_ntohs(tvb, offset);                 /* gets value of the 16-bit field */
     proto_tree_add_string_format(                               /* adds formatted string to proto tree*/
         tree, hf_assuredctrl_16_bit_field, tvb, offset, 2, NULL, "%s: %d", field_name, value
     );
@@ -637,7 +635,7 @@ static int get_32_bit_value (
     int offset,
     char const * const field_name)
 {
-    guint32 value = tvb_get_ntohl(tvb, offset);                 /* gets value of the 32-bit field */
+    uint32_t value = tvb_get_ntohl(tvb, offset);                 /* gets value of the 32-bit field */
     proto_tree_add_string_format(                               /* adds formatted string to proto tree*/
         tree, hf_assuredctrl_32_bit_field, tvb, offset, 4, NULL, "%s: %d", field_name, value
     );
@@ -650,7 +648,7 @@ static int get_64_bit_value (
     int offset,
     char const * const field_name)
 {
-    guint64 value = tvb_get_ntoh64(tvb, offset);                /* gets value of the 64-bit field */
+    uint64_t value = tvb_get_ntoh64(tvb, offset);                /* gets value of the 64-bit field */
     proto_tree_add_string_format(                               /* adds formatted string to proto tree*/
         tree, hf_assuredctrl_64_bit_field, tvb, offset, 8, NULL, "%s: %" G_GUINT64_FORMAT, field_name, value
     );
@@ -663,10 +661,10 @@ static int add_assuredCtrl_xaSessionName_item (
     tvbuff_t *tvb, 
     int offset)
 {
-    guint8 nameLen = 0;
+    uint8_t nameLen = 0;
     char sessionName[200];
     
-    nameLen = tvb_get_guint8(tvb, offset++);
+    nameLen = tvb_get_uint8(tvb, offset++);
     tvb_memcpy(tvb, sessionName, offset, nameLen-1);
     proto_tree_add_string_format(tree,
         hf_assuredctrl_xamsg_type_transacted_session_name,
@@ -685,7 +683,7 @@ static void add_assuredCtrl_xaResponse_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaResponse, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaResponse, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaResponse_list);
     offset +=1;
@@ -694,16 +692,16 @@ static void add_assuredCtrl_xaResponse_item (
     offset += 2;
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaResponseAction, tvb, offset, 1, FALSE);
+        hf_assuredctrl_xaResponseAction, tvb, offset, 1, false);
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaResponseLogLevel, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaResponseLogLevel, tvb, offset++, 1, false);
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaResponseCode, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaResponseCode, tvb, offset++, 1, false);
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaResponseSubcode, tvb, offset, 4, FALSE);
+        hf_assuredctrl_xaResponseSubcode, tvb, offset, 4, false);
 
     // I'm assuming this skips forward 4 bytes for the LastPublishedAckMsgId
     // which is no longer in the specifications
@@ -716,26 +714,26 @@ static int add_assuredCtrl_Xid_item (
     tvbuff_t *tvb, 
     int offset)
 {
-    guint8 txnIdSize = 0;
-    guint8 bQualSize = 0;
+    uint8_t txnIdSize = 0;
+    uint8_t bQualSize = 0;
     int old_offset = offset;
 
     offset += get_32_bit_value(tree, tvb, offset, "FormatId");
 
-    txnIdSize = tvb_get_guint8(tvb, offset);
+    txnIdSize = tvb_get_uint8(tvb, offset);
     offset += get_8_bit_value(tree, tvb, offset, "TransactionIdSize");
 
-    bQualSize = tvb_get_guint8(tvb, offset);
+    bQualSize = tvb_get_uint8(tvb, offset);
     offset += get_8_bit_value(tree, tvb, offset, "BranchQualifierSize");
 
     if (txnIdSize != 0) {
         proto_tree_add_item(tree, 
-            hf_assuredctrl_payload_transactionId, tvb, offset, txnIdSize, FALSE);
+            hf_assuredctrl_payload_transactionId, tvb, offset, txnIdSize, false);
         offset += txnIdSize;
     }
     if (bQualSize != 0) {
          proto_tree_add_item(tree, 
-            hf_assuredctrl_payload_branchQualifier, tvb, offset, bQualSize, FALSE);
+            hf_assuredctrl_payload_branchQualifier, tvb, offset, bQualSize, false);
         offset += bQualSize;
     }
     return offset - old_offset;
@@ -751,7 +749,7 @@ static void add_assuredCtrl_openXaSessionRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_openXaSessionRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_openXaSessionRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_openXaSessionRequest_list);
     offset++;
@@ -768,7 +766,7 @@ static void add_assuredCtrl_openXaSessionResponse_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_openXaSessionResponse, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_openXaSessionResponse, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_openXaSessionResponse_list);
     offset++;
@@ -786,7 +784,7 @@ static void add_assuredCtrl_resumeXaSessionRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-         hf_assuredctrl_xamsg_type_resumeXaSessionRequest, tvb, offset, size, FALSE);
+         hf_assuredctrl_xamsg_type_resumeXaSessionRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_resumeXaSessionRequest_list);
     offset++;
@@ -804,7 +802,7 @@ static void add_assuredCtrl_resumeXaSessionResponse_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_resumeXaSessionResponse, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_resumeXaSessionResponse, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_resumeXaSessionResponse_list);
     offset++;
@@ -820,16 +818,16 @@ static void add_assuredCtrl_closeXaSessionRequest_item (
 {
     proto_tree* sub_tree;
     proto_item* item;
-    guint8 nameLen =0;
+    uint8_t nameLen =0;
     char  sessionName[200];
 
     item = proto_tree_add_item(tree, 
-         hf_assuredctrl_xamsg_type_closeXaSessionRequest, tvb, offset, size, FALSE);
+         hf_assuredctrl_xamsg_type_closeXaSessionRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_closeXaSessionRequest_list);
     offset++;
 
-    nameLen = tvb_get_guint8(tvb, offset++);
+    nameLen = tvb_get_uint8(tvb, offset++);
     tvb_memcpy(tvb, sessionName, offset, nameLen-1);
 
     proto_tree_add_string_format(sub_tree,
@@ -844,14 +842,14 @@ static void add_assuredCtrl_closeXaSessionResponse_item (
     int size)
 {
 
-    proto_tree_add_item(tree, hf_assuredctrl_xamsg_type_closeXaSessionResponse, tvb, offset, size, FALSE);
+    proto_tree_add_item(tree, hf_assuredctrl_xamsg_type_closeXaSessionResponse, tvb, offset, size, false);
                
 
     /* // Below is old code that doesn't make any sense but I left it in case for some reason it was needed at a later point
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_closeXaSessionResponse, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_closeXaSessionResponse, tvb, offset, size, false);
         */
 
 }
@@ -862,14 +860,14 @@ static void add_assuredCtrl_consumedMsgList_item (
     int offset,
     int *itemSize)
 {
-    guint16 numMsgIds = 0;
-    guint64 msgId = 0;
+    uint16_t numMsgIds = 0;
+    uint64_t msgId = 0;
     int loop =0;
 
     *itemSize = 0;
 
     proto_tree_add_item(tree, 
-            hf_assuredctrl_EndpointId_param, tvb, offset, 4, FALSE);
+            hf_assuredctrl_EndpointId_param, tvb, offset, 4, false);
     offset += 4;
     *itemSize +=4;
 
@@ -897,13 +895,13 @@ static void add_assuredCtrl_xaStartRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaStartRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaStartRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaStartRequest_list);
     offset++;
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaStartRequestFlags_byte, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaStartRequestFlags_byte, tvb, offset++, 1, false);
 
     offset += get_32_bit_value(sub_tree, tvb, offset, "TransactedSessionId");
     offset += get_32_bit_value(sub_tree, tvb, offset, "Transaction Timeout");
@@ -920,17 +918,17 @@ static void add_assuredCtrl_xaEndRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
     int   loop =0;
-    guint16 numMsgLists = 0;
+    uint16_t numMsgLists = 0;
     int  listSize = 0;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaEndRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaEndRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaEndRequest_list);
     offset++;
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaEndRequestFlags_byte, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaEndRequestFlags_byte, tvb, offset++, 1, false);
 
     offset += get_32_bit_value(sub_tree, tvb, offset, "RequestorTransactedSessionId");
     offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
@@ -955,7 +953,7 @@ static void add_assuredCtrl_xaPrepareRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaPrepareRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaPrepareRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaPrepareRequest_list);
     offset++;
@@ -977,13 +975,13 @@ static void add_assuredCtrl_xaCommitRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaCommitRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaCommitRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaCommitRequest_list);
     offset++;
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaCommitRequestFlags_byte, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaCommitRequestFlags_byte, tvb, offset++, 1, false);
     offset += get_32_bit_value(sub_tree, tvb, offset, "TransactedSessionId");
 
     offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
@@ -999,7 +997,7 @@ static void add_assuredCtrl_xaRollbackRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaRollbackRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaRollbackRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaRollbackRequest_list);
     offset++;
@@ -1021,7 +1019,7 @@ static void add_assuredCtrl_xaForgetRequest_item (
     proto_item* item;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaForgetRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaForgetRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaForgetRequest_list);
     offset++;
@@ -1041,27 +1039,27 @@ static void add_assuredCtrl_xaRecoverRequest_item (
 {
     proto_tree* sub_tree;
     proto_item* item;
-    guint8 flags = 0;
-    guint32 scanCursorLen =0;
+    uint8_t flags = 0;
+    uint32_t scanCursorLen =0;
 
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaRecoverRequest, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaRecoverRequest, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaRecoverRequest_list);
     offset++;
 
-    flags = tvb_get_guint8(tvb, offset);
+    flags = tvb_get_uint8(tvb, offset);
 
     proto_tree_add_item(sub_tree, 
-    hf_assuredctrl_xaRecoverRequestFlags_byte, tvb, offset++, 1, FALSE);
+    hf_assuredctrl_xaRecoverRequestFlags_byte, tvb, offset++, 1, false);
 
     offset += get_32_bit_value(sub_tree, tvb, offset, "MaxNumIDs");
 
     if (flags & 0x01) {
         offset += get_32_bit_value(sub_tree, tvb, offset, "ScanCursorLength");
         proto_tree_add_item(sub_tree, 
-            hf_assuredctrl_scanCursorData, tvb, offset++, scanCursorLen, FALSE);
+            hf_assuredctrl_scanCursorData, tvb, offset++, scanCursorLen, false);
     }
 }
 
@@ -1073,35 +1071,35 @@ static void add_assuredCtrl_xaRecoverResponse_item (
 {
     proto_tree* sub_tree;
     proto_item* item;
-    guint32 numXids = 0;
-    guint8 flags = 0;
-    guint32 scanCursorLen =0;
-    guint32 loop = 0;
+    uint32_t numXids = 0;
+    uint8_t flags = 0;
+    uint32_t scanCursorLen =0;
+    uint32_t loop = 0;
 
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_xamsg_type_xaRecoverResponse, tvb, offset, size, FALSE);
+        hf_assuredctrl_xamsg_type_xaRecoverResponse, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_XA_msg_xaRecoverResponse_list);
     offset++;
 
-    flags = tvb_get_guint8(tvb, offset);
+    flags = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaRecoverResponseFlags_byte, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaRecoverResponseFlags_byte, tvb, offset++, 1, false);
 
     /* skip the first 2 bytes of XaResponse*/
     offset +=2;
 
     proto_tree_add_item(sub_tree, 
-         hf_assuredctrl_xaResponseAction, tvb, offset, 1, FALSE);
+         hf_assuredctrl_xaResponseAction, tvb, offset, 1, false);
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaResponseLogLevel, tvb, offset++, 1, FALSE);
+        hf_assuredctrl_xaResponseLogLevel, tvb, offset++, 1, false);
 
     proto_tree_add_item(sub_tree, 
-         hf_assuredctrl_xaResponseCode, tvb, offset++, 1, FALSE);
+         hf_assuredctrl_xaResponseCode, tvb, offset++, 1, false);
 
     proto_tree_add_item(sub_tree, 
-        hf_assuredctrl_xaResponseSubcode, tvb, offset, 4, FALSE);
+        hf_assuredctrl_xaResponseSubcode, tvb, offset, 4, false);
 
     offset += 4;
 
@@ -1109,7 +1107,7 @@ static void add_assuredCtrl_xaRecoverResponse_item (
         scanCursorLen = tvb_get_ntohl(tvb, offset);
         offset += get_32_bit_value(sub_tree, tvb, offset, "ScanCursorLength");
         proto_tree_add_item(sub_tree, 
-            hf_assuredctrl_scanCursorData, tvb, offset, scanCursorLen, FALSE);
+            hf_assuredctrl_scanCursorData, tvb, offset, scanCursorLen, false);
         offset += scanCursorLen;
     }
 
@@ -1127,10 +1125,10 @@ static int add_assuredCtrl_txnClientFields_item (
     int offset,
     char const * const field_name)
 {
-    guint8 length = 0;
+    uint8_t length = 0;
     char data[254];     /* 254 bytes = max 253 byte string + 1 NULL byte*/
 
-    length = tvb_get_guint8(tvb, offset);
+    length = tvb_get_uint8(tvb, offset);
     offset++;
 
     tvb_memcpy(tvb, data, offset, length-1);
@@ -1146,14 +1144,14 @@ static int add_assuredCtrl_msgIdList_item (
     int offset)
 {
     int old_offset = offset;
-    guint32 msgIdCount = 0;
-    guint64 msgId = 0;
+    uint32_t msgIdCount = 0;
+    uint64_t msgId = 0;
     unsigned int i = 0;
 
     msgIdCount = tvb_get_ntohl(tvb, offset);
     offset += get_32_bit_value(tree, tvb, offset, "MsgIdCount");
 
-    proto_tree_add_item(tree, hf_assuredctrl_msgIdType, tvb, offset, 1, FALSE);
+    proto_tree_add_item(tree, hf_assuredctrl_msgIdType, tvb, offset, 1, false);
     offset++;
 
     /* Cannot call get_64_bit_value because of special formatting (i.e. MsgId[%d]) */
@@ -1173,10 +1171,10 @@ static int add_assuredCtrl_endpoint_item (
     int offset)
 {
     int old_offset = offset;
-    guint32 ackCount = 0;
+    uint32_t ackCount = 0;
     unsigned int i = 0;
 
-    proto_tree_add_item(tree, hf_assuredctrl_endpointHash, tvb, offset, 8, FALSE);
+    proto_tree_add_item(tree, hf_assuredctrl_endpointHash, tvb, offset, 8, false);
     offset += 8;
     
     ackCount = tvb_get_ntohl(tvb, offset);
@@ -1195,7 +1193,7 @@ static int add_assuredCtrl_externalAckList_item (
     int offset)
 {
     int old_offset = offset;
-    guint32 endpointCount = 0;
+    uint32_t endpointCount = 0;
     unsigned int i = 0;
 
     endpointCount = tvb_get_ntohl(tvb, offset);
@@ -1217,7 +1215,7 @@ static void add_assuredCtrl_txnResponse_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_txnResponse, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_txnResponse, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_txnResponse_list);
     offset++;
 
@@ -1225,7 +1223,7 @@ static void add_assuredCtrl_txnResponse_item (
     offset += get_64_bit_value(sub_tree, tvb, offset, "CorrelationId");
 
     /* txnResponseSubcode is identical to xaResponseSubCode; hence using `hf_assuredctrl_xaResponseSubcode` field*/
-    proto_tree_add_item(sub_tree, hf_assuredctrl_xaResponseSubcode, tvb, offset, 4, FALSE);
+    proto_tree_add_item(sub_tree, hf_assuredctrl_xaResponseSubcode, tvb, offset, 4, false);
     offset += 4;
 }
 
@@ -1238,7 +1236,7 @@ static void add_assuredCtrl_syncPrepareRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncPrepareRequest, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncPrepareRequest, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_syncPrepareRequest_list);
     offset++;
 
@@ -1263,7 +1261,7 @@ static void add_assuredCtrl_asyncCommitRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_asyncCommitRequest, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_asyncCommitRequest, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_asyncCommitRequest_list);
     offset++;
 
@@ -1281,14 +1279,14 @@ static void add_assuredCtrl_syncCommitRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncCommitRequest, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncCommitRequest, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_syncCommitRequest_list);
     offset++;
 
     offset += get_32_bit_value(sub_tree, tvb, offset, "TxnId");
     offset += get_64_bit_value(sub_tree, tvb, offset, "CorrelationId");
 
-    proto_tree_add_item(sub_tree, hf_assuredctrl_heuristic_operation, tvb, offset, 1, FALSE);
+    proto_tree_add_item(sub_tree, hf_assuredctrl_heuristic_operation, tvb, offset, 1, false);
     offset++;
 }
 
@@ -1301,7 +1299,7 @@ static void add_assuredCtrl_syncCommitStart_item (
     proto_tree* sub_tree;
     proto_item* item;;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncCommitStart, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncCommitStart, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_syncCommitStart_list);
     offset++;
 
@@ -1326,7 +1324,7 @@ static void add_assuredCtrl_syncCommitEnd_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncCommitEnd, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncCommitEnd, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_syncCommitEnd_list);
     offset++;
 
@@ -1343,7 +1341,7 @@ static void add_assuredCtrl_syncRespoolRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncRespoolRequest, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncRespoolRequest, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_syncRespoolRequest_list);
     offset++;
 
@@ -1361,13 +1359,13 @@ static void add_assuredCtrl_asyncRollbackRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_asyncRollbackRequest, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_asyncRollbackRequest, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_asyncRollbackRequest_list);
     offset++;
 
     offset += get_32_bit_value(sub_tree, tvb, offset, "TxnId");
 
-    proto_tree_add_item(sub_tree, hf_assuredctrl_heuristic_operation, tvb, offset, 1, FALSE);
+    proto_tree_add_item(sub_tree, hf_assuredctrl_heuristic_operation, tvb, offset, 1, false);
     offset++;
 }
 
@@ -1380,7 +1378,7 @@ static void add_assuredCtrl_syncUncommitRequest_item (
     proto_tree* sub_tree;
     proto_item* item;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncUncommitRequest, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type_syncUncommitRequest, tvb, offset, size, false);
     sub_tree = proto_item_add_subtree(item, ett_TXN_msg_syncUncommitRequest_list);
     offset++;
 
@@ -1397,7 +1395,7 @@ static void add_assuredCtrl_payload_param_xa_item (
     int lenbytes,
     const char **str_transactionctrl_msgtype)
 {
-    guint8 msgType = tvb_get_guint8(tvb, offset);
+    uint8_t msgType = tvb_get_uint8(tvb, offset);
     *str_transactionctrl_msgtype = try_val_to_str(msgType, xamsgtypenames);
     switch (msgType) 
     {
@@ -1449,7 +1447,7 @@ static void add_assuredCtrl_payload_param_xa_item (
         default:
             proto_tree_add_item(tree,
                 hf_assuredctrl_xamsg_type_unknown,
-                tvb, offset-(lenbytes+1), size+(lenbytes+1), FALSE);
+                tvb, offset-(lenbytes+1), size+(lenbytes+1), false);
             break;
     }
 }
@@ -1462,9 +1460,9 @@ static void add_assuredCtrl_payload_param_txn_item (
     int lenbytes,
     const char **str_transactionctrl_msgtype)
 {
-    guint8 msgType = tvb_get_guint8(tvb, offset);
+    uint8_t msgType = tvb_get_uint8(tvb, offset);
     *str_transactionctrl_msgtype = try_val_to_str(msgType, txnmsgtypenames);
-    proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type, tvb, offset, 1, FALSE);
+    proto_tree_add_item(tree, hf_assuredctrl_txnmsg_type, tvb, offset, 1, false);
 
     switch (msgType)
     {
@@ -1507,7 +1505,7 @@ static void add_assuredCtrl_payload_param_txn_item (
         default:
             proto_tree_add_item(tree,
                 hf_assuredctrl_txnmsg_type_unknown,
-                tvb, offset-(lenbytes+1), size+(lenbytes+1), FALSE);
+                tvb, offset-(lenbytes+1), size+(lenbytes+1), false);
             break;
     }
 }
@@ -1538,15 +1536,15 @@ static void add_FD_suback_item(
     proto_tree* sub_tree;
     proto_item* item;
     int local_offset = offset;
-    guint32 flowid = 0;
-    guint64 min = 0;
-    guint64 max = 0;
-    guint32 msgCount = 0;
-    guint64 lastMsgIdRecved = 0;
-    guint32 windowSz = 0;
+    uint32_t flowid = 0;
+    uint64_t min = 0;
+    uint64_t max = 0;
+    uint32_t msgCount = 0;
+    uint64_t lastMsgIdRecved = 0;
+    uint32_t windowSz = 0;
     
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_transactionflowdescriptorsuback_param, tvb, offset, size, FALSE);
+        hf_assuredctrl_transactionflowdescriptorsuback_param, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_FD_suback_list);
     while( local_offset < offset+size )
@@ -1585,12 +1583,12 @@ static void add_FD_pubnotify_item(
     proto_tree* sub_tree;
     proto_item* item;
     int local_offset = offset;
-    guint32 flowid = 0;
-    guint32 messageCount = 0;
-    guint64 lastMsgId = 0;
+    uint32_t flowid = 0;
+    uint32_t messageCount = 0;
+    uint64_t lastMsgId = 0;
     
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_transactionflowdescriptorpubnotify_param, tvb, offset, size, FALSE);
+        hf_assuredctrl_transactionflowdescriptorpubnotify_param, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_FD_pubnotify_list);
     while( local_offset < offset+size )
@@ -1626,12 +1624,12 @@ static void add_FD_puback_item(
     proto_tree* sub_tree;
     proto_item* item;
     int local_offset = offset;
-    guint32 flowid = 0;
-    guint64 lastMsgId = 0;
-    guint32 windowSz = 0;
+    uint32_t flowid = 0;
+    uint64_t lastMsgId = 0;
+    uint32_t windowSz = 0;
     
     item = proto_tree_add_item(tree, 
-        hf_assuredctrl_transactionflowdescriptorpuback_param, tvb, offset, size, FALSE);
+        hf_assuredctrl_transactionflowdescriptorpuback_param, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_FD_puback_list);
     while( local_offset < offset+size )
@@ -1658,33 +1656,33 @@ static void add_EP_behaviour_item(
     proto_tree* sub_tree;
     proto_item* item;
     int     num_bool_bytes = size;
-    guint8      behaviours;
+    uint8_t      behaviours;
 
-    item = proto_tree_add_item(tree, hf_assuredctrl_epbehaviour_param, tvb, offset, size, FALSE);
+    item = proto_tree_add_item(tree, hf_assuredctrl_epbehaviour_param, tvb, offset, size, false);
 
     sub_tree = proto_item_add_subtree(item, ett_EP_behaviour_list);
     if ( num_bool_bytes >= 1 ) {
-            behaviours = tvb_get_guint8(tvb, offset);
+            behaviours = tvb_get_uint8(tvb, offset);
             /*
              * TODO: I'm sure there is a better way to handle this loonie field which contains 4 2-bit values 
              */
             if (behaviours & 0x80) {
-                proto_tree_add_item(sub_tree, hf_asssuredctrl_enableCutThrough_param, tvb, offset, 1, FALSE);
+                proto_tree_add_item(sub_tree, hf_asssuredctrl_enableCutThrough_param, tvb, offset, 1, false);
             } 
             if (behaviours & 0x40) {
-                proto_tree_add_item(sub_tree, hf_asssuredctrl_disableCutThrough_param, tvb, offset, 1, FALSE);
+                proto_tree_add_item(sub_tree, hf_asssuredctrl_disableCutThrough_param, tvb, offset, 1, false);
             }
             if (behaviours & 0x20) {
-                proto_tree_add_item(sub_tree, hf_asssuredctrl_enableNotifySender_param, tvb, offset, 1, FALSE);
+                proto_tree_add_item(sub_tree, hf_asssuredctrl_enableNotifySender_param, tvb, offset, 1, false);
             }
             if (behaviours & 0x10) {
-                proto_tree_add_item(sub_tree, hf_asssuredctrl_disableNotifySender_param, tvb, offset, 1, FALSE);
+                proto_tree_add_item(sub_tree, hf_asssuredctrl_disableNotifySender_param, tvb, offset, 1, false);
             }
             if (behaviours & 0x08) {
-                proto_tree_add_item(sub_tree, hf_asssuredctrl_enableDeliveryCount_param, tvb, offset, 1, FALSE);
+                proto_tree_add_item(sub_tree, hf_asssuredctrl_enableDeliveryCount_param, tvb, offset, 1, false);
             }
             if (behaviours & 0x04) {
-                proto_tree_add_item(sub_tree, hf_asssuredctrl_disableDeliveryCount_param, tvb, offset, 1, FALSE);
+                proto_tree_add_item(sub_tree, hf_asssuredctrl_disableDeliveryCount_param, tvb, offset, 1, false);
             }
     }
 }
@@ -1694,13 +1692,13 @@ add_assuredctrl_param(
     tvbuff_t *tvb,
     packet_info* pinfo,
     proto_tree *tree,
-    guint8 param_type,
+    uint8_t param_type,
     int offset,
     int size,
     int lenbytes,
     const char **str_transactionctrl_msgtype)
 {
-    guint8 transactionctrl_type;
+    uint8_t transactionctrl_type;
 
     // skip type byte and lenbytes
     offset += (lenbytes + 1);
@@ -1716,25 +1714,25 @@ add_assuredctrl_param(
         case ASSUREDCTRL_LAST_MSGID_SENT_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_last_msgid_sent_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_LAST_MSGID_ACKED_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_last_msgid_acked_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_WINDOW_SIZE_PARAM:
         {
-            guint32 windowSize = 0;
-            version = (tvb_get_guint8(tvb, 0) & 0x3f);            
-            if (version < 3) { msg_type = (tvb_get_guint8(tvb, 1) & 0xf0) >> 4; }
-            else { msg_type = tvb_get_guint8(tvb, 1); }
+            uint32_t windowSize = 0;
+            version = (tvb_get_uint8(tvb, 0) & 0x3f);            
+            if (version < 3) { msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4; }
+            else { msg_type = tvb_get_uint8(tvb, 1); }
 
             item = proto_tree_add_item_ret_uint(tree,
                 hf_assuredctrl_window_size_param,
-                tvb, offset, size, FALSE, &windowSize);
+                tvb, offset, size, false, &windowSize);
             if (0 == windowSize) {
                 if (msg_type != 0x04) { // Not Bind request (Bind request main contain a window size param of 0)
                     expert_add_info(pinfo, item, &ei_assuredctrl_smf_expert_transport_window_zero);
@@ -1746,86 +1744,86 @@ add_assuredctrl_param(
         case ASSUREDCTRL_TRANSPORT_PRIO_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_transport_prio_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_APPLICATION_ACK_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_application_ack_min_id_param,
-                tvb, offset, 8, FALSE);
+                tvb, offset, 8, false);
             proto_tree_add_item(tree,
                 hf_assuredctrl_application_ack_max_id_param,
-                tvb, offset+8, 8, FALSE);
+                tvb, offset+8, 8, false);
             if (size == 17) {
                 proto_tree_add_item(tree,
                     hf_assuredctrl_application_ack_outcome_param,
-                    tvb, offset+16, 1, FALSE);
+                    tvb, offset+16, 1, false);
             }
             break;
 
         case ASSUREDCTRL_FLOWID_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_flowid_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             item = proto_tree_add_item(tree, // This parameter is for easier search and filtering with flows
                 hf_smf_flowid_hidden_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             proto_item_set_hidden(item);
             break;
 
         case ASSUREDCTRL_QUEUE_NAME_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_queue_name_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_DTE_NAME_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_dte_name_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_TOPIC_NAME_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_topic_name_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_FLOW_NAME_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_flow_name_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_DURABILITY_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_durability_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_ACCESS_TYPE_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_access_type_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_MESSAGE_SELECTOR_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_message_selector_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_TRANSPORT_WINDOW_SIZE_PARAM:
         {
-            guint32 windowSize = 0;
+            uint32_t windowSize = 0;
 
-            version = (tvb_get_guint8(tvb, 0) & 0x3f);            
-            if (version < 3) { msg_type = (tvb_get_guint8(tvb, 1) & 0xf0) >> 4; }
-            else { msg_type = tvb_get_guint8(tvb, 1); }
+            version = (tvb_get_uint8(tvb, 0) & 0x3f);            
+            if (version < 3) { msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4; }
+            else { msg_type = tvb_get_uint8(tvb, 1); }
 
             item = proto_tree_add_item_ret_uint(tree,
                 hf_assuredctrl_transport_window_size_param,
-                tvb, offset, size, FALSE, &windowSize);
+                tvb, offset, size, false, &windowSize);
             if (0 == windowSize) {
                 if (msg_type != 0x04) { // Not Bind request (Bind request main contain a window size param of 0)
                     expert_add_info(pinfo, item, &ei_assuredctrl_smf_expert_transport_window_zero);
@@ -1837,61 +1835,61 @@ add_assuredctrl_param(
         case ASSUREDCTRL_UNBIND_LINGER_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_unbind_linger_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_LAST_MSGID_RECVED_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_last_msgid_recved_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case ASSUREDCTRL_ALL_OTHERS_PERMISSIONS_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_all_others_permissions_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_FLOW_TYPE_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_flow_type_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_ENDPOINT_QUOTA_MB_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_endpoint_quota_mb_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_ENDPOINT_MAX_MESSAGE_SIZE_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_endpoint_max_message_size_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_GRANTED_PERMISSIONS_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_granted_permissions_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_RESPECT_TTL_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_respect_ttl_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_TRANSACTIONCTRLMESSAGETYPE_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactionctrlmessagetype_param,
-                tvb, offset, size, FALSE);
-            transactionctrl_type = tvb_get_guint8(tvb, offset);
+                tvb, offset, size, false);
+            transactionctrl_type = tvb_get_uint8(tvb, offset);
             *str_transactionctrl_msgtype = try_val_to_str(transactionctrl_type, transactionctrlmsgtypenames);
             break;
         case ASSUREDCTRL_TRANSACTEDSESSIONID_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactedsessionid_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_TRANSACTEDSESSIONNAME_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactedsessionname_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_TRANSACTIONID_PARAM:
             add_transactionid_param(tree,
@@ -1901,13 +1899,13 @@ add_assuredctrl_param(
         case ASSUREDCTRL_TRANSACTEDSESSIONSTATE_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactedsessionstate_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_TRANSACTIONFLOWDESCRIPTORPUBNOTIFY_PARAM:
             /*
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactionflowdescriptorpubnotify_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
                 */
                 add_FD_pubnotify_item(tree, tvb, offset, size);
             break;
@@ -1915,7 +1913,7 @@ add_assuredctrl_param(
             /*
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactionflowdescriptorpuback_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
                 */
                 add_FD_puback_item(tree, tvb, offset, size);
 
@@ -1924,24 +1922,24 @@ add_assuredctrl_param(
             /*
             proto_tree_add_item(tree,
                 hf_assuredctrl_transactionflowdescriptorsuback_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
                 */
             add_FD_suback_item(tree, tvb, offset, size);
             break;
         case ASSUREDCTRL_NO_LOCAL_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_no_local_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_ACTIVEFLOWINDICATION_PARAM:
             proto_tree_add_item(tree,
                     hf_assuredctrl_activeflowindication_param,
-                    tvb, offset, size, FALSE);
+                    tvb, offset, size, false);
                 break;
         case ASSUREDCTRL_WANTFLOWCHANGEUPDATE_PARAM:
             proto_tree_add_item(tree,
                     hf_assuredctrl_wantflowchangeupdate_param,
-                    tvb, offset, size, FALSE);
+                    tvb, offset, size, false);
                 break;
         case ASSUREDCTRL_EP_BEHAVIOUR_PARAM:
             add_EP_behaviour_item(tree, tvb, offset, size);
@@ -1949,56 +1947,56 @@ add_assuredctrl_param(
         case ASSUREDCTRL_PUBLISHDERID_PARAM:
             proto_tree_add_item(tree,
                     hf_assuredctrl_publisherid_param,
-                    tvb, offset, size, FALSE);
+                    tvb, offset, size, false);
                 break;
         case ASSUREDCTRL_APPLICATION_PUBACK_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_application_ack_pubid_param,
-                tvb, offset, 4, FALSE);
+                tvb, offset, 4, false);
             proto_tree_add_item(tree,
                 hf_assuredctrl_application_ack_min_id_param,
-                tvb, offset+4, 8, FALSE);
+                tvb, offset+4, 8, false);
             proto_tree_add_item(tree,
                 hf_assuredctrl_application_ack_max_id_param,
-                tvb, offset+12, 8, FALSE);
+                tvb, offset+12, 8, false);
                 break;
         case ASSUREDCTRL_NUMMSGSPOOLED_PARAM:
             proto_tree_add_item(tree,
                     hf_assuredctrl_nummsgspooled_param,
-                    tvb, offset, size, FALSE);
+                    tvb, offset, size, false);
                 break;
         case ASSUREDCTRL_CUTTHROUGH_PARAM:
             proto_tree_add_item(tree,
                     hf_assuredctrl_cutthrough_param,
-                    tvb, offset, size, FALSE);
+                    tvb, offset, size, false);
                 break;
         case ASSUREDCTRL_PUBLISHERFLAGS_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_drAckConsumed_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_APPMSGIDTYPE_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_appMsgIdType_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_QENDPOINTHASH_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_qEndPointHash_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_MAX_REDELIVERY_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_max_redelivery_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_PAYLOAD_PARAM:
             /* The ASSUREDCTRL_PAYLOAD_PARAM is only parsed on two types of assuredCtrl msgs.
                So first, parse the message again from the tvBuff and make sure it is either XACtrl or TXNCtrl msg. */
-            version = (tvb_get_guint8(tvb, 0) & 0x3f);
+            version = (tvb_get_uint8(tvb, 0) & 0x3f);
             
-            if (version < 3) { msg_type = (tvb_get_guint8(tvb, 1) & 0xf0) >> 4; }
-            else { msg_type = tvb_get_guint8(tvb, 1); }
+            if (version < 3) { msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4; }
+            else { msg_type = tvb_get_uint8(tvb, 1); }
 
             /* Only parse if msg is either an XaCtrl (0x0e) or TxnCtrl (0x10). */
             if ( (msg_type != 0x0e) && (msg_type != 0x10) ) { break; }
@@ -2010,22 +2008,22 @@ add_assuredctrl_param(
         case ASSUREDCTRL_ENDPOINTID_PARAM:
             proto_tree_add_item(tree,
                     hf_assuredctrl_EndpointId_param,
-                    tvb, offset, size, FALSE);
+                    tvb, offset, size, false);
                 break;
         case ASSUREDCTRL_ACKSEQUENCENUM_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_ackSequenceNum_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_ACKRECONCILEREQ_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_ackReconcileReq_param,
-                tvb, offset-(lenbytes+1), size+(lenbytes+1), FALSE);
+                tvb, offset-(lenbytes+1), size+(lenbytes+1), false);
             break;
         case ASSUREDCTRL_ACKRECONCILESTART_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_ackReconcileStart_param,
-                tvb, offset-(lenbytes+1), size+(lenbytes+1), FALSE);
+                tvb, offset-(lenbytes+1), size+(lenbytes+1), false);
             break;
         case ASSUREDCTRL_TIMESTAMP_PARAM:
 	    {
@@ -2038,7 +2036,7 @@ add_assuredctrl_param(
                 proto_item* ti2;
                 proto_tree* timestamp_tree;
 
-                ti2 = proto_tree_add_item(tree, hf_assuredctrl_timestamp_param, tvb, offset, size, FALSE);
+                ti2 = proto_tree_add_item(tree, hf_assuredctrl_timestamp_param, tvb, offset, size, false);
                 timestamp_tree = proto_item_add_subtree(ti2, ett_assuredctrl_timestamp_param);
 
                     time_t epch2 = tvb_get_ntohl(tvb, offset);
@@ -2069,26 +2067,26 @@ add_assuredctrl_param(
         case ASSUREDCTRL_MAXDELIVEREDUNACKEDMSGSPERFLOW_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_max_delivered_unacked_msgs_per_flow_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_DRQUEUEPRIORITY_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_dr_queue_priority_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_STARTREPLAY_PARAM:
             {
                 proto_item* ti;
                 proto_tree* start_replay_tree;
 
-                ti = proto_tree_add_item(tree, hf_assuredctrl_start_replay_param, tvb, offset, size, FALSE);
+                ti = proto_tree_add_item(tree, hf_assuredctrl_start_replay_param, tvb, offset, size, false);
                 start_replay_tree = proto_item_add_subtree(ti, ett_assuredctrl_start_replay_param);
 
-                if (tvb_get_guint8(tvb, offset) == 0) {
+                if (tvb_get_uint8(tvb, offset) == 0) {
                     proto_tree_add_string_format(start_replay_tree, hf_assuredctrl_start_replay_type_param, tvb, offset, 1, NULL,
                         "Start Replay Location: BEGINNING");
                 }
-                else if (tvb_get_guint8(tvb, offset) == 1) {
+                else if (tvb_get_uint8(tvb, offset) == 1) {
                     time_t epch = tvb_get_ntoh64(tvb, offset + 1)/1000000000;
 
                     // The function 'strftime' is the only function that I could find that would custom-parse the 64-bit time.
@@ -2123,7 +2121,7 @@ add_assuredctrl_param(
                  * serializatoin:
                  *    rmid1:xxxxx-xxxxxxxxxxx-xxxxxxxx-xxxxxxxx  (5,11,8,8)
                  */
-                else if (tvb_get_guint8(tvb, offset) == 2) {
+                else if (tvb_get_uint8(tvb, offset) == 2) {
                     proto_tree_add_string_format(
                         start_replay_tree, hf_assuredctrl_start_replay_location_rgmid_string, tvb, offset + 1, 8, NULL,
                         "Start Replay Location: Replay Messages after: rmid1:%05x-%011lx-%08x-%08x",
@@ -2138,48 +2136,48 @@ add_assuredctrl_param(
         case ASSUREDCTRL_ENDPOINTERRORID_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_endpoint_error_id_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_RETRANSMIT_REQUEST_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_retransmit_request_param,
-                tvb, offset, size, FALSE);  // param only consists of length/uh/type so I'm having it highlight it all
+                tvb, offset, size, false);  // param only consists of length/uh/type so I'm having it highlight it all
             break;
         case ASSUREDCTRL_SPOOLER_UNIQUE_ID_PARAM:
             proto_tree_add_item(tree,
                 hf_assuredctrl_spooler_unique_id_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_TRANSACTION_GET_SESSION_STATE_AND_ID:
         	proto_tree_add_item(tree,
                 hf_assuredctrl_transaction_get_session_state_and_id,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_PARTITION_GROUP_ID:
             proto_tree_add_item(tree,
                 hf_assuredctrl_partition_group_id,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
         case ASSUREDCTRL_REDELIVERY_DELAY_CONFIGURATION:
             proto_tree_add_item(tree,
                 hf_assuredctrl_redelivery_delay_config_initial_interval_ms,
-                tvb, offset, 4, FALSE);
+                tvb, offset, 4, false);
             proto_tree_add_item(tree,
                 hf_assuredctrl_redelivery_delay_config_max_interval_ms,
-                tvb, offset+4, 4, FALSE);
+                tvb, offset+4, 4, false);
             proto_tree_add_item(tree,
                 hf_assuredctrl_redelivery_delay_config_back_off_multiplier,
-                tvb, offset+8, 2, FALSE);
+                tvb, offset+8, 2, false);
             if (size > 10) {
                 proto_tree_add_item(tree,
                     hf_assuredctrl_redelivery_delay_config_rfu,
-                    tvb, offset+10, size-10, FALSE);
+                    tvb, offset+10, size-10, false);
             }
             break;
         default:
             proto_tree_add_item(tree,
                 hf_assuredctrl_unknown_param,
-                tvb, offset-(lenbytes+1), size+(lenbytes+1), FALSE);
+                tvb, offset-(lenbytes+1), size+(lenbytes+1), false);
         break;
     }
     smf_analysis_assuredctrl_param(tvb, pinfo, param_type, offset, size);
@@ -2195,17 +2193,17 @@ dissect_assuredctrl_param(
 {
     int param_len;
     int len_bytes; //number of bytes used for length
-    guint8 param_type;
+    uint8_t param_type;
 
     /* Is it a pad byte? */
-    if (tvb_get_guint8(tvb, offset) == 0)
+    if (tvb_get_uint8(tvb, offset) == 0)
     {
-        proto_tree_add_item(tree, hf_assuredctrl_pad_byte, tvb, offset, 1, FALSE);
+        proto_tree_add_item(tree, hf_assuredctrl_pad_byte, tvb, offset, 1, false);
         return 1;
     }
     
-    param_type = tvb_get_guint8(tvb, offset) & 0x3f;
-    param_len  = tvb_get_guint8(tvb, offset+1);
+    param_type = tvb_get_uint8(tvb, offset) & 0x3f;
+    param_len  = tvb_get_uint8(tvb, offset+1);
     if (param_len == 0) {
         param_len = tvb_get_ntohl(tvb, offset+2); //32bit len starts after the 0
         len_bytes = 5;
@@ -2352,33 +2350,33 @@ dissect_assuredctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-        ti = proto_tree_add_item(tree, proto_assuredctrl, tvb, 0, -1, FALSE);
+        ti = proto_tree_add_item(tree, proto_assuredctrl, tvb, 0, -1, false);
 
         assuredctrl_tree = proto_item_add_subtree(ti, ett_assuredctrl);
 
-        if ((tvb_get_guint8(tvb, 0) & 0x3f) < 3) {
+        if ((tvb_get_uint8(tvb, 0) & 0x3f) < 3) {
             /* Dissect header fields */
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_header_rfu,    tvb, 0, 1, FALSE);
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_version,       tvb, 0, 1, FALSE);
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_type,      tvb, 1, 1, FALSE);
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_len,       tvb, 1, 2, FALSE);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_header_rfu,    tvb, 0, 1, false);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_version,       tvb, 0, 1, false);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_type,      tvb, 1, 1, false);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_len,       tvb, 1, 2, false);
 
             /* Dissect parameters */
             header_len = tvb_get_ntohs(tvb, 1) & 0xfff;
             dissect_assuredctrl_params(tvb, pinfo, 3, 4*header_len, assuredctrl_tree, &str_transactionctrl_msgtype);
-            msgtype = (tvb_get_guint8(tvb, 1) & 0xf0) >> 4;
+            msgtype = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4;
         }
         else {
             /* Dissect header fields */
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_header_rfu,    tvb, 0, 1, FALSE);
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_version,       tvb, 0, 1, FALSE);
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_type_v3,   tvb, 1, 1, FALSE);
-            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_len_v3,    tvb, 2, 4, FALSE);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_header_rfu,    tvb, 0, 1, false);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_version,       tvb, 0, 1, false);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_type_v3,   tvb, 1, 1, false);
+            proto_tree_add_item(assuredctrl_tree, hf_assuredctrl_msg_len_v3,    tvb, 2, 4, false);
 
             /* Dissect parameters */
             header_len = tvb_get_ntohl(tvb, 2);
             dissect_assuredctrl_params(tvb, pinfo, 6, header_len, assuredctrl_tree, &str_transactionctrl_msgtype);
-            msgtype = tvb_get_guint8(tvb, 1) & 0xff;
+            msgtype = tvb_get_uint8(tvb, 1) & 0xff;
         }
 
         smf_analysis_assuredctrl(tvb, pinfo, assuredctrl_tree);
@@ -3117,7 +3115,7 @@ proto_register_assuredctrl(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_assuredctrl,
         &ett_FD_suback_list,
         &ett_FD_puback_list,
@@ -3193,7 +3191,7 @@ proto_register_assuredctrl(void)
 void
 proto_reg_handoff_assuredctrl(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
     
     if (!inited) {
 
@@ -3202,7 +3200,7 @@ proto_reg_handoff_assuredctrl(void)
         (void)create_dissector_handle(dissect_assuredctrl, proto_assuredctrl);
 	//dissector_add("smf.encap_proto", 0x8, assuredctrl_handle);
         
-        inited = TRUE;
+        inited = true;
     }
         
         /* 
