@@ -12,12 +12,12 @@ on:
         description: "Minor version of the wireshark tag"
         type: string
         required: true
-        default: '2'
+        default: '4'
       PATCH_VERSION:
         description: "Patch version of the wireshark tag"
         type: string
         required: true
-        default: '4'
+        default: '0'
         
 env:
   # This is the name for the file in releases
