@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/wmem_scopes.h>
@@ -137,13 +135,13 @@ static int hf_clientctrl_client_capabilities_param_bool_pq = -1;
 static int hf_clientctrl_client_capabilities_param_bool_rd_lt = -1;
 
 /* Global sample preference ("controls" display of numbers) */
-//static gboolean gPREF_HEX = FALSE;
+//static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_clientctrl = -1;
-static gint ett_clientctrl_rtr_capabilities_param = -1;
-static gint ett_clientctrl_rtr_capabilities_extended_param = -1;
-static gint ett_clientctrl_client_capabilities_param = -1;
+static int ett_clientctrl = -1;
+static int ett_clientctrl_rtr_capabilities_param = -1;
+static int ett_clientctrl_rtr_capabilities_extended_param = -1;
+static int ett_clientctrl_client_capabilities_param = -1;
 
 // ClientCtrl Parameters
 #define CLIENTCTRL_SOFTWAREVERSION_PARAM	        0x00
@@ -215,7 +213,7 @@ void clientctrl_dissect_client_capabilities_param(
     proto_tree* tree,
     int offset,
     int size,
-    gboolean nonBoolean _U_)
+    bool nonBoolean _U_)
 {
 //This was written in May 2019. In May 2019, there are no non-boolean client capabilities so this section of
 //the program will never be used.
@@ -223,43 +221,43 @@ void clientctrl_dissect_client_capabilities_param(
 //written in this function but commented out.
     proto_item*   ti;
     proto_tree*   cap_tree;
-    // guint8        num_bool_cap;
+    // uint8_t        num_bool_cap;
     // Non-boolean Client Capabilities
-    // guint8        cap_type;
+    // uint8_t        cap_type;
     // int           num_bool_bytes;
     // int           cap_offset, cap_len, cap_offset_end;
     // int           rtrcaps[LAST_CLIENT_CAP_PARAM + 1];
 
-    // num_bool_cap = tvb_get_guint8(tvb, offset);
+    // num_bool_cap = tvb_get_uint8(tvb, offset);
     // Non-boolean Client Capabilities
     // num_bool_bytes = (num_bool_cap + 7) / 8;
 
     //if (nonBoolean) {
         //Non-boolean Client Capabilities
-        //ti = proto_tree_add_item(tree, hf_clientctrl_client_capabilities_extended_param, tvb, offset, size, FALSE);
+        //ti = proto_tree_add_item(tree, hf_clientctrl_client_capabilities_extended_param, tvb, offset, size, false);
     //}
     //else {
-        ti = proto_tree_add_item(tree, hf_clientctrl_client_capabilities_param, tvb, offset, size, FALSE);
+        ti = proto_tree_add_item(tree, hf_clientctrl_client_capabilities_param, tvb, offset, size, false);
     //}
 
     cap_tree = proto_item_add_subtree(ti, ett_clientctrl_client_capabilities_param);
 
-    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_num_bool, tvb, offset, 1, FALSE);
-    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_unbind_ack, tvb, offset + 1, 1, FALSE);
-    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_bind_ack_errorId, tvb, offset + 1, 1, FALSE);
-    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_pq, tvb, offset + 1, 1, FALSE);
-    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_rd_lt, tvb, offset + 1, 1, FALSE);
+    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_num_bool, tvb, offset, 1, false);
+    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_unbind_ack, tvb, offset + 1, 1, false);
+    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_bind_ack_errorId, tvb, offset + 1, 1, false);
+    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_pq, tvb, offset + 1, 1, false);
+    proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_rd_lt, tvb, offset + 1, 1, false);
 }
 
 static void 
 add_clientctrl_rtr_cap_extended_param(
     proto_tree    *tree,
-    guint8        cap_type,
+    uint8_t        cap_type,
     tvbuff_t*     tvb,
     int           offset)
 {
-    guint8 versionFrom = 0;
-    guint8 versionTo = 0;
+    uint8_t versionFrom = 0;
+    uint8_t versionTo = 0;
     
     int rtrcapExtended[LAST_RTR_CAP_EXT_PARAM + 1];
     rtrcapExtended[CLIENTCTRL_RTR_CAPABILITIES_PARAM_SUPPORTED_ADCTRL_VERSIONS] = hf_clientctrl_rtr_capabilities_param_supported_adctrl_version_string;
@@ -269,8 +267,8 @@ add_clientctrl_rtr_cap_extended_param(
     strings[CLIENTCTRL_RTR_CAPABILITIES_PARAM_SUPPORTED_ADCTRL_VERSIONS] = "AdCtrl";
     strings[CLIENTCTRL_RTR_CAPABILITIES_PARAM_SUPPORTED_XACTRL_VERSIONS] = "XaCtrl";
 
-    versionFrom = tvb_get_guint8(tvb, offset);
-    versionTo = tvb_get_guint8(tvb, offset + 1);
+    versionFrom = tvb_get_uint8(tvb, offset);
+    versionTo = tvb_get_uint8(tvb, offset + 1);
 
     proto_tree_add_string_format(
         tree, rtrcapExtended[cap_type], tvb, offset, 2, NULL,
@@ -284,19 +282,19 @@ clientctrl_dissect_rtr_capabilities_param(
     proto_tree *tree,
     int offset,
     int size,
-    gboolean extended)
+    bool extended)
 {
     proto_item   *ti;
     proto_tree   *cap_tree;
-    guint8 num_bool_cap;
-    guint non_bool_cap_type;
+    uint8_t num_bool_cap;
+    unsigned int non_bool_cap_type;
     int non_bool_cap_length;
     int non_bool_caps_end;
     int non_bool_cap_offset;
     int	num_bool_bytes = 0;
     int rtrcaps[LAST_RTR_CAP_PARAM + 1];
 
-	num_bool_cap = tvb_get_guint8(tvb, offset);
+	num_bool_cap = tvb_get_uint8(tvb, offset);
         if (num_bool_cap > 0) {
             num_bool_bytes = (num_bool_cap - 1) / 8 + 1;
         }
@@ -308,59 +306,59 @@ clientctrl_dissect_rtr_capabilities_param(
         
     
     if (extended) {
-        ti = proto_tree_add_item(tree, hf_clientctrl_rtr_capabilities_extended_param, tvb, offset, size, FALSE);
+        ti = proto_tree_add_item(tree, hf_clientctrl_rtr_capabilities_extended_param, tvb, offset, size, false);
         cap_tree = proto_item_add_subtree(ti, ett_clientctrl_rtr_capabilities_extended_param);
     } 
     else {
-        ti = proto_tree_add_item(tree, hf_clientctrl_rtr_capabilities_param, tvb, offset, size, FALSE);
+        ti = proto_tree_add_item(tree, hf_clientctrl_rtr_capabilities_param, tvb, offset, size, false);
 
         cap_tree = proto_item_add_subtree(ti, ett_clientctrl_rtr_capabilities_param);
     }
 
-    proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_num_bool, tvb, offset, 1, FALSE);
+    proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_num_bool, tvb, offset, 1, false);
 
         if (num_bool_bytes >= 1) {
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_jndi, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_compression, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_sub_flow_gtd, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_temp_endpt, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_pub_flow_gtd, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_browser, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_endpoint_management, tvb, offset + 1, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_selector, tvb, offset + 1, 1, FALSE);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_jndi, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_compression, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_sub_flow_gtd, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_temp_endpt, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_pub_flow_gtd, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_browser, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_endpoint_management, tvb, offset + 1, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_selector, tvb, offset + 1, 1, false);
         }
         if (num_bool_bytes >= 2) {
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_endpoint_message_ttl, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_queue_subscriptions, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_flow_recover, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_subscription_manager, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_message_eliding, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_transacted_sessions, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_no_local, tvb, offset + 2, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_flow_change_updates, tvb, offset + 2, 1, FALSE);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_endpoint_message_ttl, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_queue_subscriptions, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_flow_recover, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_subscription_manager, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_message_eliding, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_transacted_sessions, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_no_local, tvb, offset + 2, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_flow_change_updates, tvb, offset + 2, 1, false);
         }
         if (num_bool_bytes >= 3) {
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_sequenced_topics, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_discard_behaviour, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_cut_through, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_openmama, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_replay, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_compressed_ssl, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_long_selectors, tvb, offset + 3, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_shared_subs, tvb, offset + 3, 1, FALSE);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_sequenced_topics, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_discard_behaviour, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_cut_through, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_openmama, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_replay, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_compressed_ssl, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_long_selectors, tvb, offset + 3, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_shared_subs, tvb, offset + 3, 1, false);
         }
         if (num_bool_bytes >= 4) {
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_br_replay_errorid, tvb, offset + 4, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_ad_appack_failed, tvb, offset + 4, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_var_len_ext_param, tvb, offset + 4, 1, FALSE);
-            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_rfu, tvb, offset + 4, 1, FALSE);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_br_replay_errorid, tvb, offset + 4, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_ad_appack_failed, tvb, offset + 4, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_var_len_ext_param, tvb, offset + 4, 1, false);
+            proto_tree_add_item(cap_tree, hf_clientctrl_rtr_capabilities_param_bool_rfu, tvb, offset + 4, 1, false);
         }
 
     if (extended) {
         non_bool_caps_end = offset - 5 + size;
         non_bool_cap_offset = offset + 1 + num_bool_bytes;
         for (; non_bool_cap_offset < non_bool_caps_end;) {
-            non_bool_cap_type = tvb_get_guint8(tvb, non_bool_cap_offset);
+            non_bool_cap_type = tvb_get_uint8(tvb, non_bool_cap_offset);
             non_bool_cap_length = tvb_get_ntohl(tvb, non_bool_cap_offset + 1);
             add_clientctrl_rtr_cap_extended_param(cap_tree, non_bool_cap_type, tvb, non_bool_cap_offset + 5);
             non_bool_cap_offset += non_bool_cap_length;
@@ -370,9 +368,9 @@ clientctrl_dissect_rtr_capabilities_param(
         non_bool_caps_end = offset - 5 + size;
         non_bool_cap_offset = offset + 1 + num_bool_bytes;
         for (; non_bool_cap_offset < non_bool_caps_end;) {
-            non_bool_cap_type = tvb_get_guint8(tvb, non_bool_cap_offset);
+            non_bool_cap_type = tvb_get_uint8(tvb, non_bool_cap_offset);
             non_bool_cap_length = tvb_get_ntohl(tvb, non_bool_cap_offset + 1);
-            proto_tree_add_item(cap_tree, rtrcaps[non_bool_cap_type], tvb, non_bool_cap_offset + 5, non_bool_cap_length - 5, FALSE);
+            proto_tree_add_item(cap_tree, rtrcaps[non_bool_cap_type], tvb, non_bool_cap_offset + 5, non_bool_cap_length - 5, false);
             non_bool_cap_offset += non_bool_cap_length;
         }
     }
@@ -383,13 +381,13 @@ static void
 add_clientctrl_param(
     tvbuff_t *tvb,
     proto_tree *tree,
-    guint8 param_type,
+    uint8_t param_type,
     int offset,
-    guint32 size)
+    uint32_t size)
 {
 	int ccparams[LAST_CLIENTCTRL_PARAM+1];
-	guint8 dto_local_pri;
-	guint8 dto_network_pri;
+	uint8_t dto_local_pri;
+	uint8_t dto_network_pri;
 	char* buffer;
     
 	size -= 5;
@@ -444,34 +442,34 @@ add_clientctrl_param(
         case CLIENTCTRL_MQTT_CLEAN_SESSION_TYPE_PARAM:
 		proto_tree_add_item(tree,
 		                    ccparams[param_type],
-				    tvb, offset, size, FALSE);
+				    tvb, offset, size, false);
 		break;
 
     	case CLIENTCTRL_RTR_CAPABILITIES_PARAM:
-        	clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, FALSE);
+        	clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, false);
         	break;
         case CLIENTCTRL_RTR_CAPABILITIES_EXTENDED_PARAM:
-        	clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, TRUE);
+        	clientctrl_dissect_rtr_capabilities_param(tvb, tree, offset, size, true);
         	break;
 
 	case CLIENTCTRL_DELIVERTOONEPRIORITY_PARAM:
-		dto_local_pri = tvb_get_guint8(tvb, offset);
-		dto_network_pri = tvb_get_guint8(tvb, offset+1);
+		dto_local_pri = tvb_get_uint8(tvb, offset);
+		dto_network_pri = tvb_get_uint8(tvb, offset+1);
                 buffer = (char*)wmem_alloc(wmem_packet_scope(), 100);
 		g_snprintf(buffer, 100, "Local=%d Network=%d", dto_local_pri, dto_network_pri);
 		proto_tree_add_string(tree, ccparams[CLIENTCTRL_DELIVERTOONEPRIORITY_PARAM],
                                       tvb, offset, size, buffer);
 		break;
         case CLIENTCTRL_CLIENT_CAPABILITIES_PARAM:
-                clientctrl_dissect_client_capabilities_param(tvb, tree, offset, size, FALSE);
+                clientctrl_dissect_client_capabilities_param(tvb, tree, offset, size, false);
                 break;
     case CLIENTCTRL_KEEP_ALIVE_INTERVAL_PARAM:
-        proto_tree_add_item(tree, ccparams[param_type], tvb, offset, size, FALSE);
+        proto_tree_add_item(tree, ccparams[param_type], tvb, offset, size, false);
         break;
     default:
                 proto_tree_add_item(tree,
                 hf_clientctrl_unknown_param,
-                tvb, offset-5, size+5, FALSE);
+                tvb, offset-5, size+5, false);
                 break;
     }
 }
@@ -482,10 +480,10 @@ dissect_clientctrl_param(
     int offset, 
     proto_tree *tree)
 {
-    guint32 param_len;
-    guint8 param_type;
+    uint32_t param_len;
+    uint8_t param_type;
 
-    param_type = tvb_get_guint8(tvb, offset) & 0x7f;
+    param_type = tvb_get_uint8(tvb, offset) & 0x7f;
 
 	offset++;
     param_len  = tvb_get_ntohl(tvb, offset);
@@ -627,22 +625,22 @@ dissect_clientctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_clientctrl, tvb, 0, -1, FALSE);
+		ti = proto_tree_add_item(tree, proto_clientctrl, tvb, 0, -1, false);
 
 		clientctrl_tree = proto_item_add_subtree(ti, ett_clientctrl);
 
         /* Dissect header fields */
 		proto_tree_add_item(clientctrl_tree,
-			hf_clientctrl_uh, tvb, 0, 1, FALSE);
+			hf_clientctrl_uh, tvb, 0, 1, false);
 		proto_tree_add_item(clientctrl_tree,
-			hf_clientctrl_rfu, tvb, 0, 1, FALSE);
+			hf_clientctrl_rfu, tvb, 0, 1, false);
 		proto_tree_add_item(clientctrl_tree,
-			hf_clientctrl_version, tvb, 0, 1, FALSE);
+			hf_clientctrl_version, tvb, 0, 1, false);
 
 		proto_tree_add_item(clientctrl_tree,
-			hf_clientctrl_msg_type, tvb, 1, 1, FALSE);
+			hf_clientctrl_msg_type, tvb, 1, 1, false);
 		proto_tree_add_item(clientctrl_tree,
-			hf_clientctrl_msg_len, tvb, 2, 4, FALSE);
+			hf_clientctrl_msg_len, tvb, 2, 4, false);
 
         /* Dissect parameters */
 		header_len = tvb_get_ntohl(tvb, 2);
@@ -650,7 +648,7 @@ dissect_clientctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
         dissect_clientctrl_params(tvb, 6, header_len, clientctrl_tree);
 
 		/* Figure out type of message and put it on the shared parent info */
-		msgtype = tvb_get_guint8(tvb, 1) ;
+		msgtype = tvb_get_uint8(tvb, 1) ;
 		str_msgtype = try_val_to_str(msgtype, msgtypenames);
 
 		if (str_msgtype) {
@@ -1066,7 +1064,7 @@ proto_register_clientctrl(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_clientctrl,
 		&ett_clientctrl_rtr_capabilities_param,
                 &ett_clientctrl_rtr_capabilities_extended_param,
@@ -1108,14 +1106,14 @@ proto_register_clientctrl(void)
 void
 proto_reg_handoff_clientctrl(void)
 {
-	static gboolean inited = FALSE;
+	static bool inited = false;
         
 	if (!inited) {
 
 	    //dissector_handle_t clientctrl_handle;
 	    //clientctrl_handle = create_dissector_handle(dissect_clientctrl, proto_clientctrl);
             (void)create_dissector_handle(dissect_clientctrl, proto_clientctrl);
-	    inited = TRUE;
+	    inited = true;
 	}
         
         /* 

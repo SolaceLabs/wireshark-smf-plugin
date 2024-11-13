@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/wmem_scopes.h>
@@ -51,10 +49,10 @@ static int hf_bm_sdtitem = -1;
 #define BM_TYPE_JMS 0x01
 
 /* Global sample preference ("controls" display of numbers) */
-//static gboolean gPREF_HEX = FALSE;
+//static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_bm = -1;
+static int ett_bm = -1;
 
 typedef struct {
     int type;
@@ -91,18 +89,18 @@ dissect_bm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_bm, tvb, 0, -1, FALSE);
+		ti = proto_tree_add_item(tree, proto_bm, tvb, 0, -1, false);
 
 		bm_tree = proto_item_add_subtree(ti, ett_bm);
 
         /* Dissect header fields */
 		proto_tree_add_item(bm_tree,
-		    hf_bm_num_elem, tvb, 0, 1, FALSE);
+		    hf_bm_num_elem, tvb, 0, 1, false);
 
 		/* Dissect contents */
-		num_blocks = tvb_get_guint8(tvb, 0);
+		num_blocks = tvb_get_uint8(tvb, 0);
 		for(i = 0; i < num_blocks; i++) {
-			idxblocks[i].type = tvb_get_guint8(tvb, 1+4*i);
+			idxblocks[i].type = tvb_get_uint8(tvb, 1+4*i);
 			idxblocks[i].length = tvb_get_ntoh24(tvb, 2+4*i);
 		}
 		data_offset = num_blocks * 4 + 1;
@@ -114,7 +112,7 @@ dissect_bm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 			g_snprintf(buffer, 300, "Type %d Length %d", idxblocks[i].type, idxblocks[i].length);
 			proto_tree_add_string(bm_tree, hf_bm_block, tvb, cumul_offset, idxblocks[i].length, buffer);
 			if (idxblocks[i].type == BM_TYPE_SDT) {
-		            add_sdt_block(bm_tree, pinfo, hf_bm_sdtitem, tvb, cumul_offset, idxblocks[i].length, 1, FALSE);
+		            add_sdt_block(bm_tree, pinfo, hf_bm_sdtitem, tvb, cumul_offset, idxblocks[i].length, 1, false);
 			}
 			cumul_offset += idxblocks[i].length;
 		}
@@ -160,7 +158,7 @@ proto_register_bm(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_bm
 	};
 
@@ -200,13 +198,13 @@ proto_register_bm(void)
 void
 proto_reg_handoff_bm(void)
 {
-	static gboolean inited = FALSE;
+	static bool inited = false;
 
 	if (!inited) {
 	    //dissector_handle_t bm_handle;
 	    //bm_handle = create_dissector_handle(dissect_bm, proto_bm);
 	    (void)create_dissector_handle(dissect_bm, proto_bm);
-	    inited = TRUE;
+	    inited = true;
 	}
 
         /*

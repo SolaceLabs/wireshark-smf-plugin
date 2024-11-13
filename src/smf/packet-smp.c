@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -59,10 +57,10 @@ static int hf_smp_add_queuename = -1;
 static int hf_smp_add_clientname = -1;
 
 /* Global sample preference ("controls" display of numbers) */
-//static gboolean gPREF_HEX = FALSE;
+//static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_smp = -1;
+static int ett_smp = -1;
 
 #define SMP_ADDSUBSCRIPTION 0x00
 #define SMP_REMSUBSCRIPTION 0x01
@@ -88,15 +86,15 @@ static void dissect_smp_flags(
 	proto_tree *tree)
 {
 	proto_tree_add_item(tree,
-	    hf_smp_add_da, tvb, offset, 1, FALSE);
+	    hf_smp_add_da, tvb, offset, 1, false);
 	proto_tree_add_item(tree,
-	    hf_smp_add_r, tvb, offset, 1, FALSE);
+	    hf_smp_add_r, tvb, offset, 1, false);
 	proto_tree_add_item(tree,
-	    hf_smp_add_t, tvb, offset, 1, FALSE);
+	    hf_smp_add_t, tvb, offset, 1, false);
 	proto_tree_add_item(tree,
-	    hf_smp_add_p, tvb, offset, 1, FALSE);
+	    hf_smp_add_p, tvb, offset, 1, false);
 	proto_tree_add_item(tree,
-	    hf_smp_add_f, tvb, offset, 1, FALSE);
+	    hf_smp_add_f, tvb, offset, 1, false);
 
 }
 
@@ -110,7 +108,7 @@ static void dissect_smp_add_remove(
 	dissect_smp_flags(tvb, offset, tree);
 	offset++;
 	proto_tree_add_item(tree,
-	    hf_smp_add_subscription, tvb, offset, offset_end - offset, FALSE);
+	    hf_smp_add_subscription, tvb, offset, offset_end - offset, false);
 }
 
 static void dissect_smp_add_remove_queue_sub(
@@ -125,15 +123,15 @@ static void dissect_smp_add_remove_queue_sub(
 	dissect_smp_flags(tvb, offset, tree);
 	offset++;
 
-	qn_len = tvb_get_guint8(tvb, offset);
+	qn_len = tvb_get_uint8(tvb, offset);
 	offset++;
 	proto_tree_add_item(tree,
-	    hf_smp_add_queuename, tvb, offset, qn_len, FALSE);
+	    hf_smp_add_queuename, tvb, offset, qn_len, false);
 	offset += qn_len;
-	sn_len = tvb_get_guint8(tvb, offset);
+	sn_len = tvb_get_uint8(tvb, offset);
 	offset++;
 	proto_tree_add_item(tree,
-	    hf_smp_add_subscription, tvb, offset, sn_len, FALSE);
+	    hf_smp_add_subscription, tvb, offset, sn_len, false);
 	
 
 }
@@ -150,15 +148,15 @@ static void dissect_smp_add_remove_clientname(
 	dissect_smp_flags(tvb, offset, tree);
 	offset++;
 
-	cn_len = tvb_get_guint8(tvb, offset);
+	cn_len = tvb_get_uint8(tvb, offset);
 	offset++;
 	proto_tree_add_item(tree,
-	    hf_smp_add_clientname, tvb, offset, cn_len, FALSE);
+	    hf_smp_add_clientname, tvb, offset, cn_len, false);
 	offset += cn_len;
-	sn_len = tvb_get_guint8(tvb, offset);
+	sn_len = tvb_get_uint8(tvb, offset);
 	offset++;
 	proto_tree_add_item(tree,
-	    hf_smp_add_subscription, tvb, offset, sn_len, FALSE);
+	    hf_smp_add_subscription, tvb, offset, sn_len, false);
 	
 
 }
@@ -267,21 +265,21 @@ dissect_smp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_smp, tvb, 0, -1, FALSE);
+		ti = proto_tree_add_item(tree, proto_smp, tvb, 0, -1, false);
 
 		smp_tree = proto_item_add_subtree(ti, ett_smp);
 
         /* Dissect header fields */
 		proto_tree_add_item(smp_tree,
-		    hf_smp_uh, tvb, 0, 1, FALSE);
+		    hf_smp_uh, tvb, 0, 1, false);
         proto_tree_add_item(smp_tree,
-            hf_smp_msg_type, tvb, 0, 1, FALSE);
+            hf_smp_msg_type, tvb, 0, 1, false);
         proto_tree_add_item(smp_tree,
-            hf_smp_msg_len, tvb, 1, 4, FALSE);
+            hf_smp_msg_len, tvb, 1, 4, false);
 
 		/* Dissect contents */
 		msg_len = tvb_get_ntohl(tvb, 1);
-		msg_type = tvb_get_guint8(tvb, 0) & 0x7f;
+		msg_type = tvb_get_uint8(tvb, 0) & 0x7f;
 		switch(msg_type)
 		{
 		case SMP_ADDSUBSCRIPTION:
@@ -298,7 +296,7 @@ dissect_smp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 			break;
 		default:
 			proto_tree_add_item(smp_tree,
-				hf_smp_payload, tvb, 5, msg_len-5, FALSE);
+				hf_smp_payload, tvb, 5, msg_len-5, false);
 			break;
 		}
 
@@ -307,7 +305,7 @@ dissect_smp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 //        dissect_assuredctrl_params(tvb, 3, 4*header_len, assuredctrl_tree);
 
 		/* Figure out type of message and put it on the shared parent info */
-		msgtype = (tvb_get_guint8(tvb, 0) & 0x7f);
+		msgtype = (tvb_get_uint8(tvb, 0) & 0x7f);
 		str_msgtype = try_val_to_str(msgtype, msgtypenames);
 
 		if (str_msgtype) {
@@ -399,7 +397,7 @@ proto_register_smp(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_smp
 	};
 
@@ -439,13 +437,13 @@ proto_register_smp(void)
 void
 proto_reg_handoff_smp(void)
 {
-	static gboolean inited = FALSE;
+	static bool inited = false;
         
 	if (!inited) {
 	    //dissector_handle_t smp_handle;
 	    //smp_handle = create_dissector_handle(dissect_smp, proto_smp);        
 	    (void)create_dissector_handle(dissect_smp, proto_smp);
-	    inited = TRUE;
+	    inited = true;
 	}
         
         /* 

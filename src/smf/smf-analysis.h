@@ -115,7 +115,7 @@ extern expert_field ei_smf_expert_max_delivered_unacked_msgs;
                     "", HFILL \
                     }}, \
             { &hf_assuredctrl_smf_analysis_num_msg_transaction_ctrl, \
-                { "Number of Msgs Transaction Ctrl (by this msg)", "assuredctrl.analysis.transportacked", \
+                { "Number of Msgs Transaction Ctrl (by this msg)", "assuredctrl.analysis.transactionacked", \
                     FT_UINT32, BASE_DEC, NULL, 0x0, \
                     "", HFILL \
                     }}, \
@@ -130,7 +130,7 @@ extern expert_field ei_smf_expert_max_delivered_unacked_msgs;
                     "", HFILL \
                     }}, \
             { &hf_assuredctrl_smf_analysis_transaction_ctrl_id, \
-                { "Transaction Ctrl to Msg in frame", "assuredctrl.analysis.msgtransportacked", \
+                { "Transaction Ctrl to Msg in frame", "assuredctrl.analysis.msgtransactionacked", \
                     FT_FRAMENUM, BASE_NONE, NULL, 0x0, \
                     "", HFILL \
                     }}, \
@@ -160,9 +160,9 @@ extern int ett_assuredctrl_analysis;
 
 int smf_analysis(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree);
 
-void smf_analysis_param(tvbuff_t *tvb, packet_info* pinfo, guint8 param_type, int offset);
+void smf_analysis_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t param_type, int offset);
 
-void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, guint8 param_type, int offset, int size);
+void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t param_type, int offset, int size);
 
 void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tree);
 

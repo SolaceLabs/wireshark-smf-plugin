@@ -40,7 +40,7 @@
 
 static int proto_smf_compressed = -1;
 static int global_smf_compressed_port = 55003;
-static guint dictionary_init = 0xee;
+static unsigned int dictionary_init = 0xee;
 static int hf_smf_compressed_segment_data = -1;
 
 static dissector_handle_t smf_tcp_compressed_handle;
@@ -49,7 +49,7 @@ static expert_field ei_decompression_error = EI_INIT;
 
 typedef struct _smf_uncompressed_buf_t {
     guchar *buf;
-    guint len;
+    unsigned int len;
     char *errorMsg;
 } smf_uncompressed_buf_t;
 
@@ -85,16 +85,16 @@ static voidpf stream_alloc(void * opaque, uInt num, uInt size)
     return wmem_alloc0(wmem_file_scope(), num*size);
 }
 
-static void stream_free(void * opaque, voidpf address)
+static void stream_free(void * opaque, voidpf stream_address)
 {
     (void)opaque; // avoid compiler warning
-    wmem_free(wmem_file_scope(), address);
+    wmem_free(wmem_file_scope(), stream_address);
 }
 
 static void init_stream(smf_compressed_stream_t *compressed_stream_p)
 {
     z_stream* stream_p = &compressed_stream_p->stream;
-    gint z_rc;
+    int z_rc;
     stream_p->next_in  = Z_NULL;
     stream_p->avail_in = 0;
     stream_p->zalloc   = stream_alloc;
@@ -116,9 +116,9 @@ static void init_stream(smf_compressed_stream_t *compressed_stream_p)
 }
 
 static void
-decompress_record(smf_compressed_stream_t* compressed_stream_p, const guchar* in, guint inl, guchar* out_str, guint* outl, char *errorMsg_p)
+decompress_record(smf_compressed_stream_t* compressed_stream_p, const guchar* in, unsigned int inl, guchar* out_str, unsigned int* outl, char *errorMsg_p)
 {
-    gint err = Z_OK;
+    int err = Z_OK;
 
     z_stream* stream_p = &compressed_stream_p->stream;
 DIAG_OFF(cast-qual)
@@ -206,7 +206,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     smf_uncompressed_buf_t *uncompressed_buf = NULL;
     if (!PINFO_FD_VISITED(pinfo)) {
         // First time decoding the frame
-        guint outl;
+        unsigned int outl;
         guchar out_str[MAX_DECOMPRESS_LEN];
         outl = MAX_DECOMPRESS_LEN;
         decompress_record(currentStream_p,
@@ -249,18 +249,18 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 
         // Save it so that we do not need to do uncompress when we revisit
         p_add_proto_data(wmem_file_scope(), pinfo, proto_smf_compressed,
-                (guint32)tvb_raw_offset(tvb), uncompressed_buf);
+                (uint32_t)tvb_raw_offset(tvb), uncompressed_buf);
 
     } else {
         uncompressed_buf = (smf_uncompressed_buf_t *)p_get_proto_data(wmem_file_scope(), pinfo,
-                proto_smf_compressed, (guint32)tvb_raw_offset(tvb));
+                proto_smf_compressed, (uint32_t)tvb_raw_offset(tvb));
         if (!uncompressed_buf) {
             // g_print("Cannot find previously parsed data - %d\n", tvb_raw_offset(tvb));
             return tvb_captured_length(tvb);
         }
     }
 
-    guint nbytes = uncompressed_buf->len;
+    unsigned int nbytes = uncompressed_buf->len;
     if (nbytes == 0) {
         // memory freed
         // This means we are reassembling in later frame
@@ -318,7 +318,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 
 void proto_reg_handoff_smf_compress(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
         
 	if (!inited) {
         smf_tcp_compressed_handle = create_dissector_handle(dissect_smf_compressed, proto_smf_compressed);

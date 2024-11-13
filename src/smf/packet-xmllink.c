@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <glib.h>
-
 #include <epan/packet.h>
 #include <epan/prefs.h>
 
@@ -56,10 +54,10 @@ static int hf_xmllink_routing_control_address_param = -1;
 static int hf_xmllink_routing_control_address_port_param = -1;
 
 /* Global sample preference ("controls" display of numbers) */
-//static gboolean gPREF_HEX = FALSE;
+//static bool gPREF_HEX = false;
 
 /* Initialize the subtree pointers */
-static gint ett_xmllink = -1;
+static int ett_xmllink = -1;
 
 /* Conn priority to string */
 static const value_string connprionames[] = {
@@ -91,7 +89,7 @@ static void
 add_xmllink_param(
     tvbuff_t *tvb,
     proto_tree *tree,
-    guint8 param_type,
+    uint8_t param_type,
     int offset,
     int size)
 {
@@ -103,47 +101,47 @@ add_xmllink_param(
         case XMLLINK_CONN_PRIORITY_PARAM:
             proto_tree_add_item(tree,
                 hf_xmllink_conn_priority_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case XMLLINK_TCP_LISTENING_PORT_PARAM:
             proto_tree_add_item(tree,
                 hf_xmllink_tcp_listening_port_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case XMLLINK_UDP_LISTENING_PORT_PARAM:
             proto_tree_add_item(tree,
                 hf_xmllink_udp_listening_port_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case XMLLINK_OPERATING_MODE_PARAM:
             proto_tree_add_item(tree,
                 hf_xmllink_operating_mode_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case XMLLINK_HOSTNAME_PARAM:
             proto_tree_add_item(tree,
                 hf_xmllink_hostname_param,
-                tvb, offset, size, FALSE);
+                tvb, offset, size, false);
             break;
 
         case XMLLINK_ROUTING_CONTROL_ADDRESS_PARAM:
             // Display the address and port values separately
             proto_tree_add_item(tree,
                 hf_xmllink_routing_control_address_param,
-                tvb, offset, size-2, FALSE);
+                tvb, offset, size-2, false);
             proto_tree_add_item(tree,
                 hf_xmllink_routing_control_address_port_param,
-                tvb, offset+4, 2, FALSE);
+                tvb, offset+4, 2, false);
             break;
 
         default:
             proto_tree_add_item(tree,
                 hf_xmllink_unknown_param,
-                tvb, offset-2, size+2, FALSE);
+                tvb, offset-2, size+2, false);
             break;
     }
 }
@@ -156,18 +154,18 @@ dissect_xmllink_param(
     proto_tree *tree)
 {
     int param_len;
-    guint8 param_type;
+    uint8_t param_type;
 
     /* Is it a pad byte? */
-    if (tvb_get_guint8(tvb, offset) == 0)
+    if (tvb_get_uint8(tvb, offset) == 0)
     {
         proto_tree_add_item(tree,
-            hf_xmllink_pad_byte, tvb, offset, 1, FALSE);
+            hf_xmllink_pad_byte, tvb, offset, 1, false);
         return 1;
     }
 
-    param_type = tvb_get_guint8(tvb, offset) & 0x1f;
-    param_len  = tvb_get_guint8(tvb, offset+1);
+    param_type = tvb_get_uint8(tvb, offset) & 0x1f;
+    param_len  = tvb_get_uint8(tvb, offset+1);
 
     add_xmllink_param(tvb, tree, param_type, offset, param_len);
 
@@ -297,15 +295,15 @@ dissect_xmllink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
    offset to the end of the packet. */
 
 /* create display subtree for the protocol */
-		ti = proto_tree_add_item(tree, proto_xmllink, tvb, 0, -1, FALSE);
+		ti = proto_tree_add_item(tree, proto_xmllink, tvb, 0, -1, false);
 
 		xmllink_tree = proto_item_add_subtree(ti, ett_xmllink);
 
         /* Dissect header fields */
 		proto_tree_add_item(xmllink_tree,
-		    hf_xmllink_version, tvb, 0, 1, FALSE);
+		    hf_xmllink_version, tvb, 0, 1, false);
         proto_tree_add_item(xmllink_tree,
-            hf_xmllink_msg_len, tvb, 1, 2, FALSE);
+            hf_xmllink_msg_len, tvb, 1, 2, false);
 
         /* Dissect parameters */
         header_len = tvb_get_ntohs(tvb, 1) & 0xfff;
@@ -388,7 +386,7 @@ proto_register_xmllink(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_xmllink
 	};
 
@@ -427,7 +425,7 @@ proto_register_xmllink(void)
 void
 proto_reg_handoff_xmllink(void)
 {
-	static gboolean inited = FALSE;
+	static bool inited = false;
         
 	if (!inited) {
 
@@ -436,7 +434,7 @@ proto_reg_handoff_xmllink(void)
 	    (void)create_dissector_handle(dissect_xmllink, proto_xmllink);
 	    //dissector_add("smf.encap_proto", 0x8, xmllink_handle);
         
-	    inited = TRUE;
+	    inited = true;
 	}
         
         /* 

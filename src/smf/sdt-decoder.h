@@ -31,7 +31,7 @@
 extern int ett_trace_span_message_creation_context;
 
 void
-add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvbuff_t *tvb, int offset, int length, int indent, gboolean is_in_map);
+add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvbuff_t *tvb, int offset, int length, int indent, bool is_in_map);
 
 void get_embedded_smf_info(tvbuff_t *tvb, int offset, int length, int *embedded_smf_info);
 
