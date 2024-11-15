@@ -61,8 +61,16 @@ jobs:
       - name: echo1
         run: brew info glib
         
-      - name: Run bash Setup Script
-        run: bash ./wireshark/tools/macos-setup-brew.sh
+      - name: Install deps
+        continue-on-error: true
+        run: |
+          brew install opus c-ares glib libgcrypt gnutls lua cmake python nghttp2 snappy lz4 libxml2 ninja \
+            libmaxminddb libsmi spandsp brotli minizip zstd libssh libilbc speexdsp gettext pcre2 "$@"
+
+          # install qt5
+          brew install qt@5
+          qt5_dir="$(brew --prefix)/opt/qt@5/lib/cmake/Qt5:/usr/local/Cellar/qt@5/5.15.12:/usr/local/Cellar/qt@5/5.15.12/lib/cmake/Qt5:/usr/local/opt/qt@5/bin:/opt/homebrew/opt/qt@5"
+          echo "Qt5_DIR=$qt5_dir" >> $GITHUB_ENV
         
       - name: echo
         run: brew info glib
