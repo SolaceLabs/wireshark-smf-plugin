@@ -98,14 +98,15 @@ jobs:
             -D CMAKE_PREFIX_PATH=${{ env.Qt5_DIR }} \
             -D Qt5_DIR=${{ env.Qt5_DIR }} \
             -D Qt5Core_DIR=${{ env.Qt5_DIR }} \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -D CMAKE_OSX_ARCHITECTURES="arm64" \
             -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 \
-            -DCMAKE_C_FLAGS="-std=c99" \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DPython_ROOT_DIR=${{ env.pythonLocation }} \
             -DPython_LIBRARY=${{ env.pythonLocation }}/lib \
             -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
             -DPython_EXECUTABLE=${{ env.pythonLocation }}/bin/python \
-            -DPython_FIND_STRATEGY=LOCATION 
+            -DPython_FIND_STRATEGY=LOCATION \
+            -DCMAKE_POLICY_DEFAULT_CMP0094=NEW
             
       - name: Build
         working-directory: build
