@@ -60,10 +60,8 @@ jobs:
           python-version: "3.10"
 
       - name: Run Setup Script
+        shell: bash
         run: ./wireshark/tools/macos-setup-brew.sh
-        
-      - name: Install Glib
-        run:  brew install glib
 
       - name: Link SMF plugin
         shell: bash
