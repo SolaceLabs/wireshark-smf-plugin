@@ -61,6 +61,15 @@ jobs:
 
       - name: Run bash Setup Script
         run: bash ./wireshark/tools/macos-setup-brew.sh
+        
+      - name: echo
+        run: echo "brew info glib"
+        
+      - name: echo1
+        run: echo brew info glib
+
+      - name: install glib
+        run: brew install gib
 
       - name: Link SMF plugin
         shell: bash
