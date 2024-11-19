@@ -98,11 +98,26 @@ jobs:
         run: ls -R ${{ github.workspace }}/build/run
 
       # Step to modify rpath for SMF plugin so it can find the bundled libraries (glib)
+      #- name: Modify rpath for SMF plugin
+      #  run: |
+     #     VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
+     #     install_name_tool -add_rpath @executable_path/PlugIns/libs ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
+      
       - name: Modify rpath for SMF plugin
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
-          install_name_tool -add_rpath @executable_path/PlugIns/libs ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
-       
+          echo "VERSIONED_DIR: $VERSIONED_DIR"
+          echo "Checking plugin path: ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so"
+          
+          # Ensure the plugin exists before modifying rpath
+          if [ -f "${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so" ]; then
+            echo "Plugin found, modifying rpath..."
+            install_name_tool -add_rpath @executable_path/PlugIns/libs ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
+            echo @executable_path
+          else
+            echo "Plugin not found! Exiting step."
+            exit 1
+            
        # A compressed tarball is created for release. Includes the dependencies too
        # This means that the artifact is compressed and zipped as a result.
       - name: Create Compressed Tarball
