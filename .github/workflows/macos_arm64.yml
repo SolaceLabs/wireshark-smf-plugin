@@ -95,7 +95,7 @@ jobs:
         run: ninja
 
       - name: List Wireshark Plugin Directory
-        run: ls -R ${{ github.workspace }}/wireshark/Contents/PlugIns/wireshark
+        run: ls -R ${{ github.workspace }}/build/run
 
       # Step to modify rpath for SMF plugin so it can find the bundled libraries (glib)
       - name: Modify rpath for SMF plugin
