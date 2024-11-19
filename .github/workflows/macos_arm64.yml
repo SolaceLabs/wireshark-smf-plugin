@@ -88,10 +88,7 @@ jobs:
             -DPython_LIBRARY=${{ env.pythonLocation }}/lib \
             -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
             -DPython_EXECUTABLE=${{ env.pythonLocation }}/bin/python \
-            -DPython_FIND_STRATEGY=LOCATION \
-            -DCMAKE_BUILD_RPATH="@executable_path/PlugIns/libs" \
-            -DCMAKE_INSTALL_RPATH="@executable_path/PlugIns/libs" \
-            -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE
+            -DPython_FIND_STRATEGY=LOCATION
           
       - name: Build
         working-directory: build
@@ -100,12 +97,12 @@ jobs:
       - name: List Wireshark Plugin Directory
         run: ls -R ${{ github.workspace }}/build/run
 
-      # Step to modify rpath for SMF plugin so it can find the bundled libraries (glib)
-     # - name: Modify rpath for SMF plugin
-      #  run: |
-      #    VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
-       #   echo "Executable Path: $(dirname $(realpath $0))"
-      #    install_name_tool -add_rpath ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/libs ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
+      # Step to modify rpath for SMF plugin so it can find the bundled libraries
+      - name: Modify rpath for SMF plugin
+        run: |
+          VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
+          echo "Executable Path: $(dirname $(realpath $0))"
+          install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/libs/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
             
        # A compressed tarball is created for release. Includes the dependencies too
        # This means that the artifact is compressed and zipped as a result.
