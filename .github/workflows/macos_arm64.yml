@@ -102,7 +102,7 @@ jobs:
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
           echo "Executable Path: $(dirname $(realpath $0))"
-          install_name_tool -add_rpath @executable_path/PlugIns/libs ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
+          install_name_tool -add_rpath ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/libs ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
             
        # A compressed tarball is created for release. Includes the dependencies too
        # This means that the artifact is compressed and zipped as a result.
