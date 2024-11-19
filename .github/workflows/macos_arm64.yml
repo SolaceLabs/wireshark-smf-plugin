@@ -74,7 +74,7 @@ jobs:
           ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
 
       - name: Mkdir
-        run: mkdir build
+        run: mkdir -p build
 
       - name: Cmake
         working-directory: build
