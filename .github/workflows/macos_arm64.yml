@@ -94,12 +94,26 @@ jobs:
         working-directory: build
         run: ninja
 
-      # A compressed tarball is created for release
+      # Step to modify rpath for SMF plugin so it can find the bundled libraries (glib)
+      - name: Modify rpath for SMF plugin
+        run: |
+          # Build the versioned directory path dynamically based on the version input
+          VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
+          
+          install_name_tool -add_rpath @executable_path/PlugIns/libs ${{ github.workspace }}/wireshark/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
+
+      # A compressed tarball is created for release. Includes the dependencies too
       # This means that the artifact is compressed and zipped as a result.
       - name: Create Compressed Tarball
-        working-directory: ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark
-        run: tar -czvf ${{ github.workspace }}/${{ env.PLUGIN_NAME }} **/epan/smf.so
-      
+        run: |
+          mkdir -p ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark
+          
+          # Build the versioned directory path dynamically based on the version input
+          VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
+
+          tar -czvf ${{ github.workspace }}/${{ env.PLUGIN_NAME }} -C ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns \
+          wireshark/${VERSIONED_DIR}/epan/smf.so PlugIns/libs/ 
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
