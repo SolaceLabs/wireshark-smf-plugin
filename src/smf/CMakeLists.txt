@@ -64,9 +64,20 @@ register_plugin_files(plugin.c
 	${DISSECTOR_SRC}
 )
 
+# Copy required glib libraries
+install(FILES /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/PlugIns/libs)
+	
 add_wireshark_plugin_library(smf epan)
 target_include_directories(smf SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(smf epan ${ZLIB_LIBRARIES})
+
+# Modify rpath to find glib libraries
+add_custom_command(TARGET smf POST_BUILD
+    COMMAND install_name_tool -add_rpath "@executable_path/PlugIns/libs"
+    $<TARGET_FILE:smf>
+    COMMENT "Modifying rpath for smf.so"
+)
 
 install_plugin(smf epan)  
 
