@@ -97,10 +97,8 @@ jobs:
       # Step to modify rpath for SMF plugin so it can find the bundled libraries (glib)
       - name: Modify rpath for SMF plugin
         run: |
-          # Build the versioned directory path dynamically based on the version input
-          VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
-          
-          install_name_tool -add_rpath @executable_path/PlugIns/libs ${{ github.workspace }}/wireshark/Contents/PlugIns/wireshark/**/epan/smf.so
+          # Find all smf.so files and modify their rpath
+          find ${{ github.workspace }}/wireshark/Contents/PlugIns/wireshark -type f -path "*/epan/smf.so" -exec install_name_tool -add_rpath @executable_path/PlugIns/libs {} \;
 
        # A compressed tarball is created for release. Includes the dependencies too
        # This means that the artifact is compressed and zipped as a result.
