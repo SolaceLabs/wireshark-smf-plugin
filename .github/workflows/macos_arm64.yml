@@ -74,7 +74,7 @@ jobs:
           ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
 
       - name: Mkdir
-        run: mkdir build
+        run: mkdir -p build
 
       - name: Cmake
         working-directory: build
@@ -98,7 +98,6 @@ jobs:
       - name: Modify rpath for SMF plugin
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
-          echo "Executable Path: $(dirname $(realpath $0))"
           install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/libs/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
             
        # A compressed tarball is created for release. Includes the dependencies too
