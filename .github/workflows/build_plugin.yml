@@ -27,7 +27,7 @@ jobs:
   #    MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
   #    PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
   build_macos_arm64:
-    uses: gurkiratsolace/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
+    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
