@@ -95,7 +95,7 @@ jobs:
         run: ninja
 
       # Update dependency path for SMF plugin to find the bundled libraries
-      - name: Modify rpath for SMF plugin
+      - name: Modify path for SMF plugin
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
           install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/libs/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
