@@ -62,7 +62,7 @@ jobs:
       - name: Run Setup Script
         run: ./wireshark/tools/macos-setup-brew.sh
 
-      - name: Copy glib libraries into Wireshark app bundle
+      - name: Copy dependencies into Wireshark app bundle
         run: |
           mkdir -p ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/libs
           cp /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/libs/
@@ -74,7 +74,7 @@ jobs:
           ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
 
       - name: Mkdir
-        run: mkdir -p build
+        run: mkdir build
 
       - name: Cmake
         working-directory: build
@@ -94,10 +94,7 @@ jobs:
         working-directory: build
         run: ninja
 
-      - name: List Wireshark Plugin Directory
-        run: ls -R ${{ github.workspace }}/build/run
-
-      # Step to modify rpath for SMF plugin so it can find the bundled libraries
+      # Update dependency path for SMF plugin to find the bundled libraries
       - name: Modify rpath for SMF plugin
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
