@@ -69,7 +69,7 @@ jobs:
           ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
 
       - name: Mkdir
-        run: mkdir build
+        run: mkdir -p build
 
       - name: Cmake
         working-directory: build
@@ -83,18 +83,24 @@ jobs:
             -DPython_LIBRARY=${{ env.pythonLocation }}/lib \
             -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
             -DPython_EXECUTABLE=${{ env.pythonLocation }}/bin/python \
-            -DPython_FIND_STRATEGY=LOCATION 
-            
+            -DPython_FIND_STRATEGY=LOCATION
+          
       - name: Build
         working-directory: build
         run: ninja
 
-      # A compressed tarball is created for release
-      # This means that the artifact is compressed and zipped as a result.
+      # Update dependency path for SMF plugin to find the libraries from wireshark package
+      - name: Update dependency path for SMF plugin
+        run: |
+          VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
+          install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/../Frameworks/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
+                  
+       # A compressed tarball is created for release.
+       # This means that the artifact is compressed and zipped as a result.
       - name: Create Compressed Tarball
         working-directory: ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark
         run: tar -czvf ${{ github.workspace }}/${{ env.PLUGIN_NAME }} **/epan/smf.so
-      
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
