@@ -334,63 +334,63 @@ proto_register_smp(void)
 /* Setup list of header fields  See Section 1.6.1 for details*/
 	static hf_register_info hf[] = {
 		{ &hf_smp_uh,
-			{ "UH",           "smp.uh",
+			{ "UH",           "sol-smp.uh",
 			FT_UINT8, BASE_DEC, NULL, 0x80,          
 			"", HFILL }
 		},
 		{ &hf_smp_msg_type,
-			{ "Message type",           "smp.msg_type",
+			{ "Message type",           "sol-smp.msg_type",
 			FT_UINT8, BASE_HEX, VALS(msgtypenames), 0x7f,          
 			"", HFILL }
 		},
 		{ &hf_smp_msg_len,
-			{ "Message length",           "smp.msg_len",
+			{ "Message length",           "sol-smp.msg_len",
 			FT_UINT32, BASE_DEC, NULL, 0x00,          
 			"", HFILL }
 		},
         { &hf_smp_payload,
-            { "Payload",           "smp.payload",
+            { "Payload",           "sol-smp.payload",
             FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
 
 		{ &hf_smp_add_da,
-			{ "DeliverAlways",           "smp.da",
+			{ "DeliverAlways",           "sol-smp.da",
 			FT_BOOLEAN, 8, NULL, 0x10,          
 			"", HFILL }
 		},
 		{ &hf_smp_add_r,
-			{ "ResponseRequired",           "smp.r",
+			{ "ResponseRequired",           "sol-smp.r",
 			FT_BOOLEAN, 8, NULL, 0x08,          
 			"", HFILL }
 		},
 		{ &hf_smp_add_t,
-			{ "Topic",           "smp.t",
+			{ "Topic",           "sol-smp.t",
 			FT_BOOLEAN, 8, NULL, 0x04,          
 			"", HFILL }
 		},
 		{ &hf_smp_add_p,
-			{ "Persist",           "smp.p",
+			{ "Persist",           "sol-smp.p",
 			FT_BOOLEAN, 8, NULL, 0x02,          
 			"", HFILL }
 		},
 		{ &hf_smp_add_f,
-			{ "Filter",           "smp.f",
+			{ "Filter",           "sol-smp.f",
 			FT_BOOLEAN, 8, NULL, 0x01,          
 			"", HFILL }
 		},
         { &hf_smp_add_subscription,
-            { "SubscriptionString", "smp.subscription",
+            { "SubscriptionString", "sol-smp.subscription",
             FT_STRING, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
         { &hf_smp_add_queuename,
-            { "Queue", "smp.queue",
+            { "Queue", "sol-smp.queue",
             FT_STRING, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
         { &hf_smp_add_clientname,
-            { "ClientName", "smp.clientname",
+            { "ClientName", "sol-smp.clientname",
             FT_STRING, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
@@ -410,7 +410,7 @@ proto_register_smp(void)
 	proto_register_field_array(proto_smp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("solace.smp", dissect_smp, proto_smp);
+    register_dissector("solace.sol-smp", dissect_smp, proto_smp);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
