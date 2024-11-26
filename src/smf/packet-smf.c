@@ -3327,7 +3327,7 @@ void proto_reg_handoff_smf(void)
         subctrl_handle = find_dissector("solace.subctrl");
         xmllink_handle = find_dissector("solace.xmllink");
         assuredctrl_handle = find_dissector("solace.assuredctrl");
-        smp_handle = find_dissector("solace.smp");
+        smp_handle = find_dissector("solace.sol-smp");
         smrp_handle = find_dissector("solace.smrp");
         clientctrl_handle = find_dissector("solace.clientctrl");
         bm_handle = find_dissector("solace.smf-bm");

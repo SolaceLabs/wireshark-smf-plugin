@@ -410,7 +410,7 @@ proto_register_smp(void)
 	proto_register_field_array(proto_smp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("solace.smp", dissect_smp, proto_smp);
+    register_dissector("solace.sol-smp", dissect_smp, proto_smp);
         
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
