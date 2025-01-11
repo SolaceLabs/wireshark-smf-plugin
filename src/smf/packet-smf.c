@@ -1831,8 +1831,10 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
     /* If TrMsg AND AC Flag is set then parse the params as an AssuredCtrl Msg */
     /* Otherwise, parse the params as regular TrMsg (i.e. continue as before) */
     if ((encap_protocol == SMF_TRMSG) && acflag_set) {
+        int attachment_length = param_info.attachment_length; // Attachment length gets modified in dissect_smf_params
+        dissect_smf_params(tvb, pinfo, param_offset, payload_offset, smf_tree, &param_info);
 
-        next_tvb = tvb_new_subset_length_caplen(tvb, payload_offset, -1, param_info.attachment_length);
+        next_tvb = tvb_new_subset_length_caplen(tvb, payload_offset, -1, attachment_length);
         call_dissector_with_data(assuredctrl_handle, next_tvb, pinfo, tree, encap_name_buf);
     }
     else {
