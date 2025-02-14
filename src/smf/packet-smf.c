@@ -92,6 +92,7 @@ static int hf_smf_sni = -1;
 static int hf_smf_ttl = -1;
 static int hf_smf_header_len_v3 = -1;
 static int hf_smf_msg_len_v3 = -1;
+static int hf_smf_attachment_len = -1;
 
 
 /* Header v2 */
@@ -428,6 +429,8 @@ struct param_info_t
     int metadata_length;
     int xml_payload_start;
     int xml_payload_length;
+    int binary_payload_start;
+    int binary_payload_length;
     int attachment_start;
     int attachment_length;
     int cidlist_start;
@@ -1089,12 +1092,12 @@ static void smf_proto_add_message_contents_summary_item(proto_tree *tree,
     proto_item* item;
     int i;
 
-    /* Zero out the xml payload length.  If there is no XML payload section in
+    /* Zero out the xml payload length and binary payload length. If there is no XML payload section in
      the message contents summary, then there is no XML payload.  If, however,
      there is an XML payload section, the length will be reset later.
      */
     param_info_p->xml_payload_length = 0;
-    param_info_p->attachment_length = 0;
+    param_info_p->binary_payload_length = 0;
 
     item = proto_tree_add_item(tree, hf_smf_message_contents_summary_param, tvb,
         offset, size, false);
@@ -1129,8 +1132,8 @@ static void smf_proto_add_message_contents_summary_item(proto_tree *tree,
             case 0x2:
                 current_size = smf_proto_add_variable_size_item(sub_tree, tvb,
                     offset + i + 1, len - 1, hf_smf_binary_attachment_param);
-                param_info_p->attachment_start = cumulative_size;
-                param_info_p->attachment_length = current_size;
+                param_info_p->binary_payload_start = cumulative_size;
+                param_info_p->binary_payload_length = current_size;
                 cumulative_size += current_size;
                 break;
 
@@ -1269,10 +1272,10 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             smf_proto_add_variable_size_item(tree, tvb, offset, size, hf_smf_generic_attachment_param);
             break;
         case STANDARD_PARAM_BINARY_ATTACHMENT:
-            param_info_p->attachment_length = smf_proto_add_variable_size_item(
+            param_info_p->binary_payload_length = smf_proto_add_variable_size_item(
                 tree, tvb, offset, size, hf_smf_binary_attachment_param);
-            param_info_p->xml_payload_length -= param_info_p->attachment_length;
-            param_info_p->attachment_start = param_info_p->xml_payload_length;
+            param_info_p->xml_payload_length -= param_info_p->binary_payload_length;
+            param_info_p->binary_payload_start = param_info_p->xml_payload_length;
             break;
         case STANDARD_PARAM_ORIGINATOR_ADDRESS:
             proto_tree_add_item(tree, hf_smf_originator_address_param, tvb,
@@ -1812,26 +1815,22 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
     //hdr_len = tvb_get_ntohl(tvb, 4);
     msg_len = tvb_get_ntohl(tvb, 8);
 
-    switch (encap_protocol)
-    {
-    case SMF_TRMSG:
-        /* Default the attachment length to the size of the message.  This will
-            get overwritten if there is a MessageContentsSummary parameter. */
-        param_info.attachment_start = 0;
-        param_info.attachment_length = msg_len - payload_offset;
-        break;
-    default:
-        /* Default the xml payload length to the size of the message.  This will
-            get overwritten if there is a MessageContentsSummary parameter. */
-        param_info.xml_payload_start = 0;
-        param_info.xml_payload_length = msg_len - payload_offset;
-        break;
-    }
+    /* Default the attachment length to the size of the message.
+    All attachment are binary attachment unless there is a MessageContentsSummary.
+    The binary attachment and xml attachment informaiton will
+    get overwritten if there is a MessageContentsSummary parameter. */
+    param_info.attachment_start = 0;
+    param_info.attachment_length = msg_len - payload_offset;
+    ti = proto_tree_add_uint(smf_tree, hf_smf_attachment_len, tvb, 0, 0, param_info.attachment_length);
+    proto_item_set_generated(ti);
+
+    param_info.binary_payload_start = 0;
+    param_info.binary_payload_length = param_info.attachment_length;
 
     /* If TrMsg AND AC Flag is set then parse the params as an AssuredCtrl Msg */
     /* Otherwise, parse the params as regular TrMsg (i.e. continue as before) */
     if ((encap_protocol == SMF_TRMSG) && acflag_set) {
-
+        dissect_smf_params(tvb, pinfo, param_offset, payload_offset, smf_tree, &param_info);
         next_tvb = tvb_new_subset_length_caplen(tvb, payload_offset, -1, param_info.attachment_length);
         call_dissector_with_data(assuredctrl_handle, next_tvb, pinfo, tree, encap_name_buf);
     }
@@ -1867,7 +1866,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             }
 
             /* Binary attachment */
-            if (param_info.attachment_length > 0)
+            if (param_info.binary_payload_length > 0)
             {
                 _smf_attachment_type_t attachment_type = _smf_attachment_type_none;
 
@@ -1875,40 +1874,40 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                  * bytes will be sent. In those cases, the call to ntohl() below causes a malformed packet because there are fewer than four bytes to pull.
                  */
                 if ((msg_len - payload_offset) >= 4) {
-                    magicNumber = tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start);
+                    magicNumber = tvb_get_ntohl(tvb, payload_offset + param_info.binary_payload_start);
 
                     if (magicNumber == 0x501ACE01) {
-                        attach_item = proto_tree_add_item(smf_tree, hf_smf_attachment, tvb, payload_offset + param_info.attachment_start, param_info.attachment_length, false);
+                        attach_item = proto_tree_add_item(smf_tree, hf_smf_attachment, tvb, payload_offset + param_info.binary_payload_start, param_info.binary_payload_length, false);
                         attach_tree = proto_item_add_subtree(attach_item, ett_attachment_sdt);
                     }
                 }
-                if (param_info.attachment_length > 5) {
-                    uint8_t type = tvb_get_uint8(tvb, payload_offset + param_info.attachment_start);
-                    /* Within this if statement, length is compared to param_info.attachment_length. the length is encoded as an 
+                if (param_info.binary_payload_length > 5) {
+                    uint8_t type = tvb_get_uint8(tvb, payload_offset + param_info.binary_payload_start);
+                    /* Within this if statement, length is compared to param_info.binary_payload_length. the length is encoded as an 
                      * unsigned 32-bit integer value on the wire, so it is necessary to use tvb_get_ntohl since it fetches an 
-                     * unsigned 32-bit value from the packet. However, param_info.attachment_length is declared as a regular int 
+                     * unsigned 32-bit value from the packet. However, param_info.binary_payload_length is declared as a regular int 
                      * and is referenced in many places, so it would be at least tedious if not difficult to change its declaration 
                      * from type 'int' to type 'unsigned int'. The easiest solution was to declare length as an unsigned 64-bit 
                      * variable, and typecast any assignments or comparisons to type 'uint64_t' so that there is no overflow like 
                      * there might be if we typecasted int to unsigned int or vice versa. 
                      */
-                    uint64_t length = (uint64_t)tvb_get_ntohl(tvb, payload_offset + param_info.attachment_start + 1);
+                    uint64_t length = (uint64_t)tvb_get_ntohl(tvb, payload_offset + param_info.binary_payload_start + 1);
 
                     if ((type == 0x2f || //Decode as SDT if an SDT stream is contained
                         type == 0x2b || //Decode as SDT if an SDT map is contained
                         type == 0x1f    //Decode as SDT if an SDT string is contained
                         )
-                        && length == (uint64_t)param_info.attachment_length) {
+                        && length == (uint64_t)param_info.binary_payload_length) {
                         attachment_type = _smf_attachment_type_sdt;
                     }
-                    else if ((type == 0x31) && (param_info.attachment_length > 7)) { /* 0x31 = Solace openMAMA payload*/
+                    else if ((type == 0x31) && (param_info.binary_payload_length > 7)) { /* 0x31 = Solace openMAMA payload*/
                         type = tvb_get_uint8(tvb,
-                            payload_offset + param_info.attachment_start + 2);
+                            payload_offset + param_info.binary_payload_start + 2);
                         length = (uint64_t)tvb_get_ntohl(tvb,
-                            payload_offset + param_info.attachment_start + 3);
+                            payload_offset + param_info.binary_payload_start + 3);
 
 
-                        if ((type == 0x2F) && (length + 2 == (uint64_t)param_info.attachment_length)) { /* Stream of fields starts with 0x2F */
+                        if ((type == 0x2F) && (length + 2 == (uint64_t)param_info.binary_payload_length)) { /* Stream of fields starts with 0x2F */
                             attachment_type = _smf_attachment_type_openmama_payload;
                         }
                     }
@@ -1919,9 +1918,9 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                 {  
                     // Try the subdirector first...
                     next_tvb = tvb_new_subset_length_caplen(tvb,
-                        payload_offset + param_info.attachment_start,
+                        payload_offset + param_info.binary_payload_start,
                         -1,
-                        param_info.attachment_length);
+                        param_info.binary_payload_length);
 
                     const smf_subdissection_uat_entry_t* subdissector = get_subdissector_from_uat(topic_name);
                     if (subdissector != NULL) {
@@ -1949,7 +1948,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                         {
                             attach_item = proto_tree_add_item(smf_tree,
                                 hf_smf_attachment, tvb,
-                                payload_offset + param_info.attachment_start,
+                                payload_offset + param_info.binary_payload_start,
                                 -1, false);
 
                             attach_tree = proto_item_add_subtree(
@@ -1957,8 +1956,8 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                         }
 
                         add_sdt_block(attach_tree, pinfo, hf_smf_attachment_sdt, tvb,
-                            payload_offset + param_info.attachment_start + 5,
-                            param_info.attachment_length - 5, 1, false);
+                            payload_offset + param_info.binary_payload_start + 5,
+                            param_info.binary_payload_length - 5, 1, false);
 
 
                         break;
@@ -1967,16 +1966,16 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                     {
                         /* openMAMA payload */
                         next_tvb = tvb_new_subset_length_caplen(tvb,
-                            payload_offset + param_info.attachment_start,
+                            payload_offset + param_info.binary_payload_start,
                             -1,
-                            param_info.attachment_length);
+                            param_info.binary_payload_length);
                         call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
                         break;
                     }
                     default:
                     {
                         proto_tree_add_item(smf_tree, hf_smf_attachment, tvb,
-                            payload_offset + param_info.attachment_start,
+                            payload_offset + param_info.binary_payload_start,
                             -1, false);
                         break;
                     }
@@ -2002,7 +2001,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
         case SMF_CSMP:
         case SMF_CSPF:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector_no_protocol_change(xml_handle, next_tvb, pinfo, tree);
             }
@@ -2013,21 +2012,21 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             break;
 
         case SMF_PUBCTRL:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector(pubctrl_handle, next_tvb, pinfo, tree);
             }
             break;
 
         case SMF_SUBCTRL:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector(subctrl_handle, next_tvb, pinfo, tree);
             }
             break;
 
         case SMF_XMLLINK:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector(xmllink_handle, next_tvb, pinfo, tree);
             }
@@ -2035,28 +2034,28 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
         case SMF_ASSUREDCTRL:
         case SMF_ASSUREDCTRL_PASSTHRU:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector_with_data(assuredctrl_handle, next_tvb, pinfo, tree, encap_name_buf);
             }
             break;
 
         case SMF_SMP:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector_with_data(smp_handle, next_tvb, pinfo, tree, encap_name_buf);
             }
             break;
 
         case SMF_CLIENTCTRL:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector_with_data(clientctrl_handle, next_tvb, pinfo, tree, encap_name_buf);
             }
             break;
 
         case SMF_SMRP:
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 call_dissector(smrp_handle, next_tvb, pinfo, tree);
             }
@@ -2064,7 +2063,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
         case SMF_ENCAP_SMF:
             //Tried to dissect this as SMF but very hard to tell if there are multiple SMF messages, or an encap message.
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 col_set_fence(pinfo->cinfo, COL_PROTOCOL);
                 call_dissector(smf_handle, next_tvb, pinfo, tree);
@@ -2076,7 +2075,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
         case SMF_JNDI:
         default:
             /* Add the payload, if there is one */
-            if (param_info.xml_payload_length > 0)
+            if (param_info.attachment_length > 0)
             {
                 proto_tree_add_item(smf_tree, hf_smf_payload, tvb,
                     payload_offset, -1, false);
@@ -2242,6 +2241,12 @@ void proto_register_smf(void)
 
             { &hf_smf_msg_len_v3,
                 { "Message length", "smf.msg_len",
+                    FT_UINT32, BASE_DEC, NULL, 0x0,
+                    "", HFILL
+                    }},
+            
+            { &hf_smf_attachment_len,
+                { "Attachment length", "smf.attachment_len",
                     FT_UINT32, BASE_DEC, NULL, 0x0,
                     "", HFILL
                     }},
