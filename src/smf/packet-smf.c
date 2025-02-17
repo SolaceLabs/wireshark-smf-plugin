@@ -12,18 +12,18 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-// NOTE:  See the README.developer file for instructions on modifying the 
+// NOTE:  See the README.developer file for instructions on modifying the
 // dissector code.
 
 #include "config.h"
@@ -56,7 +56,7 @@
 #include <epan/prefs.h>
 #include <epan/uat.h>
 #include <stdbool.h>
-#include <epan/uat-int.h> 
+#include <epan/uat-int.h>
 //#include <epan/uat_load.l>
 
 /*
@@ -224,7 +224,7 @@ static expert_field ei_trace_span_invalid_length = EI_INIT;
 static bool smf_desegment = true;
 
 static bool extractAdMsgId = false;
- 
+
 #if 0
 /* Global sample preference ("controls" display of numbers) */
 static bool gPREF_HEX = false;
@@ -682,7 +682,7 @@ static int call_dissector_no_protocol_change(dissector_handle_t handle, tvbuff_t
     col_set_writable(pinfo->cinfo, COL_PROTOCOL, true);
     return rc;
 }
- 
+
 /* Initialise the reassembly table */
 static void smf_reas_init(void)
 {
@@ -793,7 +793,7 @@ static uint32_t test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
     {
         return 1;
     }
-    // Detect obsolete protocols 
+    // Detect obsolete protocols
     switch (smfProtocol) {
     case SMF_CSMP:
     case SMF_PUBMSG:
@@ -826,7 +826,7 @@ static uint32_t test_smf(tvbuff_t *tvb, packet_info* pinfo, int offset)
         // The message is too big.
         return 1;
     }
-    
+
     return msglen;
 }
 
@@ -850,7 +850,7 @@ static unsigned int get_smf_pdu_len(packet_info* inf, tvbuff_t *tvb, int offset,
             // Start from the MIN_SMF_HEADER_LEN byte. Returning anything less than MIN_SMF_HEADER_LEN is an error
             uint32_t index = offset + MIN_SMF_HEADER_LEN;
             uint32_t found = 0;
-            // The reason for not checking the last 12 bytes of the packet is because it would trigger some 
+            // The reason for not checking the last 12 bytes of the packet is because it would trigger some
             // other errors in decoding. The exact reason has not been studied.
             while (!found && ((index + MIN_SMF_HEADER_LEN) < captured_length_remaining) ) {
                 if (test_smf(tvb, inf, index) != 1) {
@@ -875,7 +875,7 @@ static void smf_proto_add_base64_string(proto_tree *tree, packet_info *pinfo, in
     int offset, int size)
 {
     char* str;
-   
+
     str = tvb_get_string_enc(NULL, tvb, offset, size, ENC_ASCII);
     if (size > 1) {
         if (strlen(str) > 1) {
@@ -1334,7 +1334,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                 size, false);
             proto_item_set_hidden(item);
             break;
-        case STANDARD_PARAM_TOPIC_NAME:           
+        case STANDARD_PARAM_TOPIC_NAME:
             topic_name = tvb_get_string_enc(NULL, tvb, offset, size, ENC_ASCII);
             proto_tree_add_item(tree, hf_smf_topic_name_param, tvb, offset,
                 size, false);
@@ -1350,7 +1350,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             proto_tree_add_item(tree, hf_smf_point_of_entry_unique_id_ingress_vrid_hash, tvb,
                 offset+2, 8, false);
             proto_tree_add_item(tree, hf_smf_point_of_entry_unique_id_vpn_name_hash, tvb,
-                offset+10, 8, false);            
+                offset+10, 8, false);
             break;
         case STANDARD_PARAM_DELIVERY_ALWAYS_ONLY:
             proto_tree_add_item(tree, hf_smf_deliver_always_only, tvb,
@@ -1368,7 +1368,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                 size, false);
             break;
         case STANDARD_PARAM_EXTENDED_TYPE_STREAM:
-            {   
+            {
                 for (int local_offset = offset; local_offset < size + offset;)
                 {
                     uint8_t format;
@@ -1379,7 +1379,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                     type = tvb_get_ntohs(tvb, local_offset) & 0xFFF;
                     switch (format)
                     {
-                        case 0: 
+                        case 0:
                             paramSize = 0;
                             break;
                         case 1:
@@ -1387,7 +1387,7 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                             break;
                         case 2:
                             paramSize = 2;
-                            break;    
+                            break;
                         case 3:
                             paramSize = 4;
                             break;
@@ -1417,20 +1417,20 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
                         case SMF_EXTENDED_PARAM_GSS_API_TOKEN:
                             proto_tree_add_item(tree, hf_smf_gss_api_token_param, tvb, local_offset, paramSize, false);
                             break;
-                        
+
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_ACK_MESSAGE_ID:
                             proto_tree_add_item(tree, hf_smf_assured_delivery_ack_message_id_param, tvb, local_offset, 8, false);
                             break;
-                        
+
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_TRANSACTION_ID:
                             proto_tree_add_item(tree, hf_smf_assured_delivery_trans_id_param, tvb, local_offset, 4, false);
                             break;
-                        
+
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_TRANSACTION_FLAGS:
                             proto_tree_add_item(tree, hf_smf_assured_delivery_trans_sr_flag, tvb, local_offset, 1, false);
                             proto_tree_add_item(tree, hf_smf_assured_delivery_trans_pr_flag, tvb, local_offset, 1, false);
                             break;
-                        
+
                         case SMF_EXTENDED_PARAM_ASSURED_DELIVERY_SPOOLER_UNIQUE_ID:
                             proto_tree_add_item(tree, hf_smf_assured_delivery_spooler_unique_id, tvb, local_offset, 8, false);
                             break;
@@ -1870,7 +1870,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
             {
                 _smf_attachment_type_t attachment_type = _smf_attachment_type_none;
 
-                /* Only check for perf tool if the payload length is long enough for perf tool to exist. In certain cases, usually testing, a payload that is less than four 
+                /* Only check for perf tool if the payload length is long enough for perf tool to exist. In certain cases, usually testing, a payload that is less than four
                  * bytes will be sent. In those cases, the call to ntohl() below causes a malformed packet because there are fewer than four bytes to pull.
                  */
                 if ((msg_len - payload_offset) >= 4) {
@@ -1883,13 +1883,13 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                 }
                 if (param_info.binary_payload_length > 5) {
                     uint8_t type = tvb_get_uint8(tvb, payload_offset + param_info.binary_payload_start);
-                    /* Within this if statement, length is compared to param_info.binary_payload_length. the length is encoded as an 
-                     * unsigned 32-bit integer value on the wire, so it is necessary to use tvb_get_ntohl since it fetches an 
-                     * unsigned 32-bit value from the packet. However, param_info.binary_payload_length is declared as a regular int 
-                     * and is referenced in many places, so it would be at least tedious if not difficult to change its declaration 
-                     * from type 'int' to type 'unsigned int'. The easiest solution was to declare length as an unsigned 64-bit 
-                     * variable, and typecast any assignments or comparisons to type 'uint64_t' so that there is no overflow like 
-                     * there might be if we typecasted int to unsigned int or vice versa. 
+                    /* Within this if statement, length is compared to param_info.binary_payload_length. the length is encoded as an
+                     * unsigned 32-bit integer value on the wire, so it is necessary to use tvb_get_ntohl since it fetches an
+                     * unsigned 32-bit value from the packet. However, param_info.binary_payload_length is declared as a regular int
+                     * and is referenced in many places, so it would be at least tedious if not difficult to change its declaration
+                     * from type 'int' to type 'unsigned int'. The easiest solution was to declare length as an unsigned 64-bit
+                     * variable, and typecast any assignments or comparisons to type 'uint64_t' so that there is no overflow like
+                     * there might be if we typecasted int to unsigned int or vice versa.
                      */
                     uint64_t length = (uint64_t)tvb_get_ntohl(tvb, payload_offset + param_info.binary_payload_start + 1);
 
@@ -1915,7 +1915,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 
                 int subdissectorSuccess = 0;
                 if (attach_item == NULL)
-                {  
+                {
                     // Try the subdirector first...
                     next_tvb = tvb_new_subset_length_caplen(tvb,
                         payload_offset + param_info.binary_payload_start,
@@ -2244,7 +2244,7 @@ void proto_register_smf(void)
                     FT_UINT32, BASE_DEC, NULL, 0x0,
                     "", HFILL
                     }},
-            
+
             { &hf_smf_attachment_len,
                 { "Attachment length", "smf.attachment_len",
                     FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -2542,13 +2542,13 @@ void proto_register_smf(void)
                     FT_UINT64, BASE_DEC, NULL, 0x0,
                     "", HFILL
                     }},
-            
-            { &hf_smf_assured_delivery_rep_mate_ack_id, 
+
+            { &hf_smf_assured_delivery_rep_mate_ack_id,
                 { "Replication Mate Ack Message Id", "smf.assureddelivery_rep_mate_ack_id",
                     FT_UINT64, BASE_DEC, NULL, 0x0,
                     "", HFILL
                     }},
-            
+
             { &hf_smf_assured_delivery_redelivery_count,
                 { "Redelivery Count", "smf.assureddelivery_redelivery_count",
                     FT_UINT32, BASE_DEC, NULL, 0x00,
@@ -2872,7 +2872,7 @@ void proto_register_smf(void)
     register_init_routine(&smf_proto_init);
 
     reassembly_table_register(&smf_gen_reassembly_table, &addresses_reassembly_table_functions);
-  
+
     smf_payload_dissector_table = register_decode_as_next_proto(proto_smf,"smf_payload_dissector_table","SMF Attachment",NULL);
     module_t* smf_module;
     smf_module = prefs_register_protocol(proto_smf, NULL);
@@ -2906,7 +2906,7 @@ void proto_register_smf(void)
         smf_subdissection_uat);
 
     // Register scan smf in stream
-    prefs_register_bool_preference(smf_module, "scan_smf_in_stream", "Scan for SMF in TCP Stream", 
+    prefs_register_bool_preference(smf_module, "scan_smf_in_stream", "Scan for SMF in TCP Stream",
         "Scan for SMF data inside the TCP Stream. Used in packet capture with busy SMF traffic. If unselected, SMF is scanned at the beginning of each TCP packet.", &scan_smf_in_stream);
 
     /* Register a sample preference */

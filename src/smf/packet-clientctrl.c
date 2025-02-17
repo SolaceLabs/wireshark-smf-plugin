@@ -1,6 +1,6 @@
 /* packet-assuredctrl.c
  * Routines for Assured Control dissection
- * Copyright 2007, Solace Corporation 
+ * Copyright 2007, Solace Corporation
  *
  * $Id: packet-assuredctrl.c 321 2007-01-24 19:42:21Z $
  *
@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -79,7 +79,7 @@ static int hf_clientctrl_requires_release7_0_param = -1;
 static int hf_clientctrl_requested_encoding_param = -1;
 static int hf_clientctrl_mqtt_clean_session_type_param = -1;
 static int hf_clientctrl_client_capabilities_param = -1;
-static int hf_clientctrl_keep_alive_interval_param = -1; 
+static int hf_clientctrl_keep_alive_interval_param = -1;
 
 /* Boolean Router Capabilities */
 static int hf_clientctrl_rtr_capabilities_param_num_bool = -1;
@@ -249,7 +249,7 @@ void clientctrl_dissect_client_capabilities_param(
     proto_tree_add_item(cap_tree, hf_clientctrl_client_capabilities_param_bool_rd_lt, tvb, offset + 1, 1, false);
 }
 
-static void 
+static void
 add_clientctrl_rtr_cap_extended_param(
     proto_tree    *tree,
     uint8_t        cap_type,
@@ -258,7 +258,7 @@ add_clientctrl_rtr_cap_extended_param(
 {
     uint8_t versionFrom = 0;
     uint8_t versionTo = 0;
-    
+
     int rtrcapExtended[LAST_RTR_CAP_EXT_PARAM + 1];
     rtrcapExtended[CLIENTCTRL_RTR_CAPABILITIES_PARAM_SUPPORTED_ADCTRL_VERSIONS] = hf_clientctrl_rtr_capabilities_param_supported_adctrl_version_string;
     rtrcapExtended[CLIENTCTRL_RTR_CAPABILITIES_PARAM_SUPPORTED_XACTRL_VERSIONS] = hf_clientctrl_rtr_capabilities_param_supported_xactrl_version_string;
@@ -303,12 +303,12 @@ clientctrl_dissect_rtr_capabilities_param(
         rtrcaps[CLIENTCTRL_RTR_CAPABILITIES_PARAM_PORT_TYPE] = hf_clientctrl_rtr_capabilities_param_port_type;
         rtrcaps[CLIENTCTRL_RTR_CAPABILITIES_PARAM_MAX_GUARANTEED_MSG_SIZE] = hf_clientctrl_rtr_capabilities_param_max_gtd_msg_sz;
         rtrcaps[CLIENTCTRL_RTR_CAPABILITIES_PARAM_MAX_DIRECT_MSG_SIZE] = hf_clientctrl_rtr_capabilities_param_max_drct_msg_sz;
-        
-    
+
+
     if (extended) {
         ti = proto_tree_add_item(tree, hf_clientctrl_rtr_capabilities_extended_param, tvb, offset, size, false);
         cap_tree = proto_item_add_subtree(ti, ett_clientctrl_rtr_capabilities_extended_param);
-    } 
+    }
     else {
         ti = proto_tree_add_item(tree, hf_clientctrl_rtr_capabilities_param, tvb, offset, size, false);
 
@@ -374,7 +374,7 @@ clientctrl_dissect_rtr_capabilities_param(
             non_bool_cap_offset += non_bool_cap_length;
         }
     }
- 
+
 }
 
 static void
@@ -389,7 +389,7 @@ add_clientctrl_param(
 	uint8_t dto_local_pri;
 	uint8_t dto_network_pri;
 	char* buffer;
-    
+
 	size -= 5;
 
 	ccparams[CLIENTCTRL_SOFTWAREVERSION_PARAM] = hf_clientctrl_software_version_param;
@@ -476,8 +476,8 @@ add_clientctrl_param(
 
 static int
 dissect_clientctrl_param(
-    tvbuff_t *tvb, 
-    int offset, 
+    tvbuff_t *tvb,
+    int offset,
     proto_tree *tree)
 {
     uint32_t param_len;
@@ -493,7 +493,7 @@ dissect_clientctrl_param(
 
     add_clientctrl_param(tvb, tree, param_type, offset, param_len);
 
-    // Checks if param_len less than by how much the offset moves so that it doesn't get stuck in a loop 
+    // Checks if param_len less than by how much the offset moves so that it doesn't get stuck in a loop
     if (param_len < 5){
         param_len = 5;
     }
@@ -502,8 +502,8 @@ dissect_clientctrl_param(
 
 static void
 dissect_clientctrl_params(
-    tvbuff_t *tvb, 
-    int param_offset_start, 
+    tvbuff_t *tvb,
+    int param_offset_start,
     int param_offset_end,
     proto_tree *tree)
 {
@@ -530,28 +530,28 @@ dissect_clientctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 	int header_len;
 	int msgtype;
 	const char *str_msgtype;
-	char* str_buffer = (char*)data; /* This is done so that the prototype for dissect_clientctrl 
-					 * can match the dissect_t prototype, which will resolve some 
-					 * compiler errors. the data passed to dissect_clientctrl from 
-					 * packet-smf.c is a char*, so we typecast the void* data back 
-					 * to char*. 
+	char* str_buffer = (char*)data; /* This is done so that the prototype for dissect_clientctrl
+					 * can match the dissect_t prototype, which will resolve some
+					 * compiler errors. the data passed to dissect_clientctrl from
+					 * packet-smf.c is a char*, so we typecast the void* data back
+					 * to char*.
 					 */
 
 /* Make entries in Protocol column and Info column on summary display */
 #if 0
-	if (check_col(pinfo->cinfo, COL_PROTOCOL)) 
+	if (check_col(pinfo->cinfo, COL_PROTOCOL))
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, "assuredctrl");
-#endif 
+#endif
 /* This field shows up as the "Info" column in the display; you should use
    it, if possible, to summarize what's in the packet, so that a user looking
    at the list of packets can tell what type of packet it is. See section 1.5
    for more information.
 
    Before changing the contents of a column you should make sure the column is
-   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active 
+   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active
    don't bother setting it.
-   
-   If you are setting the column to a constant string, use "col_set_str()", 
+
+   If you are setting the column to a constant string, use "col_set_str()",
    as it's more efficient than the other "col_set_XXX()" calls.
 
    If you're setting it to a string you've constructed, or will be
@@ -568,13 +568,13 @@ dissect_clientctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
    past the end of the packet, so that the Info column doesn't have data
    left over from the previous dissector; do
 
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_clear(pinfo->cinfo, COL_INFO);
 
    */
 
     /*
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_set_str(pinfo->cinfo, COL_INFO, "XXX Request");
     */
 /* A protocol dissector can be called in 2 different ways:
@@ -670,7 +670,7 @@ dissect_clientctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 
 void
 proto_register_clientctrl(void)
-{                 
+{
 	//module_t *assuredctrl_module;
 
 /* Setup list of header fields  See Section 1.6.1 for details*/
@@ -998,7 +998,7 @@ proto_register_clientctrl(void)
                 },
 	        { &hf_clientctrl_rtr_capabilities_param_non_bool,
 	            { "Router capability",           "clientctrl.rtr_capabilities",
-                    FT_BYTES, BASE_NONE, NULL, 0x0,          
+                    FT_BYTES, BASE_NONE, NULL, 0x0,
 	            "", HFILL }
 	        },
                 { &hf_clientctrl_rtr_capabilities_param_port_speed,
@@ -1080,14 +1080,14 @@ proto_register_clientctrl(void)
 	proto_register_subtree_array(ett, array_length(ett));
 
     register_dissector("solace.clientctrl", dissect_clientctrl, proto_clientctrl);
-        
+
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
-	assuredctrl_module = prefs_register_protocol(proto_assuredctrl, 
+	assuredctrl_module = prefs_register_protocol(proto_assuredctrl,
 	    proto_reg_handoff_assuredctrl);
-     
+
 /* Register a sample preference */
-	prefs_register_bool_preference(assuredctrl_module, "showHex", 
+	prefs_register_bool_preference(assuredctrl_module, "showHex",
 	     "Display numbers in Hex",
 	     "Enable to display numerical values in hexadecimal.",
 	     &gPREF_HEX);
@@ -1096,18 +1096,18 @@ proto_register_clientctrl(void)
 
 
 /* If this dissector uses sub-dissector registration add a registration routine.
-   This exact format is required because a script is used to find these routines 
+   This exact format is required because a script is used to find these routines
    and create the code that calls these routines.
-   
-   This function is also called by preferences whenever "Apply" is pressed 
-   (see prefs_register_protocol above) so it should accommodate being called 
+
+   This function is also called by preferences whenever "Apply" is pressed
+   (see prefs_register_protocol above) so it should accommodate being called
    more than once.
 */
 void
 proto_reg_handoff_clientctrl(void)
 {
 	static bool inited = false;
-        
+
 	if (!inited) {
 
 	    //dissector_handle_t clientctrl_handle;
@@ -1115,8 +1115,8 @@ proto_reg_handoff_clientctrl(void)
             (void)create_dissector_handle(dissect_clientctrl, proto_clientctrl);
 	    inited = true;
 	}
-        
-        /* 
+
+        /*
           If you perform registration functions which are dependant upon
           prefs the you should de-register everything which was associated
           with the previous settings and re-register using the new prefs settings
@@ -1133,6 +1133,6 @@ proto_reg_handoff_clientctrl(void)
           currentPort = gPortPref;
 
           dissector_add("tcp.port", currentPort, assuredctrl_handle);
-            
+
         */
 }

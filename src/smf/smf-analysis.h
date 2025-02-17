@@ -1,6 +1,6 @@
 /* smf-analysis.h
  * Defines functions and constants for smf-analysis.c, packet-smf.c, and packet-assuredctrl.c
- * 
+ *
  * Copyright 2024, Solace Corporation
  *
  * This program is free software; you can redistribute it and/or
@@ -142,7 +142,7 @@ extern expert_field ei_smf_expert_max_delivered_unacked_msgs;
 
 // There is nothing here at this moment for expert item
 // This is for future expension
-#define EI_ASSUREDCTRL_SMF_EXPERT_ITEM 
+#define EI_ASSUREDCTRL_SMF_EXPERT_ITEM
 
 extern int hf_assuredctrl_smf_analysis;
 extern int hf_assuredctrl_smf_analysis_transaction_flow_id;

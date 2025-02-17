@@ -12,18 +12,18 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-// NOTE:  See the README.developer file for instructions on modifying the 
+// NOTE:  See the README.developer file for instructions on modifying the
 // dissector code.
 
 #include "config.h"
@@ -89,7 +89,7 @@ typedef struct _smf_analysis_buf_t {
     uint64_t ad_msg_id_m;
     int isFlowIdKnown_m;
     uint32_t ad_flow_id_m;
-    
+
     // Analysised info
     uint32_t numMsgInTransport_m; // This is the number of messages still in the transport window.
     uint32_t numUnackedMsg_m; // This is the number of messages unack by the application.
@@ -109,7 +109,7 @@ typedef struct _smf_analysis_assuredctrl_buf_t {
 
     // Analysised info
     uint32_t numTransportMsg_m; // This is the number of transport messages acknowledged by this message.
-    uint32_t numMsgInTransport_m; // This is the number of messages still in the transport window. 
+    uint32_t numMsgInTransport_m; // This is the number of messages still in the transport window.
     wmem_list_t *transportAckList_m;
     uint32_t numAckedMsg_m;   // This is the number of messages App acked by this message.
     uint32_t numUnackedMsg_m; // This is the number of messages unack by the application.
@@ -140,17 +140,17 @@ static int getAssuredCtrlProto(void) {
 // Helper functions to get the protocol data per message location
 static smf_analysis_buf_t* getSmfAnalysisProtoData(tvbuff_t* tvb, packet_info* pinfo) {
     int proto_smf = getSmfProto();
-    smf_analysis_buf_t *smf_analysis_buf_p = 
+    smf_analysis_buf_t *smf_analysis_buf_p =
         (smf_analysis_buf_t *)p_get_proto_data(
-            wmem_file_scope(), 
+            wmem_file_scope(),
             pinfo,
-            proto_smf, 
+            proto_smf,
             (uint32_t)tvb_raw_offset(tvb));
     if (NULL == smf_analysis_buf_p) {
         smf_analysis_buf_p = wmem_new0(wmem_file_scope(), smf_analysis_buf_t);
         p_add_proto_data(wmem_file_scope(), pinfo, proto_smf,
                 (uint32_t)tvb_raw_offset(tvb), smf_analysis_buf_p);
-        
+
     }
     return smf_analysis_buf_p;
 }
@@ -158,11 +158,11 @@ static smf_analysis_buf_t* getSmfAnalysisProtoData(tvbuff_t* tvb, packet_info* p
 // Helper functions to get the AssuredCtrl protocol data per message location
 static smf_analysis_assuredctrl_buf_t* getAssuredCtrlAnalysisProtoData(tvbuff_t* tvb, packet_info* pinfo) {
     int proto_assuredctrl = getAssuredCtrlProto();
-    smf_analysis_assuredctrl_buf_t *smf_analysis_assuredctrl_buf_p = 
+    smf_analysis_assuredctrl_buf_t *smf_analysis_assuredctrl_buf_p =
         (smf_analysis_assuredctrl_buf_t *)p_get_proto_data(
-            wmem_file_scope(), 
+            wmem_file_scope(),
             pinfo,
-            proto_assuredctrl, 
+            proto_assuredctrl,
             (uint32_t)tvb_raw_offset(tvb));
     if (NULL == smf_analysis_assuredctrl_buf_p) {
         smf_analysis_assuredctrl_buf_p = wmem_new0(wmem_file_scope(), smf_analysis_assuredctrl_buf_t);
@@ -205,7 +205,7 @@ typedef struct _trans_ack_msg_t {
 
     // Analysised info
     uint32_t numTransportMsg_m; // This is the number of transport messages acknowledged by this message.
-    uint32_t numMsgInTransport_m; // This is the number of messages still in the transport window. 
+    uint32_t numMsgInTransport_m; // This is the number of messages still in the transport window.
     wmem_list_t *transportAckList_m;
     uint32_t numAckedMsg_m;   // This is the number of messages App acked by this message.
     uint32_t numUnackedMsg_m; // This is the number of messages unack by the application.
@@ -245,7 +245,7 @@ static void init_smf_flow(smf_flow_t *flow_p, uint32_t flow_id) {
     flow_p->msgsInTransport_m = wmem_list_new(wmem_file_scope());
     flow_p->msgsUnacked_m = wmem_list_new(wmem_file_scope());
     // No need to touch the other fields since the should be zeroed at alloc
-} 
+}
 
 static void insert_msg(smf_flow_t *flow_p, smf_ad_msg_t *msg) {
     flow_p->numMsgInTransport_m++;
@@ -307,10 +307,10 @@ void init_smf_conv(smf_conv_t *smf_conv_p) {
 // Save the parameters that we are interested in
 void smf_analysis_param(tvbuff_t *tvb, packet_info *pinfo, uint8_t param_type, int offset) {
     smf_analysis_buf_t *smf_analysis_buf_p = getSmfAnalysisProtoData(tvb, pinfo);
-    switch (param_type) 
+    switch (param_type)
     {
         case 0x11: // Assured Delivery Message Id
-        {            
+        {
             smf_analysis_buf_p->ad_msg_id_m = tvb_get_uint64(tvb, offset, false);
             break;
         }
@@ -377,7 +377,7 @@ int smf_analysis(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
             if (!((smf_analysis_buf_p->ad_msg_id_m) && (smf_analysis_buf_p->isFlowIdKnown_m))) {
                 // This is an AD message without AD information
                 // This could be a transaction message
-                // g_print("Ad Message without a flow or message id. Packet: %d, Flow: %d, Msg Id: %ld", 
+                // g_print("Ad Message without a flow or message id. Packet: %d, Flow: %d, Msg Id: %ld",
                 //    pinfo->fd->num, smf_analysis_buf_p->ad_flow_id_m, smf_analysis_buf_p->ad_msg_id_m);
                 return 0;
             }
@@ -429,7 +429,7 @@ int smf_analysis(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
             proto_item_set_generated(item);
             item = proto_tree_add_uint(flags_tree, hf_smf_analysis_prev_handshake_frame,
                                     tvb, 0, 0, smf_analysis_buf_p->transport_ack_frame_m);
-            proto_item_set_generated(item);         
+            proto_item_set_generated(item);
         }
         item = proto_tree_add_uint(flags_tree, hf_smf_analysis_msg_in_transport,
                                 tvb, 0, 0, smf_analysis_buf_p->numMsgInTransport_m);
@@ -445,7 +445,7 @@ int smf_analysis(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)
         if (smf_flow_p->maxDeliveredUnackedMsgsPerFlow_m != -1) {
             if (smf_analysis_buf_p->numUnackedMsg_m == (uint32_t)smf_flow_p->maxDeliveredUnackedMsgsPerFlow_m) {
                 expert_add_info(pinfo, item, &ei_smf_expert_max_delivered_unacked_msgs);
-                col_append_fstr(pinfo->cinfo, COL_INFO, "[MaxDeliveredUnackedMsgs reached]  ");            
+                col_append_fstr(pinfo->cinfo, COL_INFO, "[MaxDeliveredUnackedMsgs reached]  ");
             }
         }
         proto_item_set_generated(item);
@@ -463,10 +463,10 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
     if (!PINFO_FD_VISITED(pinfo)) {
         int version = (tvb_get_uint8(tvb, 0) & 0x3f);
         int msg_type;
-        if (version < 3) { 
-            msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4; 
-        } else { 
-            msg_type = tvb_get_uint8(tvb, 1); 
+        if (version < 3) {
+            msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4;
+        } else {
+            msg_type = tvb_get_uint8(tvb, 1);
         }
         switch (param_type) {
             case 0x02:  { // ASSUREDCTRL_LAST_MSGID_ACKED_PARAM
@@ -490,7 +490,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
 
                 smf_flow_p = find_or_create_smf_flow(reverseStream_p, smf_analysis_assuredctrl_buf_p->ad_flow_id_m);
                 frame_p = wmem_list_head(smf_flow_p->msgsInTransport_m);
-                while ((frame_p != NULL) && 
+                while ((frame_p != NULL) &&
                        (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m <= last_msgid_acked)) {
                     smf_ad_msg_t *ad_msg_p = (smf_ad_msg_t *)(wmem_list_frame_data(frame_p));
                     putMsgIntoList(smf_analysis_assuredctrl_buf_p->transportAckList_m, (smf_ad_msg_t *)wmem_list_frame_data(frame_p));
@@ -558,11 +558,11 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                 }
                 smf_flow_p = find_or_create_smf_flow(reverseStream_p, smf_analysis_assuredctrl_buf_p->ad_flow_id_m);
                 frame_p = wmem_list_head(smf_flow_p->msgsUnacked_m);
-                while ((frame_p != NULL) && 
+                while ((frame_p != NULL) &&
                        (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m < ack_min_id)) {
                     frame_p = wmem_list_frame_next(frame_p);
                 }
-                while ((frame_p != NULL) && 
+                while ((frame_p != NULL) &&
                        (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m <= ack_max_id)) {
                     putMsgIntoList(smf_analysis_assuredctrl_buf_p->appAckList_m, (smf_ad_msg_t *)wmem_list_frame_data(frame_p));
                     smf_analysis_assuredctrl_buf_p->numAckedMsg_m++;
@@ -581,7 +581,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                 smf_analysis_assuredctrl_buf_p->ad_flow_id_m = tvb_get_uint32(tvb, offset, false);
 
                 // Determine if this is a bind (to an endpoint). If it is NOT a bind, then no applicaiton ack is needed.
-                switch (msg_type) { 
+                switch (msg_type) {
                     case 0x00: // OpenFlow (Ack, because there is a flow id param)
                         smf_flow_p = find_or_create_smf_flow(reverseStream_p, smf_analysis_assuredctrl_buf_p->ad_flow_id_m);
                         smf_flow_p->isFlowTypeKnown_m = 1;
@@ -593,7 +593,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                         smf_flow_p->isFlowTypeKnown_m = 1;
                         smf_flow_p->flowType_m = msg_type;
                         smf_flow_p->isCombinedTransportAppAck_m = 0;
-                        break;                    
+                        break;
                     default:
                         break;
                 }
@@ -634,7 +634,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                         putTransIntoList(smf_analysis_assuredctrl_buf_p->transactionAckList_m, transAckMsg_p);
 
                         wmem_list_frame_t *frame_p = wmem_list_head(smf_flow_p->msgsInTransport_m);
-                        while ((frame_p != NULL) && 
+                        while ((frame_p != NULL) &&
                             (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m <= lastMsgId)) {
                             putMsgIntoList(transAckMsg_p->transportAckList_m, (smf_ad_msg_t *)wmem_list_frame_data(frame_p));
                             transAckMsg_p->numTransportMsg_m++;
@@ -645,7 +645,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                         }
 
                         frame_p = wmem_list_head(smf_flow_p->msgsUnacked_m);
-                        while ((frame_p != NULL) && 
+                        while ((frame_p != NULL) &&
                             (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m <= lastMsgId)) {
                             putMsgIntoList(transAckMsg_p->appAckList_m, (smf_ad_msg_t *)wmem_list_frame_data(frame_p));
                             transAckMsg_p->numAckedMsg_m++;
@@ -656,7 +656,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                         }
                         transAckMsg_p->messageCount_m = messageCount;
                         transAckMsg_p->numMsgInTransport_m = smf_flow_p->numMsgInTransport_m;
-                        transAckMsg_p->numUnackedMsg_m = smf_flow_p->numMsgUnacked_m;                        
+                        transAckMsg_p->numUnackedMsg_m = smf_flow_p->numMsgUnacked_m;
                     }
                     local_offset += 16;
                 }
@@ -679,16 +679,16 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                     msgCount = tvb_get_ntohl(tvb, local_offset + 20);
                     lastMsgIdRecved = tvb_get_ntoh64(tvb, local_offset + 24);
                     windowSz = tvb_get_ntohl(tvb, local_offset + 32);
-                    
+
                     if(flowid != 0xFFFFFFFF) {
                         smf_flow_t *smf_flow_p = find_or_create_smf_flow(reverseStream_p, flowid);
                         smf_flow_p->isTransportWindownKnown_m = 1;
                         smf_flow_p->transport_window_size_m = windowSz;
                         trans_ack_msg_t *transAckMsg_p = create_trans_ack_msg(flowid);
-                        putTransIntoList(smf_analysis_assuredctrl_buf_p->transactionAckList_m, transAckMsg_p);  
+                        putTransIntoList(smf_analysis_assuredctrl_buf_p->transactionAckList_m, transAckMsg_p);
 
                         wmem_list_frame_t *frame_p = wmem_list_head(smf_flow_p->msgsInTransport_m);
-                        while ((frame_p != NULL) && 
+                        while ((frame_p != NULL) &&
                             (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m <= lastMsgIdRecved)) {
                             putMsgIntoList(transAckMsg_p->transportAckList_m, (smf_ad_msg_t *)wmem_list_frame_data(frame_p));
                             transAckMsg_p->numTransportMsg_m++;
@@ -699,7 +699,7 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
                         }
 
                         frame_p = wmem_list_head(smf_flow_p->msgsUnacked_m);
-                        while ((frame_p != NULL) && 
+                        while ((frame_p != NULL) &&
                             (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m <= max)) {
                             if (((smf_ad_msg_t *)(wmem_list_frame_data(frame_p)))->msg_id_m >= min) {
                                 putMsgIntoList(transAckMsg_p->appAckList_m, (smf_ad_msg_t *)wmem_list_frame_data(frame_p));
@@ -747,7 +747,7 @@ void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tre
         proto_item_set_generated(item);
         item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_num_msg_unacked,
                                 tvb, 0, 0, smf_analysis_assuredctrl_buf_p->numUnackedMsg_m);
-        proto_item_set_generated(item);       
+        proto_item_set_generated(item);
 
         item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_num_msg_transport_acked,
                                 tvb, 0, 0, smf_analysis_assuredctrl_buf_p->numTransportMsg_m);
@@ -769,7 +769,7 @@ void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tre
         while (NULL != list_p) {
             smf_ad_msg_t *ad_msg_p = (smf_ad_msg_t *)wmem_list_frame_data(list_p);
             item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_transport_acked_id,
-                                tvb, 0, 0, ad_msg_p->frame_m);   
+                                tvb, 0, 0, ad_msg_p->frame_m);
             proto_item_set_generated(item);
             list_p = wmem_list_frame_next(list_p);
         }
@@ -777,10 +777,10 @@ void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tre
         while (NULL != list_p) {
             smf_ad_msg_t *ad_msg_p = (smf_ad_msg_t *)wmem_list_frame_data(list_p);
             item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_app_acked_id,
-                                tvb, 0, 0, ad_msg_p->frame_m);   
+                                tvb, 0, 0, ad_msg_p->frame_m);
             proto_item_set_generated(item);
             list_p = wmem_list_frame_next(list_p);
-        }        
+        }
     }
 
     // This is for transactions
@@ -793,19 +793,19 @@ void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tre
 
         item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_transaction_flow_id,
                                 tvb, 0, 0, transAckMsg_p->ad_flow_id_m);
-        proto_item_set_generated(item); 
+        proto_item_set_generated(item);
 
         item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_num_msg_transport_acked,
                                 tvb, 0, 0, transAckMsg_p->numTransportMsg_m);
         proto_item_set_generated(item);
         item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_num_msg_in_transport,
                         tvb, 0, 0, transAckMsg_p->numMsgInTransport_m);
-        proto_item_set_generated(item);        
+        proto_item_set_generated(item);
         wmem_list_frame_t *list_p = wmem_list_head(transAckMsg_p->transportAckList_m);
         while (NULL != list_p) {
             smf_ad_msg_t *ad_msg_p = (smf_ad_msg_t *)wmem_list_frame_data(list_p);
             item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_transport_acked_id,
-                                tvb, 0, 0, ad_msg_p->frame_m);   
+                                tvb, 0, 0, ad_msg_p->frame_m);
             proto_item_set_generated(item);
             list_p = wmem_list_frame_next(list_p);
         }
@@ -815,12 +815,12 @@ void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tre
         proto_item_set_generated(item);
         item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_num_msg_unacked,
                 tvb, 0, 0, transAckMsg_p->numUnackedMsg_m);
-        proto_item_set_generated(item); 
+        proto_item_set_generated(item);
         list_p = wmem_list_head(transAckMsg_p->appAckList_m);
         while (NULL != list_p) {
             smf_ad_msg_t *ad_msg_p = (smf_ad_msg_t *)wmem_list_frame_data(list_p);
             item = proto_tree_add_uint(flags_tree, hf_assuredctrl_smf_analysis_transaction_ctrl_id,
-                                tvb, 0, 0, ad_msg_p->frame_m);   
+                                tvb, 0, 0, ad_msg_p->frame_m);
             proto_item_set_generated(item);
             list_p = wmem_list_frame_next(list_p);
         }

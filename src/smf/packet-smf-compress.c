@@ -1,6 +1,6 @@
 /* packet-smf-compress.c
  * Routines for Solace Message Format with compression dissection
- * Copyright 2021, Solace Corporation 
+ * Copyright 2021, Solace Corporation
  *
  * $Id: packet-smf-compress.c 657 2007-07-31 20:42:07Z $
  *
@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -153,10 +153,10 @@ DIAG_ON(cast-qual)
             outStr = "Unknown";
             break;
         }
-        
+
         snprintf(errorMsg_p, ERROR_MSG_SIZE, "%s(%d): %s", outStr, err, stream_p->msg);
         *outl = *outl - stream_p->avail_out;
-        
+
         // Cleanup the decompressor and re-initialize
         inflateEnd(&compressed_stream_p->stream);
         init_stream(compressed_stream_p);
@@ -237,7 +237,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
             guchar* offsetbuf = currentStream_p->uncompressed_buf->buf + currentStream_p->desegment_offset;
             memcpy(curbuffer, offsetbuf, prefBufOffset);
             curbuffer += prefBufOffset;
-            
+
             if (currentStream_p->desegment_offset == 0) {
                 // The previous buffer was not used at all.
                 // dealloc the old buffer
@@ -301,7 +301,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
         currentStream_p->desegment_offset = pinfo->desegment_offset;
         currentStream_p->desegment_len = pinfo->desegment_len;
         currentStream_p->uncompressed_buf = NULL;
-        if ((currentStream_p->desegment_offset != 0) || 
+        if ((currentStream_p->desegment_offset != 0) ||
             (currentStream_p->desegment_len != 0)) {
             // There is some data left for desegment.
             // Keep a link for the next segment
@@ -319,7 +319,7 @@ static int dissect_smf_compressed(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 void proto_reg_handoff_smf_compress(void)
 {
     static bool inited = false;
-        
+
 	if (!inited) {
         smf_tcp_compressed_handle = create_dissector_handle(dissect_smf_compressed, proto_smf_compressed);
         dissector_add_uint("tcp.port", global_smf_compressed_port, smf_tcp_compressed_handle);
@@ -353,7 +353,7 @@ void proto_register_smf_compress(void)
     module_t* smfcomp_module;
     smfcomp_module = prefs_register_protocol(proto_smf_compressed, NULL);
     if (smfcomp_module) {
-        prefs_register_uint_preference(smfcomp_module, "compression_dictionary_init", 
+        prefs_register_uint_preference(smfcomp_module, "compression_dictionary_init",
         "SMF Compression Dictionary Initial Value", "SMF Compression Dictionary Initial Value", 16, &dictionary_init);
-    }  
+    }
 }

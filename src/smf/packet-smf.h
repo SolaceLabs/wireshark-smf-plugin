@@ -1,5 +1,5 @@
 /* packet-smf.h
- * Defines functions and constants for packet-smf.c, packet-smrp.c, 
+ * Defines functions and constants for packet-smf.c, packet-smrp.c,
  * packet-clientctrl.c, smf-analysis.c, packet-assuredctrl.c, and sdt-decoder.c
  *
  * Copyright 2024, Solace Corporation
@@ -35,7 +35,7 @@ void smf_proto_add_trace_span_transport_context_value(proto_tree* tree, packet_i
 #define ETHERTYPE_SMF_BACKDOOR 0xbacd
 
 // 0x200 (1023) is max channel #, but..
-// ...we use 0x400 as there are two 
+// ...we use 0x400 as there are two
 // directions (LC->CC and CC->LC)
 #define MAX_BD_CHANNEL         0x7ff
 #endif

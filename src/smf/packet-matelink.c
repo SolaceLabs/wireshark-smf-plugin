@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -308,7 +308,7 @@ static void dissect_matelink_journalWrite(tvbuff_t * tvb, packet_info* pinfo _U_
         size = curlen-16;
         proto_tree_add_item(tree, hf_matelink_journalwrite_data, tvb, offset, curlen-16, ENC_LITTLE_ENDIAN);
         offset += size;
-    }    
+    }
 
     return;
 }
@@ -441,10 +441,10 @@ static int dissect_matelink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 void proto_reg_handoff_matelink(void)
 {
     static bool inited = false;
-        
+
 	if (!inited) {
         matelink_handle = create_dissector_handle(dissect_matelink, proto_matelink);
-        dissector_add_uint("tcp.port", global_matelink_port, matelink_handle);        
+        dissector_add_uint("tcp.port", global_matelink_port, matelink_handle);
     }
 }
 
@@ -476,14 +476,14 @@ void proto_register_matelink(void)
             { "Message Sequence", "matelink.sequence",
                 FT_UINT64, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }},        
+            }},
 
-        // default        
+        // default
         { &hf_matelink_data,
             { "Message Data", "matelink.data",
                 FT_BYTES, BASE_NONE, NULL, 0x0,
                 "", HFILL
-            }},    
+            }},
 
         // Hello
         { &hf_matelink_hello_magic,
@@ -581,61 +581,61 @@ void proto_register_matelink(void)
             { "Processing Delay Timestamp", "matelink.hello.processingDelayTimestamp",
                 FT_UINT64, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         // Journal Write
         { &hf_matelink_journalwrite_requestId,
             { "Request Id", "matelink.journalwrite.requestId",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_journalwrite_pad,
             { "Pad", "matelink.journalwrite.pad",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_journalwrite_data,
             { "Data", "matelink.journalwrite.data",
                 FT_BYTES, BASE_NONE, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         // Journal Write Ack
         { &hf_matelink_journalwriteack_requestId,
             { "Request Id", "matelink.journalwriteack.requestId",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_journalwriteack_nak,
             { "NAK", "matelink.journalwriteack.nak",
                 FT_UINT32, BASE_DEC, NULL, 0x00000001,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_journalwriteack_pad,
             { "Pad", "matelink.journalwriteack.pad",
                 FT_UINT32, BASE_DEC, NULL, 0xFFFFFFFE,
                 "", HFILL
-            }}, 
+            }},
         // Door Bell
         { &hf_matelink_doorbell_queueId,
             { "Queue Id", "matelink.doorbell.queueid",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_doorbell_pad,
             { "Pad", "matelink.doorbell.pad",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         // Sync Write
         { &hf_matelink_syncwrite_offset,
             { "Offset", "matelink.syncwrite.offset",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_syncwrite_requestid,
             { "Request Id", "matelink.syncwrite.requestid",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }}, 
+            }},
 
         // Trans Header (inside Journal Write)
         // UINT32          length : 28,
@@ -646,17 +646,17 @@ void proto_register_matelink(void)
             { "Length", "matelink.transheader.length",
                 FT_UINT32, BASE_DEC, NULL, 0x0FFFFFFF,
                 "", HFILL
-            }}, 
+            }},
         { &hf_matelink_transheader_type,
             { "Type", "matelink.transheader.type",
                 FT_UINT32, BASE_DEC, VALS(transheaderType_name), 0xF0000000,
                 "", HFILL
-            }},     
+            }},
         { &hf_matelink_transheader_checksum,
             { "Checksum", "matelink.transheader.checksum",
                 FT_UINT32, BASE_DEC, NULL, 0x0,
                 "", HFILL
-            }},                         
+            }},
         { &hf_matelink_transheader_sequence,
             { "Sequence", "matelink.transheader.sequence",
                 FT_UINT64, BASE_DEC, NULL, 0x0,

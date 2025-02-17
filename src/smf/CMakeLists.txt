@@ -68,7 +68,7 @@ add_wireshark_plugin_library(smf epan)
 target_include_directories(smf SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(smf epan ${ZLIB_LIBRARIES})
 
-install_plugin(smf epan)  
+install_plugin(smf epan)
 
 #[[
 install(TARGETS smf

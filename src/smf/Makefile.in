@@ -514,7 +514,7 @@ abi_incdirs = $(subst -I,NEWLINE,$(filter -I%,$(WS_CFLAGS) -I$(abs_top_srcdir) -
 abi_sysdirs = $(subst -isystem,NEWLINE,$(filter -isystem%,$(WS_CFLAGS)))
 abi_includes = $(abi_incdirs) $(abi_sysdirs)
 PLUGIN_CPPFLAGS = $(INCLUDEDIRS) $(WS_CPPFLAGS) $(GLIB_CFLAGS)
-PLUGIN_CFLAGS = 
+PLUGIN_CFLAGS =
 PLUGIN_LDFLAGS = -module -avoid-version
 
 #
@@ -766,7 +766,7 @@ clean-pluginLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-smf.la: $(smf_la_OBJECTS) $(smf_la_DEPENDENCIES) 
+smf.la: $(smf_la_OBJECTS) $(smf_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(smf_la_LINK) -rpath $(plugindir) $(smf_la_OBJECTS) $(smf_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
