@@ -123,7 +123,25 @@ Note 1: To start VSCode, start from the "X64 Native Tools Command Prompt" (searc
 Note 2: The VCSVERSION_OVERRIDE is needed because the compile failed to find the approparite git repository.
 
 ### Linux
-    TODO
+    Wireshark is best built from source on Linux following the steps outlined at wireshark.org.
+
+    That said, if you already have a wireshark running on Linux and just need to build the plugin you can do the following:
+...
+    # clone the repo
+    git clone --recurse-submodules git@github.com:>your-for>/wireshark-smf-plugin.git
+    # enter the repo
+    cd wireshark-smf-plugin/
+    # symlink out plugin into wireshark 
+    ln -s ../../../src/smf wireshark/plugins/epan/smf
+    # create a build directory and enter it
+    mkdir build
+    cd build
+    # configure cmake,   turn off all options for building wireshark and just build the plugin
+    cmake ../wireshark -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCUSTOM_PLUGIN_SRC_DIR="plugins/epan/smf" $(sed -n 's/^option(\(BUILD_\S\+\).*ON)$/-D\1=OFF/p' ../wireshark/CMakeOptions.txt)
+    # build the plugins
+    ninja plugins
+...
+
 ### MacOS
     TODO
 
