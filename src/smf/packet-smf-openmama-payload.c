@@ -170,16 +170,16 @@ dissect_mama_field_msg(
     }
     value_len -= (len_bytes+2);
 
-    next_tvb = tvb_new_subset_length_caplen(tvb, 
-        offset+len_bytes +2, 
-        value_len, 
+    next_tvb = tvb_new_subset_length_caplen(tvb,
+        offset+len_bytes +2,
+        value_len,
         value_len);
     call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
 
     return value_len + len_bytes +2;
 }
 
-static void 
+static void
 dissect_vector_param(
     tvbuff_t *tvb,
     int offset,
@@ -188,7 +188,7 @@ dissect_vector_param(
     proto_tree *tree,
     packet_info *pinfo)
 {
-    proto_tree   *field_tree;	        
+    proto_tree   *field_tree;
     proto_item   *ti;
     int loop;
     int count;
@@ -197,7 +197,7 @@ dissect_vector_param(
     ti = proto_tree_add_item(tree, hf_mama_field_value_vector, tvb, offset, value_len, false);
     field_tree =   proto_item_add_subtree(ti, ett_mama_payload_field_vector);
 
-    switch (tag) 
+    switch (tag)
     {
 
     case MAMA_PAYLOAD_SUBTAG_TYPE_BOOLEAN_VECTOR:
@@ -267,11 +267,11 @@ dissect_vector_param(
             proto_tree_add_item(field_tree,
                 hf_mama_field_value_datetime_seconds, tvb, offset+8*loop, 4, false);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_precision, tvb, offset+8*loop+4, 1, false); 
+                hf_mama_field_value_datetime_precision, tvb, offset+8*loop+4, 1, false);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_hints, tvb, offset+8*loop+4, 1, false); 
+                hf_mama_field_value_datetime_hints, tvb, offset+8*loop+4, 1, false);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_datetime_microseconds, tvb, offset+8*loop+5, 3, false); 
+                hf_mama_field_value_datetime_microseconds, tvb, offset+8*loop+5, 3, false);
         }
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_PRICE_VECTOR:
@@ -281,7 +281,7 @@ dissect_vector_param(
             proto_tree_add_item(field_tree,
                 hf_mama_field_value_price_f64, tvb, offset+9*loop, 8, false);
             proto_tree_add_item(field_tree,
-                hf_mama_field_value_price_u8, tvb, offset+9*loop+8, 1, false);	
+                hf_mama_field_value_price_u8, tvb, offset+9*loop+8, 1, false);
         }
         break;
 
@@ -305,7 +305,7 @@ dissect_vector_param(
     }
 }
 
-static void 
+static void
 dissect_byte_array_param(
     tvbuff_t *tvb,
     int offset,
@@ -315,15 +315,15 @@ dissect_byte_array_param(
     packet_info *pinfo)
 {
     tvbuff_t *next_tvb;
-    proto_tree   *field_tree;	        
+    proto_tree   *field_tree;
     proto_item   *ti;
 
     switch (tag)
     {
     case MAMA_PAYLOAD_SUBTAG_TYPE_MSG:
-        next_tvb = tvb_new_subset_length_caplen(tvb, 
-            offset, 
-            value_len, 
+        next_tvb = tvb_new_subset_length_caplen(tvb,
+            offset,
+            value_len,
             value_len);
         call_dissector(mama_payload_handle, next_tvb, pinfo, tree);
         break;
@@ -337,11 +337,11 @@ dissect_byte_array_param(
         proto_tree_add_item(field_tree,
             hf_mama_field_value_datetime_seconds, tvb, offset, 4, false);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_precision, tvb, offset+4, 1, false); 
+            hf_mama_field_value_datetime_precision, tvb, offset+4, 1, false);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_hints, tvb, offset+4, 1, false); 
+            hf_mama_field_value_datetime_hints, tvb, offset+4, 1, false);
         proto_tree_add_item(field_tree,
-            hf_mama_field_value_datetime_microseconds, tvb, offset+5, 3, false); 
+            hf_mama_field_value_datetime_microseconds, tvb, offset+5, 3, false);
         break;
     case MAMA_PAYLOAD_SUBTAG_TYPE_PRICE:
         ti = proto_tree_add_item(tree,
@@ -513,7 +513,7 @@ dissect_mama_field(
             break;
         case 4:
             proto_tree_add_item(field_tree, hf_mama_field_value_i32, tvb, offset+field_len, param_value_len, false);
-            break;		
+            break;
         case 8:
         default:
             proto_tree_add_item(field_tree, hf_mama_field_value_i64, tvb, offset+field_len, param_value_len, false);
@@ -531,7 +531,7 @@ dissect_mama_field(
             break;
         case 4:
             proto_tree_add_item(field_tree, hf_mama_field_value_u32, tvb, offset+field_len, param_value_len, false);
-            break;		
+            break;
         case 8:
         default:
             proto_tree_add_item(field_tree, hf_mama_field_value_u64, tvb, offset+field_len, param_value_len, false);
@@ -554,7 +554,7 @@ dissect_mama_field(
         tag=tvb_get_uint8(tvb, offset + field_len );
         field_len++;
         param_value_len--;
-        dissect_byte_array_param(tvb, offset+field_len, param_value_len, tag, field_tree, pinfo);	
+        dissect_byte_array_param(tvb, offset+field_len, param_value_len, tag, field_tree, pinfo);
         break;
 
     case SMF_PARAM_TYPE_STRING:
@@ -611,7 +611,7 @@ dissect_mama_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     proto_tree_add_item(payload_tree,
         hf_mama_stream_length, tvb, 3, 4, false);
 
-    dissect_mama_fields(tvb, 7, stream_len-5, payload_tree, pinfo); 
+    dissect_mama_fields(tvb, 7, stream_len-5, payload_tree, pinfo);
 
     return tvb_captured_length(tvb);
 }
@@ -640,46 +640,46 @@ proto_register_mama_payload(void)
         },
         { &hf_mama_field_name,
             { "Field name", "mama-payload.field-name", FT_STRING, BASE_NONE,
-                NULL, 0x0, "", HFILL } 
+                NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_bool,
-            { "Boolean value", "mama-payload.field-value.bool", FT_BOOLEAN, BASE_NONE, NULL, 0x0, "", HFILL } 
+            { "Boolean value", "mama-payload.field-value.bool", FT_BOOLEAN, BASE_NONE, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_i8,
-            { "Int8 value", "mama-payload.field-value-i8",  FT_INT8, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Int8 value", "mama-payload.field-value-i8",  FT_INT8, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_i16,
-            { "Int16 value", "mama-payload.field-value-i16",  FT_INT16, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Int16 value", "mama-payload.field-value-i16",  FT_INT16, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_i32,
-            { "Int32 value", "mama-payload.field-value-i32",  FT_INT32, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Int32 value", "mama-payload.field-value-i32",  FT_INT32, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_i64,
-            { "Int64 value", "mama-payload.field-value-i64",  FT_INT64, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Int64 value", "mama-payload.field-value-i64",  FT_INT64, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_u8,
-            { "Uint8 value", "mama-payload.field-value-u8",  FT_UINT8, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Uint8 value", "mama-payload.field-value-u8",  FT_UINT8, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_u16,
-            { "Uint16 value", "mama-payload.field-value-u16",  FT_UINT16, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Uint16 value", "mama-payload.field-value-u16",  FT_UINT16, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_u32,
-            { "Uint32 value", "mama-payload.field-value-u32",  FT_UINT32, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Uint32 value", "mama-payload.field-value-u32",  FT_UINT32, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_u64,
-            { "Uint64 value", "mama-payload.field-value-u64",  FT_UINT64, BASE_DEC, NULL, 0x0, "", HFILL } 
+            { "Uint64 value", "mama-payload.field-value-u64",  FT_UINT64, BASE_DEC, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_f32,
-            { "Float32 value", "mama-payload.field-value-f32",  FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "Float32 value", "mama-payload.field-value-f32",  FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_f64,
-            { "Float64 value", "mama-payload.field-value-f64",  FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "Float64 value", "mama-payload.field-value-f64",  FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_char,
-            { "Char value", "mama-payload.field-value-char",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "Char value", "mama-payload.field-value-char",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_string,
-            { "String value", "mama-payload.field-value-string",  FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "String value", "mama-payload.field-value-string",  FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_opaque,
             { "Opaque value",           "mama-payload.field-opaque",
@@ -693,31 +693,31 @@ proto_register_mama_payload(void)
         },
         { &hf_mama_field_value_datetime_seconds,
             { "Seconds",           "mama-payload.field-datetime-seconds",
-            FT_UINT32, BASE_HEX, NULL, 0x0, "", HFILL } 
+            FT_UINT32, BASE_HEX, NULL, 0x0, "", HFILL }
         },
         { &hf_mama_field_value_datetime_precision,
             { "Precision",           "mama-payload.field-datetime-precision",
-            FT_UINT8, BASE_DEC, NULL, 0xF0, "", HFILL } 
+            FT_UINT8, BASE_DEC, NULL, 0xF0, "", HFILL }
         },
         { &hf_mama_field_value_datetime_hints,
             { "Hints",           "mama-payload.field-datetime-hints",
-            FT_UINT8, BASE_DEC, NULL, 0x0F, "", HFILL } 
+            FT_UINT8, BASE_DEC, NULL, 0x0F, "", HFILL }
         },
         { &hf_mama_field_value_datetime_microseconds,
             { "Microseconds",           "mama-payload.field-datetime-ms",
-            FT_UINT32, BASE_HEX, NULL, 0x000FFFFF, "", HFILL } 
+            FT_UINT32, BASE_HEX, NULL, 0x000FFFFF, "", HFILL }
         },
         { &hf_mama_field_value_price,
-            { "Price value (float64, uint8)", "mama-payload.field-value-price",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "Price value (float64, uint8)", "mama-payload.field-value-price",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_vector,
-            { "Vector value", "mama-payload.field-value-vector",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "Vector value", "mama-payload.field-value-vector",  FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_price_f64,
-            { "Price", "mama-payload.field-value-price-f64",  FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL } 
+            { "Price", "mama-payload.field-value-price-f64",  FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
         { &hf_mama_field_value_price_u8,
-            { "Hints", "mama-payload.field-value-price-u8",  FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } 
+            { "Hints", "mama-payload.field-value-price-u8",  FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
         },
     };
 

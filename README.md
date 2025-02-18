@@ -16,20 +16,20 @@ This project is a plugin for wireshark that will dissect Solace SMF protocol.
 3. Unzip the folder and place the .dll (Windows) or .so (Mac/Linux) file in the Wireshark plugin folder, under `epan`. The plugin folder path varies for each OS.
 
 ### Windows Plugin Folder
-Personal Plugin Folder: 
+Personal Plugin Folder:
 
 `%APPDATA%\Roaming\Wireshark\plugins\4.0\epan`
 
-Global Plugin Folder: 
+Global Plugin Folder:
 
 `C:\Program Files\Wireshark\plugins\4.0\plugins\epan`
 
 ### macOS/Linux Plugin Folder
-Personal Plugin Folder: 
+Personal Plugin Folder:
 
 `~/.local/lib/wireshark/plugins/epan`
 
-See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins. 
+See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins.
 
 ### Finding Plugin Folders and Verify Installation
 
@@ -54,7 +54,7 @@ Use a cmd prompt with admin privilege:
 ```
 cd base-directory-of-wireshark-smf-plugin
 mkdir build
-mklink CMakeListsCustom.txt ..\src\CMakeListsCustom.txt 
+mklink CMakeListsCustom.txt ..\src\CMakeListsCustom.txt
 cd plugins\epan
 mklink /D smf ..\..\..\src\smf
 ```

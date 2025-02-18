@@ -50,7 +50,7 @@ add_tooldata_block(proto_tree *bm_tree, int headerFieldIndex, tvbuff_t *tvb, int
 
     pos = start_offset + 4;
 	length += 4;
-    
+
 	field_bitmap = tvb_get_ntohl(tvb, pos);
 
 	pos += 4;

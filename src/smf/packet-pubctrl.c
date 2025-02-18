@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -71,7 +71,7 @@ static int ett_pubctrl = -1;
 /* We use the dissector in packet-clientctrl.c
    as teh rtr capabilities parameter is defined
    identically for both pubctrl and clientctrl  */
-extern void 
+extern void
 clientctrl_dissect_rtr_capabilities_param(
 	tvbuff_t *tvb,
     	proto_tree *tree,
@@ -148,8 +148,8 @@ add_pubctrl_param(
 
 static int
 dissect_pubctrl_param(
-    tvbuff_t *tvb, 
-    int offset, 
+    tvbuff_t *tvb,
+    int offset,
     proto_tree *tree)
 {
     int param_len;
@@ -173,8 +173,8 @@ dissect_pubctrl_param(
 
 static void
 dissect_pubctrl_params(
-    tvbuff_t *tvb, 
-    int param_offset_start, 
+    tvbuff_t *tvb,
+    int param_offset_start,
     int param_offset_end,
     proto_tree *tree)
 {
@@ -203,19 +203,19 @@ dissect_pubctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* d
 
 /* Make entries in Protocol column and Info column on summary display */
 #if 0
-	if (check_col(pinfo->cinfo, COL_PROTOCOL)) 
+	if (check_col(pinfo->cinfo, COL_PROTOCOL))
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, "pubctrl");
-#endif 
+#endif
 /* This field shows up as the "Info" column in the display; you should use
    it, if possible, to summarize what's in the packet, so that a user looking
    at the list of packets can tell what type of packet it is. See section 1.5
    for more information.
 
    Before changing the contents of a column you should make sure the column is
-   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active 
+   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active
    don't bother setting it.
-   
-   If you are setting the column to a constant string, use "col_set_str()", 
+
+   If you are setting the column to a constant string, use "col_set_str()",
    as it's more efficient than the other "col_set_XXX()" calls.
 
    If you're setting it to a string you've constructed, or will be
@@ -232,13 +232,13 @@ dissect_pubctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* d
    past the end of the packet, so that the Info column doesn't have data
    left over from the previous dissector; do
 
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_clear(pinfo->cinfo, COL_INFO);
 
    */
 
     /*
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_set_str(pinfo->cinfo, COL_INFO, "XXX Request");
     */
 /* A protocol dissector can be called in 2 different ways:
@@ -317,44 +317,44 @@ dissect_pubctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* d
 
 void
 proto_register_pubctrl(void)
-{                 
+{
 	//module_t *pubctrl_module;
 
 /* Setup list of header fields  See Section 1.6.1 for details*/
 	static hf_register_info hf[] = {
 		{ &hf_pubctrl_version,
 			{ "Version",           "pubctrl.version",
-			FT_UINT8, BASE_DEC, NULL, 0x3f,          
+			FT_UINT8, BASE_DEC, NULL, 0x3f,
 			"", HFILL }
 		},
 		{ &hf_pubctrl_msg_len,
 			{ "Message length",           "pubctrl.msg_len",
-			FT_UINT16, BASE_DEC, NULL, 0xfff,          
+			FT_UINT16, BASE_DEC, NULL, 0xfff,
 			"", HFILL }
 		},
 		{ &hf_pubctrl_unknown_param,
 			{ "Unrecognized parameter",           "pubctrl.unknown_param",
-			FT_BYTES, BASE_NONE, NULL, 0x0,          
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_pubctrl_pad_byte,
 			{ "Pad byte",           "pubctrl.pad_byte",
-			FT_NONE, BASE_NONE, NULL, 0x0,          
+			FT_NONE, BASE_NONE, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_pubctrl_udp_port_param,
 			{ "UDP port",           "pubctrl.udp_port",
-			FT_UINT16, BASE_DEC, NULL, 0x0,          
+			FT_UINT16, BASE_DEC, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_pubctrl_explicit_ack_mode_param,
 			{ "Explicit ACK mode",           "pubctrl.explicit_ack_mode",
-			FT_NONE, BASE_NONE, NULL, 0x0,          
+			FT_NONE, BASE_NONE, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_pubctrl_udp_source_addr_param,
 			{ "UDP source address",           "pubctrl.udp_source_addr",
-			FT_IPv4, BASE_NONE, NULL, 0x0,          
+			FT_IPv4, BASE_NONE, NULL, 0x0,
 			"", HFILL }
 		},
                 { &hf_pubctrl_software_version_param,
@@ -393,14 +393,14 @@ proto_register_pubctrl(void)
 	proto_register_subtree_array(ett, array_length(ett));
 
     register_dissector("solace.pubctrl", dissect_pubctrl, proto_pubctrl);
-        
+
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
-	pubctrl_module = prefs_register_protocol(proto_pubctrl, 
+	pubctrl_module = prefs_register_protocol(proto_pubctrl,
 	    proto_reg_handoff_pubctrl);
-     
+
 /* Register a sample preference */
-	prefs_register_bool_preference(pubctrl_module, "showHex", 
+	prefs_register_bool_preference(pubctrl_module, "showHex",
 	     "Display numbers in Hex",
 	     "Enable to display numerical values in hexadecimal.",
 	     &gPREF_HEX);
@@ -409,29 +409,29 @@ proto_register_pubctrl(void)
 
 
 /* If this dissector uses sub-dissector registration add a registration routine.
-   This exact format is required because a script is used to find these routines 
+   This exact format is required because a script is used to find these routines
    and create the code that calls these routines.
-   
-   This function is also called by preferences whenever "Apply" is pressed 
-   (see prefs_register_protocol above) so it should accommodate being called 
+
+   This function is also called by preferences whenever "Apply" is pressed
+   (see prefs_register_protocol above) so it should accommodate being called
    more than once.
 */
 void
 proto_reg_handoff_pubctrl(void)
 {
 	static bool inited = false;
-        
+
 	if (!inited) {
 
 	    //dissector_handle_t pubctrl_handle;
 	    //pubctrl_handle = create_dissector_handle(dissect_pubctrl, proto_pubctrl);
 	    (void)create_dissector_handle(dissect_pubctrl, proto_pubctrl);
 	    //dissector_add("smf.encap_proto", 0x8, pubctrl_handle);
-        
+
 	    inited = true;
 	}
-        
-        /* 
+
+        /*
           If you perform registration functions which are dependant upon
           prefs the you should de-register everything which was associated
           with the previous settings and re-register using the new prefs settings
@@ -448,6 +448,6 @@ proto_reg_handoff_pubctrl(void)
           currentPort = gPortPref;
 
           dissector_add("tcp.port", currentPort, pubctrl_handle);
-            
+
         */
 }

@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -101,7 +101,7 @@ static int hf_smrp_parm_subs_info_dto_pri = -1;
 static int hf_smrp_parm_subs_info_topic_size = -1;
 static int hf_smrp_parm_subs_info_topic_string = -1;
 static int hf_smrp_parm_unknown = -1;
-     
+
 /* Global sample preference ("controls" display of numbers) */
 //static bool gPREF_HEX = false;
 
@@ -151,7 +151,7 @@ dissect_db_summary(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree,
 static int
 dissect_block_summary(tvbuff_t *tvb, packet_info *pinfo, proto_tree *smrp_tree, int *offset_ptr)
 {
-  
+
   // First part is a db_summary
   if (dissect_db_summary(tvb, pinfo, smrp_tree, offset_ptr) < 0) return -1;
 
@@ -233,7 +233,7 @@ dissect_block_contents_req(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *sm
   return 0;
 }
 
-/* Disset the parameters */ 
+/* Disset the parameters */
 static int
 dissect_smrp_parms(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree, int *offset_ptr)
 {
@@ -248,7 +248,7 @@ dissect_smrp_parms(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *smrp_tree,
 
      parm = tvb_get_uint8(tvb, offset);
      parm_len = tvb_get_uint8(tvb, offset+1);
-     // Check for 
+     // Check for
      if (parm_len == 0) {
         if (tvb_captured_length_remaining(tvb, offset) < 6) return numParms;
         parm_len = tvb_get_ntohl(tvb, offset+2);
@@ -345,10 +345,10 @@ dissect_smrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
    for more information.
 
    Before changing the contents of a column you should make sure the column is
-   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active 
+   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active
    don't bother setting it.
-   
-   If you are setting the column to a constant string, use "col_set_str()", 
+
+   If you are setting the column to a constant string, use "col_set_str()",
    as it's more efficient than the other "col_set_XXX()" calls.
 
    If you're setting it to a string you've constructed, or will be
@@ -365,7 +365,7 @@ dissect_smrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
    past the end of the packet, so that the Info column doesn't have data
    left over from the previous dissector; do
 
-    if (check_col(pinfo->cinfo, COL_INFO)) 
+    if (check_col(pinfo->cinfo, COL_INFO))
         col_clear(pinfo->cinfo, COL_INFO);
 
    */
@@ -481,318 +481,318 @@ dissect_smrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 void
 proto_register_smrp(void)
-{                 
+{
 
 /* Setup list of header fields  See Section 1.6.1 for details*/
     static hf_register_info hf[] = {
         { &hf_smrp_ver,
             { "Version",           "smrp.ver",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_min_compat_ver,
             { "Min Compatible Version",           "smrp.min_compat_ver",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_msg_len,
             { "Message Length",           "smrp.msg_len",
-            FT_UINT32, BASE_DEC, NULL, 0x00,          
+            FT_UINT32, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_rfu0,
             { "RFU",           "smrp.rfu0",
-            FT_UINT32, BASE_HEX, NULL, 0xfff0,          
+            FT_UINT32, BASE_HEX, NULL, 0xfff0,
             "", HFILL }
         },
         { &hf_smrp_msg_type,
             { "Msg Type",           "smrp.msg_types",
-            FT_UINT8, BASE_HEX, VALS(msgtypenames), 0x0f,          
+            FT_UINT8, BASE_HEX, VALS(msgtypenames), 0x0f,
             "", HFILL }
         },
         { &hf_smrp_router_name_hash,
             { "Router Name Hash",           "smrp.router_name_hash",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_rfu1,
             { "RFU",           "smrp.rfu1",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_db_summary_cs_flag,
             { "CS Flag",           "smrp.db_summary_cs_flag",
-            FT_BOOLEAN, 16, NULL, 0x8000,          
+            FT_BOOLEAN, 16, NULL, 0x8000,
             "", HFILL }
         },
         { &hf_smrp_db_summary_rfu,
             { "RFU",           "smrp.db_summary_rfu",
-            FT_UINT16, BASE_HEX, NULL, 0x7ffe,          
+            FT_UINT16, BASE_HEX, NULL, 0x7ffe,
             "", HFILL }
         },
         { &hf_smrp_db_summary_rq_flag,
             { "RQ Flag",           "smrp.db_summary_rq_flag",
-            FT_BOOLEAN, 16, NULL, 0x0001,          
+            FT_BOOLEAN, 16, NULL, 0x0001,
             "", HFILL }
         },
         { &hf_smrp_db_summary_num_blocks_in_db,
             { "NumBlocksInDb",           "smrp.db_summary_num_blocks_in_db",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_db_summary_block_summary_cs,
             { "BlockSummaryCheckSum",   "smrp.db_summary_block_summary_cs",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_db_summary_num_subs_in_db,
             { "NumSubscriptionsInDb",   "smrp.db_summary_num_subs_in_db",
-            FT_UINT32, BASE_DEC, NULL, 0x00,          
+            FT_UINT32, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_summary_rfu,
             { "RFU",           "smrp.block_summary_rfu",
-            FT_UINT64, BASE_HEX, NULL, 0x00,          
+            FT_UINT64, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_req_block_id,
             { "Block Id",   "smrp.block_contents_req_block_id",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_req_rfu0,
             { "RFU",   "smrp.block_contents_req_rfu0",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_req_rfu1,
             { "RFU",   "smrp.block_contents_req_rfu1",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_req_rfu2,
             { "RFU",   "smrp.block_contents_req_rfu2",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags,
             { "Flags",   "smrp.block_contents_flags",
-            FT_UINT16, BASE_HEX, NULL, 0x00,          
+            FT_UINT16, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags_cs,
             { "Checksum Present",   "smrp.block_contents_flags_cs",
-            FT_BOOLEAN, 16, NULL, 0x8000,          
+            FT_BOOLEAN, 16, NULL, 0x8000,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags_rfu0,
             { "RFU",   "smrp.block_contents_flags_rfu0",
-            FT_BOOLEAN, 16, NULL, 0x6000,          
+            FT_BOOLEAN, 16, NULL, 0x6000,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags_p,
             { "Persistent Subscriptions",   "smrp.block_contents_flags_p",
-            FT_BOOLEAN, 16, NULL, 0x1000,          
+            FT_BOOLEAN, 16, NULL, 0x1000,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags_rfu1,
             { "RFU",   "smrp.block_contents_flags_rfu1",
-            FT_BOOLEAN, 16, NULL, 0x0e00,          
+            FT_BOOLEAN, 16, NULL, 0x0e00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags_u,
             { "Updated by Primary",   "smrp.block_contents_flags_u",
-            FT_BOOLEAN, 16, NULL, 0x0100,          
+            FT_BOOLEAN, 16, NULL, 0x0100,
             "", HFILL }
         },
         { &hf_smrp_block_contents_flags_rfu2,
             { "RFU",   "smrp.block_contents_flags_rfu2",
-            FT_BOOLEAN, 16, NULL, 0x00ff,          
+            FT_BOOLEAN, 16, NULL, 0x00ff,
             "", HFILL }
         },
         { &hf_smrp_block_contents_num_subs_in_block,
             { "NumSubscriptionsInBlock",   "smrp.block_contents_num_subs_in_block",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_block_id,
             { "BlockId",   "smrp.block_contents_block_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00,          
+            FT_UINT16, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_block_key,
             { "BlockKey",   "smrp.block_contents_block_key",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_seq_num,
             { "SeqNum",   "smrp.block_contents_seq_num",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_msg_vpn_hash,
             { "MsgVpnHash",   "smrp.block_contents_msg_vpn_hash",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_block_cs,
             { "BlockChecksum",   "smrp.block_contents_block_cs",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_contents_rfu ,
             { "RFU",   "smrp.block_contents_rfu",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_update_pu ,
             { "Updated by Primary",   "smrp.block_update_pu",
-            FT_BOOLEAN, 32, NULL, 0x8000,          
+            FT_BOOLEAN, 32, NULL, 0x8000,
             "", HFILL }
         },
         { &hf_smrp_block_update_rfu0 ,
             { "RFU",   "smrp.block_update_rfu0",
-            FT_BOOLEAN, 32, NULL, 0x7fff,          
+            FT_BOOLEAN, 32, NULL, 0x7fff,
             "", HFILL }
         },
         { &hf_smrp_block_update_num_adds_in_update ,
             { "NumAddsInUpdate",   "smrp.block_update_num_adds_in_update",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_update_num_removes_in_update ,
             { "NumRemovesInUpdate",   "smrp.block_update_num_removes_in_update",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_block_update_rfu1 ,
             { "RFU",   "smrp.block_update_rfu1",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_bad_format ,
             { "Badly Formated Parameter",   "smrp.parm_bad_format",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_router_name ,
             { "Router Name",   "smrp.parm_router_name",
-            FT_STRING, BASE_NONE, NULL, 0x00,          
+            FT_STRING, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_vpn_name ,
             { "VPN Name",   "smrp.parm_vpn_name",
-            FT_STRING, BASE_NONE, NULL, 0x00,          
+            FT_STRING, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info,
             { "Block Info",   "smrp.parm_block_info",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_block_id ,
             { "BlockId",   "smrp.parm_block_info_block_id",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_block_key ,
             { "BlockKey",   "smrp.parm_block_info_block_key",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_seq_num ,
             { "BlockSeqNum",   "smrp.parm_block_info_seq_num",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_flags_cs,
             { "CS Present",   "smrp.parm_block_info_flags_cs",
-            FT_BOOLEAN, 16, NULL, 0x8000,          
+            FT_BOOLEAN, 16, NULL, 0x8000,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_flags_rfu0 ,
             { "RFU",   "smrp.parm_block_info_flags_rfu0",
-            FT_BOOLEAN, 16, NULL, 0x6000,          
+            FT_BOOLEAN, 16, NULL, 0x6000,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_flags_p,
             { "Persistent",   "smrp.parm_block_info_flags_p",
-            FT_BOOLEAN, 16, NULL, 0x1000,          
+            FT_BOOLEAN, 16, NULL, 0x1000,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_flags_rfu1,
             { "RFU",   "smrp.parm_block_info_flags_rfu1",
-            FT_BOOLEAN, 16, NULL, 0x0e00,          
+            FT_BOOLEAN, 16, NULL, 0x0e00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_flags_u,
             { "Updated by Primary",   "smrp.parm_block_info_flags_u",
-            FT_BOOLEAN, 16, NULL, 0x0100,          
+            FT_BOOLEAN, 16, NULL, 0x0100,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_num_subs,
             { "NumSubscriptions",   "smrp.parm_block_info_num_subs",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_block_info_block_cs,
             { "BlockChecksum",   "smrp.parm_block_info_block_cs",
-            FT_UINT32, BASE_HEX, NULL, 0x00,          
+            FT_UINT32, BASE_HEX, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info ,
             { "Subscription Info",   "smrp.parm_subs_info",
-            FT_BYTES, BASE_NONE, NULL, 0x00,         
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_flags_r ,
             { "Removal",   "smrp.parm_subs_info_flags_r",
-            FT_BOOLEAN, 16, NULL, 0x8000,          
+            FT_BOOLEAN, 16, NULL, 0x8000,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_flags_da,
             { "Deliver Always",   "smrp.parm_subs_info_flags_da",
-            FT_BOOLEAN, 16, NULL, 0x4000,          
+            FT_BOOLEAN, 16, NULL, 0x4000,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_flags_rfu ,
             { "RFU",   "smrp.parm_subs_info_flags_rfu",
-            FT_BOOLEAN, 16, NULL, 0x3fff,          
+            FT_BOOLEAN, 16, NULL, 0x3fff,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_subs_index ,
             { "SubscriptionIndex",   "smrp.parm_subs_info_subs_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00,          
+            FT_UINT16, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_dto_weight ,
             { "DTOweight",   "smrp.parm_subs_info_dto_weight",
-            FT_UINT32, BASE_DEC, NULL, 0x00,          
+            FT_UINT32, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_rfu ,
             { "RFU",   "smrp.parm_subs_info_rfu",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_dto_pri ,
             { "DTOpriority",   "smrp.parm_subs_info_dto_pri",
-            FT_UINT8, BASE_DEC, NULL, 0x00,          
+            FT_UINT8, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_topic_size,
             { "TopicSize",   "smrp.parm_subs_info_topic_size",
-            FT_UINT8, BASE_DEC, NULL, 0x00,          
+            FT_UINT8, BASE_DEC, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_subs_info_topic_string,
             { "Topic",   "smrp.parm_subs_info_topic_string",
-            FT_STRING, BASE_NONE, NULL, 0x00,          
+            FT_STRING, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
         { &hf_smrp_parm_unknown ,
             { "Unknown Parameter",   "smrp.parm_unknown",
-            FT_BYTES, BASE_NONE, NULL, 0x00,          
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
     };
@@ -812,14 +812,14 @@ proto_register_smrp(void)
     proto_register_subtree_array(ett, array_length(ett));
 
     register_dissector("solace.smrp", dissect_smrp, proto_smrp);
-        
+
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
-    assuredctrl_module = prefs_register_protocol(proto_assuredctrl, 
+    assuredctrl_module = prefs_register_protocol(proto_assuredctrl,
         proto_reg_handoff_assuredctrl);
-     
+
 /* Register a sample preference */
-    prefs_register_bool_preference(assuredctrl_module, "showHex", 
+    prefs_register_bool_preference(assuredctrl_module, "showHex",
          "Display numbers in Hex",
          "Enable to display numerical values in hexadecimal.",
          &gPREF_HEX);
@@ -828,26 +828,26 @@ proto_register_smrp(void)
 
 
 /* If this dissector uses sub-dissector registration add a registration routine.
-   This exact format is required because a script is used to find these routines 
+   This exact format is required because a script is used to find these routines
    and create the code that calls these routines.
-   
-   This function is also called by preferences whenever "Apply" is pressed 
-   (see prefs_register_protocol above) so it should accommodate being called 
+
+   This function is also called by preferences whenever "Apply" is pressed
+   (see prefs_register_protocol above) so it should accommodate being called
    more than once.
 */
 void
 proto_reg_handoff_smrp(void)
 {
     static bool inited = false;
-        
+
     if (!inited) {
         //dissector_handle_t smrp_handle;
-        //smrp_handle = create_dissector_handle(dissect_smrp, proto_smrp);        
+        //smrp_handle = create_dissector_handle(dissect_smrp, proto_smrp);
         (void)create_dissector_handle(dissect_smrp, proto_smrp);
 	inited = true;
     }
-        
-        /* 
+
+        /*
           If you perform registration functions which are dependant upon
           prefs the you should de-register everything which was associated
           with the previous settings and re-register using the new prefs settings
@@ -864,6 +864,6 @@ proto_reg_handoff_smrp(void)
           currentPort = gPortPref;
 
           dissector_add("tcp.port", currentPort, assuredctrl_handle);
-            
+
         */
 }

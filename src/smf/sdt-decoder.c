@@ -171,7 +171,7 @@ static void get_destination_string(tvbuff_t *tvb, int offset, int length, char *
  */
 
 void
-add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvbuff_t *tvb, int offset, int length, int indent, 
+add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvbuff_t *tvb, int offset, int length, int indent,
 	 bool is_in_map)
 {
 	int pos;        /* position in payload */
@@ -243,7 +243,7 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
         payloadlen = itemlen - taglen - 1; /* Just the item payload */
         pos += taglen; /* pos now points to beginning of payload */
         //payload_offset = taglen + 1;
-        
+
         buffer = (char*)wmem_alloc(wmem_packet_scope(), 300);
         tagtype_name = try_val_to_str(tag, sdttypenames);
 
@@ -426,7 +426,7 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
     free(pad_buf);
 }
 
-void sdt_decoder_init(void) 
+void sdt_decoder_init(void)
 {
     xml_handle = find_dissector("xml");
     smrp_handle = find_dissector("solace.smrp");

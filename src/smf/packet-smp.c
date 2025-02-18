@@ -1,6 +1,6 @@
 /* packet-smp.c
  * Subscription Management Protocol Dissector
- * Copyright 2007, Solace Corporation 
+ * Copyright 2007, Solace Corporation
  *
  * $Id: $
  *
@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -132,7 +132,7 @@ static void dissect_smp_add_remove_queue_sub(
 	offset++;
 	proto_tree_add_item(tree,
 	    hf_smp_add_subscription, tvb, offset, sn_len, false);
-	
+
 
 }
 
@@ -157,7 +157,7 @@ static void dissect_smp_add_remove_clientname(
 	offset++;
 	proto_tree_add_item(tree,
 	    hf_smp_add_subscription, tvb, offset, sn_len, false);
-	
+
 
 }
 
@@ -179,19 +179,19 @@ dissect_smp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 
 /* Make entries in Protocol column and Info column on summary display */
 #if 0
-	if (check_col(pinfo->cinfo, COL_PROTOCOL)) 
+	if (check_col(pinfo->cinfo, COL_PROTOCOL))
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, "smp");
-#endif 
+#endif
 /* This field shows up as the "Info" column in the display; you should use
    it, if possible, to summarize what's in the packet, so that a user looking
    at the list of packets can tell what type of packet it is. See section 1.5
    for more information.
 
    Before changing the contents of a column you should make sure the column is
-   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active 
+   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active
    don't bother setting it.
-   
-   If you are setting the column to a constant string, use "col_set_str()", 
+
+   If you are setting the column to a constant string, use "col_set_str()",
    as it's more efficient than the other "col_set_XXX()" calls.
 
    If you're setting it to a string you've constructed, or will be
@@ -208,13 +208,13 @@ dissect_smp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
    past the end of the packet, so that the Info column doesn't have data
    left over from the previous dissector; do
 
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_clear(pinfo->cinfo, COL_INFO);
 
    */
 
     /*
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_set_str(pinfo->cinfo, COL_INFO, "XXX Request");
     */
 /* A protocol dissector can be called in 2 different ways:
@@ -328,24 +328,24 @@ dissect_smp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data)
 
 void
 proto_register_smp(void)
-{                 
+{
 	//module_t *assuredctrl_module;
 
 /* Setup list of header fields  See Section 1.6.1 for details*/
 	static hf_register_info hf[] = {
 		{ &hf_smp_uh,
 			{ "UH",           "sol-smp.uh",
-			FT_UINT8, BASE_DEC, NULL, 0x80,          
+			FT_UINT8, BASE_DEC, NULL, 0x80,
 			"", HFILL }
 		},
 		{ &hf_smp_msg_type,
 			{ "Message type",           "sol-smp.msg_type",
-			FT_UINT8, BASE_HEX, VALS(msgtypenames), 0x7f,          
+			FT_UINT8, BASE_HEX, VALS(msgtypenames), 0x7f,
 			"", HFILL }
 		},
 		{ &hf_smp_msg_len,
 			{ "Message length",           "sol-smp.msg_len",
-			FT_UINT32, BASE_DEC, NULL, 0x00,          
+			FT_UINT32, BASE_DEC, NULL, 0x00,
 			"", HFILL }
 		},
         { &hf_smp_payload,
@@ -356,27 +356,27 @@ proto_register_smp(void)
 
 		{ &hf_smp_add_da,
 			{ "DeliverAlways",           "sol-smp.da",
-			FT_BOOLEAN, 8, NULL, 0x10,          
+			FT_BOOLEAN, 8, NULL, 0x10,
 			"", HFILL }
 		},
 		{ &hf_smp_add_r,
 			{ "ResponseRequired",           "sol-smp.r",
-			FT_BOOLEAN, 8, NULL, 0x08,          
+			FT_BOOLEAN, 8, NULL, 0x08,
 			"", HFILL }
 		},
 		{ &hf_smp_add_t,
 			{ "Topic",           "sol-smp.t",
-			FT_BOOLEAN, 8, NULL, 0x04,          
+			FT_BOOLEAN, 8, NULL, 0x04,
 			"", HFILL }
 		},
 		{ &hf_smp_add_p,
 			{ "Persist",           "sol-smp.p",
-			FT_BOOLEAN, 8, NULL, 0x02,          
+			FT_BOOLEAN, 8, NULL, 0x02,
 			"", HFILL }
 		},
 		{ &hf_smp_add_f,
 			{ "Filter",           "sol-smp.f",
-			FT_BOOLEAN, 8, NULL, 0x01,          
+			FT_BOOLEAN, 8, NULL, 0x01,
 			"", HFILL }
 		},
         { &hf_smp_add_subscription,
@@ -411,14 +411,14 @@ proto_register_smp(void)
 	proto_register_subtree_array(ett, array_length(ett));
 
     register_dissector("solace.sol-smp", dissect_smp, proto_smp);
-        
+
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
-	assuredctrl_module = prefs_register_protocol(proto_assuredctrl, 
+	assuredctrl_module = prefs_register_protocol(proto_assuredctrl,
 	    proto_reg_handoff_assuredctrl);
-     
+
 /* Register a sample preference */
-	prefs_register_bool_preference(assuredctrl_module, "showHex", 
+	prefs_register_bool_preference(assuredctrl_module, "showHex",
 	     "Display numbers in Hex",
 	     "Enable to display numerical values in hexadecimal.",
 	     &gPREF_HEX);
@@ -427,26 +427,26 @@ proto_register_smp(void)
 
 
 /* If this dissector uses sub-dissector registration add a registration routine.
-   This exact format is required because a script is used to find these routines 
+   This exact format is required because a script is used to find these routines
    and create the code that calls these routines.
-   
-   This function is also called by preferences whenever "Apply" is pressed 
-   (see prefs_register_protocol above) so it should accommodate being called 
+
+   This function is also called by preferences whenever "Apply" is pressed
+   (see prefs_register_protocol above) so it should accommodate being called
    more than once.
 */
 void
 proto_reg_handoff_smp(void)
 {
 	static bool inited = false;
-        
+
 	if (!inited) {
 	    //dissector_handle_t smp_handle;
-	    //smp_handle = create_dissector_handle(dissect_smp, proto_smp);        
+	    //smp_handle = create_dissector_handle(dissect_smp, proto_smp);
 	    (void)create_dissector_handle(dissect_smp, proto_smp);
 	    inited = true;
 	}
-        
-        /* 
+
+        /*
           If you perform registration functions which are dependant upon
           prefs the you should de-register everything which was associated
           with the previous settings and re-register using the new prefs settings
@@ -463,6 +463,6 @@ proto_reg_handoff_smp(void)
           currentPort = gPortPref;
 
           dissector_add("tcp.port", currentPort, assuredctrl_handle);
-            
+
         */
 }

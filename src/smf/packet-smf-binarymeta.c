@@ -106,7 +106,7 @@ dissect_bm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		data_offset = num_blocks * 4 + 1;
 		cumul_offset = data_offset;
 		for(i = 0; i < num_blocks; i++) {
-		    
+
             buffer = (char*)wmem_alloc(wmem_packet_scope(), 300);
 
 			g_snprintf(buffer, 300, "Type %d Length %d", idxblocks[i].type, idxblocks[i].length);
@@ -153,7 +153,7 @@ proto_register_bm(void)
             FT_STRING, BASE_NONE, NULL, 0x00,
             "", HFILL }
         },
-		
+
 
 	};
 

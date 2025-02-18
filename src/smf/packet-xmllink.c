@@ -12,12 +12,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -150,7 +150,7 @@ static int
 dissect_xmllink_param(
     tvbuff_t *tvb,
     packet_info *pinfo,
-    int offset, 
+    int offset,
     proto_tree *tree)
 {
     int param_len;
@@ -181,7 +181,7 @@ static void
 dissect_xmllink_params(
     tvbuff_t *tvb,
     packet_info *pinfo,
-    int param_offset_start, 
+    int param_offset_start,
     int param_offset_end,
     proto_tree *tree)
 {
@@ -209,19 +209,19 @@ dissect_xmllink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
 /* Make entries in Protocol column and Info column on summary display */
 #if 0
-	if (check_col(pinfo->cinfo, COL_PROTOCOL)) 
+	if (check_col(pinfo->cinfo, COL_PROTOCOL))
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, "xmllink");
-#endif 
+#endif
 /* This field shows up as the "Info" column in the display; you should use
    it, if possible, to summarize what's in the packet, so that a user looking
    at the list of packets can tell what type of packet it is. See section 1.5
    for more information.
 
    Before changing the contents of a column you should make sure the column is
-   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active 
+   active by calling "check_col(pinfo->cinfo, COL_*)". If it is not active
    don't bother setting it.
-   
-   If you are setting the column to a constant string, use "col_set_str()", 
+
+   If you are setting the column to a constant string, use "col_set_str()",
    as it's more efficient than the other "col_set_XXX()" calls.
 
    If you're setting it to a string you've constructed, or will be
@@ -238,13 +238,13 @@ dissect_xmllink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
    past the end of the packet, so that the Info column doesn't have data
    left over from the previous dissector; do
 
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_clear(pinfo->cinfo, COL_INFO);
 
    */
 
     /*
-	if (check_col(pinfo->cinfo, COL_INFO)) 
+	if (check_col(pinfo->cinfo, COL_INFO))
 		col_set_str(pinfo->cinfo, COL_INFO, "XXX Request");
     */
 /* A protocol dissector can be called in 2 different ways:
@@ -323,49 +323,49 @@ dissect_xmllink(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
 void
 proto_register_xmllink(void)
-{                 
+{
 	//module_t *xmllink_module;
 
 /* Setup list of header fields  See Section 1.6.1 for details*/
 	static hf_register_info hf[] = {
 		{ &hf_xmllink_version,
 			{ "Version",           "xmllink.version",
-			FT_UINT8, BASE_DEC, NULL, 0x3f,          
+			FT_UINT8, BASE_DEC, NULL, 0x3f,
 			"", HFILL }
 		},
 		{ &hf_xmllink_msg_len,
 			{ "Message length",           "xmllink.msg_len",
-			FT_UINT16, BASE_DEC, NULL, 0xfff,          
+			FT_UINT16, BASE_DEC, NULL, 0xfff,
 			"", HFILL }
 		},
 		{ &hf_xmllink_unknown_param,
 			{ "Unrecognized parameter",           "xmllink.unknown_param",
-			FT_BYTES, BASE_NONE, NULL, 0x0,          
+			FT_BYTES, BASE_NONE, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_xmllink_pad_byte,
 			{ "Pad byte",           "xmllink.pad_byte",
-			FT_NONE, BASE_NONE, NULL, 0x0,          
+			FT_NONE, BASE_NONE, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_xmllink_conn_priority_param,
 			{ "Connection priority",           "xmllink.conn_prio",
-			FT_UINT8, BASE_DEC, VALS(connprionames), 0x0,          
+			FT_UINT8, BASE_DEC, VALS(connprionames), 0x0,
 			"", HFILL }
 		},
 		{ &hf_xmllink_tcp_listening_port_param,
 			{ "TCP listening port",           "xmllink.tcp_listening_port",
-			FT_UINT16, BASE_DEC, NULL, 0x0,          
+			FT_UINT16, BASE_DEC, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_xmllink_udp_listening_port_param,
 			{ "UDP listening port(DEPRECATED) ",           "xmllink.udp_listening_port",
-			FT_UINT16, BASE_DEC, NULL, 0x0,          
+			FT_UINT16, BASE_DEC, NULL, 0x0,
 			"", HFILL }
 		},
 		{ &hf_xmllink_operating_mode_param,
 			{ "Operating mode",           "xmllink.operating_mode",
-			FT_UINT8, BASE_DEC, VALS(operating_mode_names), 0x0,          
+			FT_UINT8, BASE_DEC, VALS(operating_mode_names), 0x0,
 			"", HFILL }
 		},
                 { &hf_xmllink_hostname_param,
@@ -399,14 +399,14 @@ proto_register_xmllink(void)
 	proto_register_subtree_array(ett, array_length(ett));
 
     register_dissector("solace.xmllink", dissect_xmllink, proto_xmllink);
-        
+
 #if 0
 /* Register preferences module (See Section 2.6 for more on preferences) */
-	xmllink_module = prefs_register_protocol(proto_xmllink, 
+	xmllink_module = prefs_register_protocol(proto_xmllink,
 	    proto_reg_handoff_xmllink);
-     
+
 /* Register a sample preference */
-	prefs_register_bool_preference(xmllink_module, "showHex", 
+	prefs_register_bool_preference(xmllink_module, "showHex",
 	     "Display numbers in Hex",
 	     "Enable to display numerical values in hexadecimal.",
 	     &gPREF_HEX);
@@ -415,29 +415,29 @@ proto_register_xmllink(void)
 
 
 /* If this dissector uses sub-dissector registration add a registration routine.
-   This exact format is required because a script is used to find these routines 
+   This exact format is required because a script is used to find these routines
    and create the code that calls these routines.
-   
-   This function is also called by preferences whenever "Apply" is pressed 
-   (see prefs_register_protocol above) so it should accommodate being called 
+
+   This function is also called by preferences whenever "Apply" is pressed
+   (see prefs_register_protocol above) so it should accommodate being called
    more than once.
 */
 void
 proto_reg_handoff_xmllink(void)
 {
 	static bool inited = false;
-        
+
 	if (!inited) {
 
 	    //dissector_handle_t xmllink_handle;
 	    //xmllink_handle = create_dissector_handle(dissect_xmllink, proto_xmllink);
 	    (void)create_dissector_handle(dissect_xmllink, proto_xmllink);
 	    //dissector_add("smf.encap_proto", 0x8, xmllink_handle);
-        
+
 	    inited = true;
 	}
-        
-        /* 
+
+        /*
           If you perform registration functions which are dependant upon
           prefs the you should de-register everything which was associated
           with the previous settings and re-register using the new prefs settings
@@ -454,6 +454,6 @@ proto_reg_handoff_xmllink(void)
           currentPort = gPortPref;
 
           dissector_add("tcp.port", currentPort, xmllink_handle);
-            
+
         */
 }
