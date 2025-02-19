@@ -22,7 +22,11 @@
 include(WiresharkPlugin)
 
 # Plugin name and version info (major minor micro extra)
-set_module_info(smf 0 0 5 0)
+if (NOT DEFINED PATCH_VERSION)
+   set(PATCH_VERSION dev)
+endif()
+
+set_module_info(smf ${PROJECT_MAJOR_VERSION} ${PROJECT_MINOR_VERSION} ${PATCH_VERSION} 0)
 
 set(DISSECTOR_SRC
 	packet-assuredctrl.c
