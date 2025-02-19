@@ -128,7 +128,7 @@ Note 2: The VCSVERSION_OVERRIDE is needed because the compile failed to find the
     That said, if you already have a wireshark running on Linux and just need to build the plugin you can do the following:
 ...
     # clone the repo
-    git clone --recurse-submodules git@github.com:>your-for>/wireshark-smf-plugin.git
+    git clone --recurse-submodules <your-fork>/wireshark-smf-plugin.git
     # enter the repo
     cd wireshark-smf-plugin/
     # symlink out plugin into wireshark 
