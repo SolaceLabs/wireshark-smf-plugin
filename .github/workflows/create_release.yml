@@ -3,18 +3,18 @@ on:
   workflow_dispatch:
     inputs:
       MAJOR_VERSION:
-        description: "Version string for wireshark tag needed to build can be v#.#.# or v#.#.#-rc#"
+        description: "Major version of the wireshark tag to use when building plugin"
         required: false
         default: '4'
       MINOR_VERSION:
-        description: "Minor version of the wireshark tag"
+        description: "Minor version of the wireshark tag to use when building plugin"
         required: false
-        default: '2'
+        default: '4'
       PATCH_VERSION:
-          description: "Patch version of the wireshark tag"
+          description: "Patch version of the wireshark tag to use when building plugin"
           required: false
-          default: '4'
-      RELEASE_PATCH_VERSION:
+          default: '5'
+      SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         required: true
         default: ''
@@ -62,8 +62,8 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-            name: "Wireshark SMF Plugin ${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.RELEASE_PATCH_VERSION }}"
-            tag: "${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.RELEASE_PATCH_VERSION }}"
+            name: "Wireshark SMF Plugin ${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.SMF_PLUGIN_PATCH_VERSION }}"
+            tag: "${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.SMF_PLUGIN_PATCH_VERSION }}"
             artifacts: "${{ env.LINUX_x86_64_PLUGIN_NAME }}/*, ${{ env.WINDOWS_x64_PLUGIN_NAME }}/*, ${{ env.MACOS_ARM64_PLUGIN_NAME }}/*"
             bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}-x_instructions.md"
             draft: true

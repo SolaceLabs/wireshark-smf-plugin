@@ -7,15 +7,15 @@ on:
   workflow_dispatch:
     inputs:
       MAJOR_VERSION:
-        description: "Version string for wireshark tag needed to build can be v#.#.# or v#.#.#-rc#"
+        description: "Major version of the wireshark tag to use when building plugin"
         required: false
         default: ''
       MINOR_VERSION:
-        description: "Minor version of the wireshark tag"
+        description: "Minor version of the wireshark tag to use when building plugin"
         required: false
         default: ''
       PATCH_VERSION:
-        description: "Patch version of the wireshark tag"
+        description: "Patch version of the wireshark tag to use when building plugin"
         required: false
         default: ''
 jobs:
