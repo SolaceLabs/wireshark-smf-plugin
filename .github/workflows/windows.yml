@@ -84,7 +84,7 @@ jobs:
 
       - name: Cmake
         run: |
-          cmake -DUSE_qt6=ON -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -A x64 ../wireshark -DCMAKE_POLICY_DEFAULT_CMP0094=NEW -DPython3_ROOT_DIR='${{ env.Python3_ROOT_DIR }}' -DPython3_EXECUTABLE='${{ env.Python3_ROOT_DIR }}\python.exe' -DPython3_LIBRARY='${{ env.Python3_ROOT_DIR }}\libs\python380.lib' -DPython3_INCLUDE_DIR='${{ env.Python3_ROOT_DIR }}\Include' -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.PATCH_VERSION }} -DSMF_PLUGIN_COMMIT_HASH=0
+          cmake -DUSE_qt6=ON -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -A x64 ../wireshark -DCMAKE_POLICY_DEFAULT_CMP0094=NEW -DPython3_ROOT_DIR='${{ env.Python3_ROOT_DIR }}' -DPython3_EXECUTABLE='${{ env.Python3_ROOT_DIR }}\python.exe' -DPython3_LIBRARY='${{ env.Python3_ROOT_DIR }}\libs\python380.lib' -DPython3_INCLUDE_DIR='${{ env.Python3_ROOT_DIR }}\Include'
         env:
           PLATFORM: x64
           WIRESHARK_BASE_DIR: C:/wireshark-libs
@@ -92,7 +92,7 @@ jobs:
         working-directory: build
 
       - name: Build
-        run: cmake --build . --config RelWithDebInfo -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.PATCH_VERSION }} -DSMF_PLUGIN_COMMIT_HASH=0
+        run: cmake --build . --config RelWithDebInfo -DSMF_PLUGIN_MAJOR_VERSION='${{ inputs.MAJOR_VERSION }}' -DSMF_PLUGIN_MINOR_VERSION='${{ inputs.MINOR_VERSION }}' -DSMF_PLUGIN_PATCH_VERSION='${{ inputs.PATCH_VERSION }}' -DSMF_PLUGIN_COMMIT_HASH="0"
         working-directory: build
       
       # A zip is created for release
