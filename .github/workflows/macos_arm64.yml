@@ -83,6 +83,10 @@ jobs:
             -DPython_LIBRARY=${{ env.pythonLocation }}/lib \
             -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
             -DPython_EXECUTABLE=${{ env.pythonLocation }}/bin/python \
+            -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} \
+            -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} \
+            -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.PATCH_VERSION }} \
+            -DSMF_PLUGIN_COMMIT_HASH=0 \
             -DPython_FIND_STRATEGY=LOCATION
           
       - name: Build

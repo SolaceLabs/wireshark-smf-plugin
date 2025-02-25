@@ -74,6 +74,10 @@ jobs:
             -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
             -DPython_EXECUTABLE=${{ env.pythonLocation }}/bin/python \
             -DPython_FIND_STRATEGY=LOCATION \
+            -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} \
+            -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} \
+            -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.PATCH_VERSION }} \
+            -DSMF_PLUGIN_COMMIT_HASH=0 \
             -DCMAKE_POLICY_DEFAULT_CMP0094=NEW
 
       - name: Build
