@@ -106,11 +106,14 @@ jobs:
         with:
           name: ${{ env.PLUGIN_NAME }}
           path: ${{ github.workspace }}/${{ env.PLUGIN_NAME }}
+          
+      - name: Create Interim Zip
+        working-directory: ${{ github.workspace }}/build/plugins/epan
+        run: Compress-Archive ./smf -Destination ${{ github.workspace }}\interim.zip
+        
       - name: Upload Interim Files
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ${{ env.PLUGIN_NAME }}.tempfiles
-          path: |
-            ${{ github.workspace }}/build/plugins/epan/smf/smf.vcxproj
-            ${{ github.workspace }}/build/plugins/epan/smf/plugin.rc
+          name: interim.zip
+          path: ${{ github.workspace }}/interim.zip
