@@ -108,6 +108,9 @@ jobs:
           path: ${{ github.workspace }}/${{ env.PLUGIN_NAME }}
       - name: Upload Interim Files
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: ${{ enn.PLUGIN_NAME }}.tempfiles
-          path: ${{ github.workspace }}/build/plugins/epan/smf/smf.vcxproj ${{ github.workspace }}/build/plugins/epan/smf/plugin.rc
+          name: ${{ env.PLUGIN_NAME }}.tempfiles
+          path: |
+            ${{ github.workspace }}/build/plugins/epan/smf/smf.vcxproj
+            ${{ github.workspace }}/build/plugins/epan/smf/plugin.rc
