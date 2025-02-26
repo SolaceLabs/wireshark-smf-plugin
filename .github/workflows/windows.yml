@@ -108,12 +108,11 @@ jobs:
           path: ${{ github.workspace }}/${{ env.PLUGIN_NAME }}
           
       - name: Create Interim Zip
-        working-directory: ${{ github.workspace }}/build/plugins/epan
+        working-directory: D:\a\wireshark-smf-plugin\wireshark-smf-plugin\wireshark\plugins\epan
         run: Compress-Archive ./smf -Destination ${{ github.workspace }}\interim.zip
         
       - name: Upload Interim Files
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: interim.zip
           path: ${{ github.workspace }}/interim.zip
