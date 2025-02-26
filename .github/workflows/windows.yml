@@ -109,8 +109,8 @@ jobs:
           
       - name: Create Interim Zip
         if: always()
-        working-directory: D:\a\wireshark-smf-plugin\wireshark-smf-plugin\wireshark\plugins\epan
-        run: Compress-Archive ./smf -Destination ${{ github.workspace }}\interim.zip
+        working-directory: ${{ github.workspace }}
+        run: Compress-Archive ./build -Destination ${{ github.workspace }}\interim.zip
         
       - name: Upload Interim Files
         uses: actions/upload-artifact@v4
