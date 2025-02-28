@@ -16,6 +16,7 @@ on:
           default: '5'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
+        type: string
         required: true
         default: ''
 env:
