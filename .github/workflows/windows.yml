@@ -106,15 +106,3 @@ jobs:
         with:
           name: ${{ env.PLUGIN_NAME }}
           path: ${{ github.workspace }}/${{ env.PLUGIN_NAME }}
-          
-      - name: Create Interim Zip
-        if: always()
-        working-directory: ${{ github.workspace }}
-        run: Compress-Archive ./build -Destination ${{ github.workspace }}\interim.zip
-        
-      - name: Upload Interim Files
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: interim.zip
-          path: ${{ github.workspace }}/interim.zip
