@@ -18,6 +18,10 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         required: false
         default: ''
+      SMF_PLUGIN_PATCH_VERSION:
+        description: "PATCH for SMF plugin"
+        required: true
+        default: ''
 jobs:
   # Commenting out intel mac for regular builds as it is currently broken.
   #build_macos:
@@ -32,15 +36,20 @@ jobs:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || "dev" }}
   build_windows:
     uses: ./.github/workflows/windows.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
+      # this goes into FILEVERSION which appears when you hover over the DLL, but cannot 
+      # contain a string like "dev"
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || "0" }}
   build_linux:
     uses: ./.github/workflows/ubuntu.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || "dev" }}
