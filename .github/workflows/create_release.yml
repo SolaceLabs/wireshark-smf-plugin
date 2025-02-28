@@ -30,7 +30,7 @@ jobs:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || "0" }}
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
   
   build_windows:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/windows.yml@main
@@ -38,7 +38,7 @@ jobs:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || "0" }}
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
     
   build_macos:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
@@ -46,7 +46,7 @@ jobs:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || "0" }}
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
       
   create_release:
     runs-on: ubuntu-latest
