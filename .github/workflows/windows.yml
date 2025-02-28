@@ -18,6 +18,10 @@ on:
         type: string
         required: true
         default: '5'
+      SMF_PLUGIN_PATCH_VERSION:
+        description: "PATCH for SMF plugin"
+        required: true
+        default: ''
 
 env:
   # This is the name for the file in releases
