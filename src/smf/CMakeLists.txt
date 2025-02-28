@@ -22,6 +22,10 @@
 include(WiresharkPlugin)
 
 # Plugin name and version info (major minor micro extra)
+#
+# NOTE:  Windows uses this for FILEVERSION in plugin.rc and so
+# may not contains useful strings like "rc" or "dev" or "<branchname>"
+#
 if (NOT DEFINED SMF_PLUGIN_MAJOR_VERSION)
    set(SMF_PLUGIN_MAJOR_VERSION ${PROJECT_MAJOR_VERSION})
 endif()
@@ -29,7 +33,7 @@ if (NOT DEFINED SMF_PLUGIN_MINOR_VERSION)
    set(SMF_PLUGIN_MINOR_VERSION ${PROJECT_MINOR_VERSION})
 endif()
 if (NOT DEFINED SMF_PLUGIN_PATCH_VERSION)
-   set(SMF_PLUGIN_PATCH_VERSION "dev")
+   set(SMF_PLUGIN_PATCH_VERSION 0)
 endif()
 if (NOT DEFINED SMF_PLUGIN_COMMIT_HASH)
    set(SMF_PLUGIN_COMMIT_HASH 0)
