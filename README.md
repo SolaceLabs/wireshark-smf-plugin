@@ -11,7 +11,7 @@ This project is a plugin for wireshark that will dissect Solace SMF protocol.
 
 1. Install [Wireshark](https://www.wireshark.org/download.html).
 
-2. Download the corresponding zip file for your platform.
+2. Download the corresponding zip file for your platform (Click on "Releases" and in the releases page, click on "Assets" to see the downloadable contents).
 
 3. Unzip the folder and place the .dll (Windows) or .so (Mac/Linux) file in the Wireshark plugin folder, under `epan`. The plugin folder path varies for each OS.
 
