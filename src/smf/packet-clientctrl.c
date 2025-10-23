@@ -379,6 +379,7 @@ clientctrl_dissect_rtr_capabilities_param(
 
 static void
 add_clientctrl_param(
+    packet_info *pinfo,
     tvbuff_t *tvb,
     proto_tree *tree,
     uint8_t param_type,
@@ -455,7 +456,7 @@ add_clientctrl_param(
 	case CLIENTCTRL_DELIVERTOONEPRIORITY_PARAM:
 		dto_local_pri = tvb_get_uint8(tvb, offset);
 		dto_network_pri = tvb_get_uint8(tvb, offset+1);
-                buffer = (char*)wmem_alloc(wmem_packet_scope(), 100);
+                buffer = (char*)wmem_alloc(pinfo->pool, 100);
 		g_snprintf(buffer, 100, "Local=%d Network=%d", dto_local_pri, dto_network_pri);
 		proto_tree_add_string(tree, ccparams[CLIENTCTRL_DELIVERTOONEPRIORITY_PARAM],
                                       tvb, offset, size, buffer);
@@ -476,6 +477,7 @@ add_clientctrl_param(
 
 static int
 dissect_clientctrl_param(
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     proto_tree *tree)
@@ -491,7 +493,7 @@ dissect_clientctrl_param(
 
 
 
-    add_clientctrl_param(tvb, tree, param_type, offset, param_len);
+    add_clientctrl_param(pinfo, tvb, tree, param_type, offset, param_len);
 
     // Checks if param_len less than by how much the offset moves so that it doesn't get stuck in a loop
     if (param_len < 5){
@@ -502,6 +504,7 @@ dissect_clientctrl_param(
 
 static void
 dissect_clientctrl_params(
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int param_offset_start,
     int param_offset_end,
@@ -511,7 +514,7 @@ dissect_clientctrl_params(
 
     for (offset=param_offset_start; offset<param_offset_end; )
     {
-        int param_len = dissect_clientctrl_param(tvb, offset, tree);
+        int param_len = dissect_clientctrl_param(pinfo, tvb, offset, tree);
         if (0 == param_len) {
             // A param cannot be 0 length. Something went wrong with the dissection. Just exit
             break;
@@ -645,7 +648,7 @@ dissect_clientctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
         /* Dissect parameters */
 		header_len = tvb_get_ntohl(tvb, 2);
 
-        dissect_clientctrl_params(tvb, 6, header_len, clientctrl_tree);
+        dissect_clientctrl_params(pinfo, tvb, 6, header_len, clientctrl_tree);
 
 		/* Figure out type of message and put it on the shared parent info */
 		msgtype = tvb_get_uint8(tvb, 1) ;

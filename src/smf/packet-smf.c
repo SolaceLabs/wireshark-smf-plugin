@@ -905,7 +905,7 @@ static void smf_proto_add_password_item(proto_tree *tree, packet_info *pinfo, tv
 }
 
 /* Add an SMF response to the tree */
-static void smf_proto_add_response_item(proto_tree *tree, tvbuff_t *tvb,
+static void smf_proto_add_response_item(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     int offset, int size)
 {
     char* buffer;
@@ -917,7 +917,7 @@ static void smf_proto_add_response_item(proto_tree *tree, tvbuff_t *tvb,
     str = tvb_get_string_enc(NULL, tvb, offset + 4, size - 4, ENC_ASCII);
 
     /* Format it like "200 OK" */
-    buffer = (char*)wmem_alloc(wmem_packet_scope(), 300);
+    buffer = (char*)wmem_alloc(pinfo->pool, 300);
     g_snprintf(buffer, 300, "%d %s", code, str);
 
     /* Add the string to the tree */
@@ -936,14 +936,14 @@ static void smf_proto_add_router_id_item(proto_tree *tree, int id1, int id2,
 }
 */
 /* Add an list of UINT16s to the tree */
-static void smf_proto_add_uint16_list_item(proto_tree *tree, int id,
-    tvbuff_t *tvb, int offset, int size)
+static void smf_proto_add_uint16_list_item(proto_tree *tree, packet_info *pinfo,
+    int id, tvbuff_t *tvb, int offset, int size)
 {
     int i;
     char* buffer;
     uint16_t list_item;
 
-    buffer = (char*)wmem_alloc(wmem_packet_scope(), 510);
+    buffer = (char*)wmem_alloc(pinfo->pool, 510);
     buffer[0] = '\0';
     for (i = 0; i < size; i += 2)
     {
@@ -956,18 +956,18 @@ static void smf_proto_add_uint16_list_item(proto_tree *tree, int id,
 }
 
 /* Add an entitlement list to the tree */
-static void smf_proto_add_enttl_list_item(proto_tree *tree, tvbuff_t *tvb,
-    int offset, int size)
+static void smf_proto_add_enttl_list_item(proto_tree *tree, packet_info *pinfo,
+    tvbuff_t *tvb, int offset, int size)
 {
-    smf_proto_add_uint16_list_item(tree, hf_smf_entitlements_param, tvb, offset,
+    smf_proto_add_uint16_list_item(tree, pinfo, hf_smf_entitlements_param, tvb, offset,
         size);
 }
 
 /* Add a subscriber id list to the tree */
-static void smf_proto_add_subid_list_item(proto_tree *tree, tvbuff_t *tvb,
-    int offset, int size)
+static void smf_proto_add_subid_list_item(proto_tree *tree, packet_info *pinfo,
+    tvbuff_t *tvb, int offset, int size)
 {
-    smf_proto_add_uint16_list_item(tree, hf_smf_subscriber_ids_param, tvb,
+    smf_proto_add_uint16_list_item(tree, pinfo, hf_smf_subscriber_ids_param, tvb,
         offset, size);
 }
 
@@ -1259,14 +1259,14 @@ static void add_smf_param(tvbuff_t * tvb, packet_info* pinfo, proto_tree * tree,
             smf_proto_add_password_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_RESPONSE:
-            smf_proto_add_response_item(tree, tvb, offset, size);
+            smf_proto_add_response_item(tree, pinfo, tvb, offset, size);
             param_info_p->is_response = true;
             break;
         case STANDARD_PARAM_ENTITLEMENT_LIST:
-            smf_proto_add_enttl_list_item(tree, tvb, offset, size);
+            smf_proto_add_enttl_list_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_SUBSCRIBER_ID_LIST:
-            smf_proto_add_subid_list_item(tree, tvb, offset, size);
+            smf_proto_add_subid_list_item(tree, pinfo, tvb, offset, size);
             break;
         case STANDARD_PARAM_GENERIC_ATTACHMENT:
             smf_proto_add_variable_size_item(tree, tvb, offset, size, hf_smf_generic_attachment_param);
@@ -1706,7 +1706,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
         sub-dissectors may choose to write the encapsulated message
         type to this buffer */
 
-    encap_name_buf = (char*)wmem_alloc(wmem_packet_scope(), 60);
+    encap_name_buf = (char*)wmem_alloc(pinfo->pool, 60);
     encap_name_buf[0] = '\0';
 
     encap_smfdata.subtype = encap_name_buf;
@@ -2085,14 +2085,14 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
     }
     //}
 
-    buffer0 = (char*)wmem_alloc(wmem_packet_scope(), 30);
+    buffer0 = (char*)wmem_alloc(pinfo->pool, 30);
     buffer0[0] = '\0';
     if (param_info.correlation_tag > 0)
     {
         g_snprintf(buffer0, 30, "Tag=%d", param_info.correlation_tag);
     }
 
-    buffer1 = (char*)wmem_alloc(wmem_packet_scope(), 30);
+    buffer1 = (char*)wmem_alloc(pinfo->pool, 30);
     buffer1[0] = '\0';
     if (bdChannel >= 0)
     {
