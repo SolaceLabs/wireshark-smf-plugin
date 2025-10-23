@@ -754,7 +754,7 @@ static int get_smf_bd_channel(packet_info *pinfo)
     // return  ((uint8_t*)(pinfo->dl_src.data)[5]) + ((uint8_t*)((pinfo->dl_src.data)[4] & 0x3) << 8);
     bdchannelPtr = &bdchannel;
     memcpy(bdchannelPtr, (char*) (pinfo->dl_src.data) + 4, 2);
-    bdchannel = pntoh16(&bdchannel);
+    bdchannel = pntohu16(&bdchannel);
     bdchannel &= 0x3ff;
     memcpy(&direction, (char*) (pinfo->dl_src.data) + 3, 1);
     return (direction == 0xcc) ? bdchannel : bdchannel | 0x400;
