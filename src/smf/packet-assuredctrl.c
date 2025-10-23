@@ -1368,10 +1368,8 @@ static int add_assuredCtrl_externalAckList_item (
 }
 
 static void add_assuredCtrl_txnResponse_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1391,10 +1389,8 @@ static void add_assuredCtrl_txnResponse_item (
 }
 
 static void add_assuredCtrl_syncPrepareRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1420,10 +1416,8 @@ static void add_assuredCtrl_syncPrepareRequest_item (
 }
 
 static void add_assuredCtrl_asyncCommitRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1440,10 +1434,8 @@ static void add_assuredCtrl_asyncCommitRequest_item (
 }
 
 static void add_assuredCtrl_syncCommitRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1462,10 +1454,8 @@ static void add_assuredCtrl_syncCommitRequest_item (
 }
 
 static void add_assuredCtrl_syncCommitStart_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1491,10 +1481,8 @@ static void add_assuredCtrl_syncCommitStart_item (
 }
 
 static void add_assuredCtrl_syncCommitEnd_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1510,10 +1498,8 @@ static void add_assuredCtrl_syncCommitEnd_item (
 }
 
 static void add_assuredCtrl_syncRespoolRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1531,10 +1517,8 @@ static void add_assuredCtrl_syncRespoolRequest_item (
 }
 
 static void add_assuredCtrl_asyncRollbackRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1551,10 +1535,8 @@ static void add_assuredCtrl_asyncRollbackRequest_item (
 }
 
 static void add_assuredCtrl_syncUncommitRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1650,39 +1632,39 @@ static void add_assuredCtrl_payload_param_txn_item (
     switch (msgType)
     {
         case ASSUREDCTRL_TXNMSGTYPE_TXN_RESPONSE:
-            add_assuredCtrl_txnResponse_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_txnResponse_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_PREPARE_REQUEST:
-            add_assuredCtrl_syncPrepareRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncPrepareRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_ASYNC_COMMIT_REQUEST:
-            add_assuredCtrl_asyncCommitRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_asyncCommitRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_COMMIT_REQUEST:
-            add_assuredCtrl_syncCommitRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncCommitRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_COMMIT_START:
-            add_assuredCtrl_syncCommitStart_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncCommitStart_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_COMMIT_END:
-            add_assuredCtrl_syncCommitEnd_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncCommitEnd_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_RESPOOL_REQUEST:
-            add_assuredCtrl_syncRespoolRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncRespoolRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_ASYNC_ROLLBACK_REQUEST:
-            add_assuredCtrl_asyncRollbackRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_asyncRollbackRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_UNCOMMIT_REQUEST:
-            add_assuredCtrl_syncUncommitRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncUncommitRequest_item(tvb, offset, item);
             break;
 
         default:
