@@ -30,17 +30,17 @@ jobs:
     uses: ./.github/workflows/macos_arm64.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
   build_windows:
     uses: ./.github/workflows/windows.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
   build_linux:
     uses: ./.github/workflows/ubuntu.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
