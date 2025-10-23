@@ -809,7 +809,7 @@ static char* custom_tvb_bytes_to_str(wmem_allocator_t *scope, tvbuff_t *tvb, con
 
     int pos = 0;
     for (int i = 0; i < len; i++) {
-        pos += sprintf(&str[pos], "%02x", tvb_get_guint8(tvb, offset + i));
+        pos += sprintf(&str[pos], "%02x", tvb_get_uint8(tvb, offset + i));
     }
     str[pos] = '\0'; // Null-terminate the string
 
@@ -1913,7 +1913,7 @@ add_assuredctrl_param(
             if (version < 3) { msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4; }
             else { msg_type = tvb_get_uint8(tvb, 1); }
 
-            windowSize = tvb_get_guint8(tvb, offset);
+            windowSize = tvb_get_uint8(tvb, offset);
             item = proto_tree_add_item(tree,
                 hf_assuredctrl_window_size_param,
                 tvb, offset, size, false);
