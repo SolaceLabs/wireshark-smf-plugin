@@ -1303,7 +1303,6 @@ static int add_assuredCtrl_msgIdList_item (
 {
     int old_offset = offset;
     uint32_t msgIdCount = 0;
-    uint64_t msgId = 0;
     unsigned int i = 0;
     int len;
 
@@ -1696,7 +1695,7 @@ static void add_transactionid_param(
     int size)
 {
     char* str;
-    int field_a, field_b;
+    unsigned int field_a, field_b;
 
     str = (char *)wmem_alloc(pinfo->pool, 100);
     field_a = tvb_get_ntohl(tvb, offset);
