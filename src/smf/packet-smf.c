@@ -1930,7 +1930,7 @@ static int dissect_smf_common(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
                             subdissectorSuccess = 1;
                         }
                     }
-                    else if (dissector_try_payload_new(smf_payload_dissector_table,next_tvb,pinfo,tree,true,NULL))
+                    else if (dissector_try_payload_with_data(smf_payload_dissector_table,next_tvb,pinfo,tree,true,NULL))
                     {
                         subdissectorSuccess = 1;
                     } else {
