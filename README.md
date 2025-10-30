@@ -7,7 +7,7 @@ This project is a plugin for wireshark that will dissect Solace SMF protocol.
 
 ## Getting Started Quickly
 
-**Note: Wireshark SMF Plugin is currently supported on Wireshark 4.0.x, 4.2.x and 4.4.x**
+**Note: Wireshark SMF Plugin is currently supported on Wireshark 4.0.x, 4.2.x, 4.4.x, and 4.6.x**
 
 1. Install [Wireshark](https://www.wireshark.org/download.html).
 
