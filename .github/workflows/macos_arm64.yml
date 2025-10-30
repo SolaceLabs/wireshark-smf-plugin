@@ -60,7 +60,7 @@ jobs:
           python-version: "3.10"
 
       - name: Run Setup Script
-        run: ./wireshark/tools/macos-setup-brew.sh
+        run: ./wireshark/tools/macos-setup-brew.sh --install-required
 
       - name: Link SMF plugin
         shell: bash
