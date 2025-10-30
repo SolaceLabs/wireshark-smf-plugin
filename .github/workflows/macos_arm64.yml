@@ -105,7 +105,7 @@ jobs:
             -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.PATCH_VERSION }} \
             -DSMF_PLUGIN_COMMIT_HASH=0 \
             -DPython_FIND_STRATEGY=LOCATION
-          
+
       - name: Build
         working-directory: build
         run: ninja
@@ -115,7 +115,7 @@ jobs:
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
           install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/../Frameworks/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
-                  
+
        # A compressed tarball is created for release.
        # This means that the artifact is compressed and zipped as a result.
       - name: Create Compressed Tarball

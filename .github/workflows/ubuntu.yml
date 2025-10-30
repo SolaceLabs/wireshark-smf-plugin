@@ -59,7 +59,7 @@ jobs:
           repository: wireshark/wireshark
           path: "./wireshark"
           ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
-          
+
       - name: Install deps
         run: sudo ./wireshark/tools/debian-setup.sh --install-optional --install-test-deps --install-deb-deps python3-pip -y
 
@@ -83,13 +83,13 @@ jobs:
       - name: Build
         run: ninja
         working-directory: build
-        
+
       # A compressed tarball is created for release
       # This means that the artifact is compressed and zipped as a result.
       - name: Create Compressed Tarball
         working-directory: ${{ github.workspace }}/build/run/plugins
         run: tar -czvf ${{ github.workspace }}/${{ env.PLUGIN_NAME }} **/epan/smf.so
-        
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
