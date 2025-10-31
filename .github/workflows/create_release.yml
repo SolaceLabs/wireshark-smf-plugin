@@ -30,21 +30,21 @@ jobs:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-  
+
   build_windows:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/windows.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-    
+
   build_macos:
     uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      
+
   create_release:
     runs-on: ubuntu-latest
     # Wait for all jobs to finish before continuing
@@ -67,4 +67,3 @@ jobs:
             artifacts: "${{ env.LINUX_x86_64_PLUGIN_NAME }}/*, ${{ env.WINDOWS_x64_PLUGIN_NAME }}/*, ${{ env.MACOS_ARM64_PLUGIN_NAME }}/*"
             bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}-x_instructions.md"
             draft: true
-          

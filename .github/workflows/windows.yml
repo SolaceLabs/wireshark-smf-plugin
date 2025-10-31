@@ -18,11 +18,28 @@ on:
         type: string
         required: true
         default: '0'
+  workflow_dispatch:
+    inputs:
+      MAJOR_VERSION:
+        description: "Major version of the wireshark tag to use when building plugin"
+        type: string
+        required: true
+        default: '4'
+      MINOR_VERSION:
+        description: "Minor version of the wireshark tag to use when building plugin"
+        type: string
+        required: true
+        default: '6'
+      PATCH_VERSION:
+        description: "Patch version of the wireshark tag to use when building plugin"
+        type: string
+        required: true
+        default: '0'
 
 env:
   # This is the name for the file in releases
   PLUGIN_NAME: wireshark-smf-windows-x64.zip
-  
+
 jobs:
   windows:
     name: Build on Windows
@@ -94,7 +111,7 @@ jobs:
       - name: Build
         run: cmake --build . --config RelWithDebInfo
         working-directory: build
-      
+
       # A zip is created for release
       # This means that the artifact is double-zipped as a result
       - name: Create Zip
