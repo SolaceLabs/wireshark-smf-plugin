@@ -18,7 +18,7 @@ This project is a plugin for wireshark that will dissect Solace SMF protocol.
 ### Windows Plugin Folder
 Personal Plugin Folder:
 
-`%APPDATA%\Roaming\Wireshark\plugins\4.0\epan`
+`%APPDATA%\Wireshark\plugins\4.6\epan`
 
 Global Plugin Folder:
 

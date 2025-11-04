@@ -46,7 +46,7 @@ jobs:
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
       # this goes into FILEVERSION which appears when you hover over the DLL, but cannot 
       # contain a string like "dev"
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
+      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '-1' }}
   build_linux:
     uses: ./.github/workflows/ubuntu.yml
     with:
