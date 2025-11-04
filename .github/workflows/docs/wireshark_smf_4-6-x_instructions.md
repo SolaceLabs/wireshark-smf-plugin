@@ -9,7 +9,7 @@
 ### Windows Plugin Folder
 Personal Plugin Folder:
 
-`%APPDATA%\Roaming\Wireshark\plugins\4.6\epan`
+`%APPDATA%\Wireshark\plugins\4.6\epan`
 
 Global Plugin Folder:
 

@@ -16,13 +16,13 @@ This project is a plugin for wireshark that will dissect Solace SMF protocol.
 3. Unzip the folder and place the .dll (Windows) or .so (Mac/Linux) file in the Wireshark plugin folder, under `epan`. The plugin folder path varies for each OS.
 
 ### Windows Plugin Folder
-Personal Plugin Folder:
+Personal Plugin Folder (version specific, use the wireshark major.minor):
 
-`%APPDATA%\Roaming\Wireshark\plugins\4.0\epan`
+`%APPDATA%\Wireshark\plugins\4.6\epan`
 
-Global Plugin Folder:
+Global Plugin Folder (version specific, use the wireshark major.minor):
 
-`C:\Program Files\Wireshark\plugins\4.0\plugins\epan`
+`C:\Program Files\Wireshark\plugins\4.6\plugins\epan`
 
 ### macOS/Linux Plugin Folder
 Personal Plugin Folder:

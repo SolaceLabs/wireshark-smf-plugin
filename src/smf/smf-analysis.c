@@ -737,6 +737,10 @@ void smf_analysis_assuredctrl_param(tvbuff_t *tvb, packet_info* pinfo, uint8_t p
 void smf_analysis_assuredctrl(tvbuff_t *tvb, packet_info* pinfo, proto_tree* tree) {
     smf_analysis_assuredctrl_buf_t *smf_analysis_assuredctrl_buf_p = (smf_analysis_assuredctrl_buf_t *)p_get_proto_data(wmem_file_scope(), pinfo,
             getAssuredCtrlProto(), (uint32_t)tvb_raw_offset(tvb));
+    if (NULL == smf_analysis_assuredctrl_buf_p) {
+        // no more buffer to analyze, there were no parameters in the assuredctrl message. Just return
+        return;
+    }
     if (smf_analysis_assuredctrl_buf_p->numTransportMsg_m != 0 || smf_analysis_assuredctrl_buf_p->numAckedMsg_m != 0) {
         proto_item *item = proto_tree_add_item(tree, hf_assuredctrl_smf_analysis, tvb, 0, 0, ENC_NA);
         proto_item_set_generated(item);
