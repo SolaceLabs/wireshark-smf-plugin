@@ -35,6 +35,11 @@ on:
         type: string
         required: true
         default: '0'
+      SMF_PLUGIN_PATCH_VERSION:
+        description: "PATCH for SMF plugin"
+        type: string
+        required: true
+        default: ''
 
 env:
   # This is the name for the file in releases
@@ -77,7 +82,7 @@ jobs:
         run: cmake -GNinja ${{ github.workspace }}/wireshark \
             -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} \
             -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} \
-            -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.PATCH_VERSION }} \
+            -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }} \
             -DSMF_PLUGIN_COMMIT_HASH=0
 
       - name: Build
