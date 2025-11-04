@@ -18,6 +18,12 @@ on:
         type: string
         required: true
         default: '0'
+      SMF_PLUGIN_PATCH_VERSION:
+        description: "PATCH for SMF plugin"
+        type: string
+        required: true
+        default: ''
+        
   workflow_dispatch:
     inputs:
       MAJOR_VERSION:
@@ -35,11 +41,6 @@ on:
         type: string
         required: true
         default: '0'
-      SMF_PLUGIN_PATCH_VERSION:
-        description: "PATCH for SMF plugin"
-        type: string
-        required: true
-        default: ''
 
 env:
   # This is the name for the file in releases
