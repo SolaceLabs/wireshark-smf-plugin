@@ -244,7 +244,7 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
         pos += taglen; /* pos now points to beginning of payload */
         //payload_offset = taglen + 1;
 
-        buffer = (char*)wmem_alloc(wmem_packet_scope(), 300);
+        buffer = (char*)wmem_alloc(pinfo->pool, 300);
         tagtype_name = try_val_to_str(tag, sdttypenames);
 
         switch (payloadlen)

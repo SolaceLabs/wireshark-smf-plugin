@@ -107,7 +107,7 @@ dissect_bm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		cumul_offset = data_offset;
 		for(i = 0; i < num_blocks; i++) {
 
-            buffer = (char*)wmem_alloc(wmem_packet_scope(), 300);
+            buffer = (char*)wmem_alloc(pinfo->pool, 300);
 
 			g_snprintf(buffer, 300, "Type %d Length %d", idxblocks[i].type, idxblocks[i].length);
 			proto_tree_add_string(bm_tree, hf_bm_block, tvb, cumul_offset, idxblocks[i].length, buffer);

@@ -809,7 +809,7 @@ static char* custom_tvb_bytes_to_str(wmem_allocator_t *scope, tvbuff_t *tvb, con
 
     int pos = 0;
     for (int i = 0; i < len; i++) {
-        pos += sprintf(&str[pos], "%02x", tvb_get_guint8(tvb, offset + i));
+        pos += sprintf(&str[pos], "%02x", tvb_get_uint8(tvb, offset + i));
     }
     str[pos] = '\0'; // Null-terminate the string
 
@@ -818,6 +818,7 @@ static char* custom_tvb_bytes_to_str(wmem_allocator_t *scope, tvbuff_t *tvb, con
 
 static int add_assuredCtrl_Xid_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset)
 {
@@ -842,13 +843,13 @@ static int add_assuredCtrl_Xid_item (
     char buffer[267]; // 128 + 128 + 8 + 3 (the three is 2 hiphers and a ending null)
 
     if (txnIdSize != 0) {
-        transactionId_p = custom_tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, txnIdSize);
+        transactionId_p = custom_tvb_bytes_to_str(pinfo->pool, tvb, offset, txnIdSize);
         proto_tree_add_item(tree,
             hf_assuredctrl_payload_transactionId, tvb, offset, txnIdSize, false);
         offset += txnIdSize;
     }
     if (bQualSize != 0) {
-        branchQualifier_p = custom_tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, bQualSize);
+        branchQualifier_p = custom_tvb_bytes_to_str(pinfo->pool, tvb, offset, bQualSize);
         proto_tree_add_item(tree,
             hf_assuredctrl_payload_branchQualifier, tvb, offset, bQualSize, false);
         offset += bQualSize;
@@ -1024,6 +1025,7 @@ static void add_assuredCtrl_consumedMsgList_item (
 
 static void add_assuredCtrl_xaStartRequest_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1048,11 +1050,12 @@ static void add_assuredCtrl_xaStartRequest_item (
         hf_assuredctrl_transactiontimeout_param, tvb, offset, len=4, false);
     offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 }
 
 static void add_assuredCtrl_xaEndRequest_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1073,7 +1076,7 @@ static void add_assuredCtrl_xaEndRequest_item (
         hf_assuredctrl_xaEndRequestFlags_byte, tvb, offset++, 1, false);
 
     offset += get_32_bit_value(sub_tree, tvb, offset, "RequestorTransactedSessionId");
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
     offset += get_64_bit_value(sub_tree, tvb, offset, "LastPublishedMsgId");
     offset += get_32_bit_value(sub_tree, tvb, offset, "MessageReceiverSessionId");
     numMsgLists = tvb_get_ntohs(tvb, offset);
@@ -1087,6 +1090,7 @@ static void add_assuredCtrl_xaEndRequest_item (
 
 static void add_assuredCtrl_xaPrepareRequest_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1107,11 +1111,12 @@ static void add_assuredCtrl_xaPrepareRequest_item (
         hf_assuredctrl_transactedsessionid_param, tvb, offset, 4, false, &len);
         offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 }
 
 static void add_assuredCtrl_xaCommitRequest_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1132,11 +1137,12 @@ static void add_assuredCtrl_xaCommitRequest_item (
         hf_assuredctrl_transactedsessionid_param, tvb, offset, 4, false, &len);
         offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 }
 
 static void add_assuredCtrl_xaRollbackRequest_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1157,11 +1163,12 @@ static void add_assuredCtrl_xaRollbackRequest_item (
         hf_assuredctrl_transactedsessionid_param, tvb, offset, 4, false, &len);
         offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 }
 
 static void add_assuredCtrl_xaForgetRequest_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1182,7 +1189,7 @@ static void add_assuredCtrl_xaForgetRequest_item (
         hf_assuredctrl_transactedsessionid_param, tvb, offset, 4, false, &len);
         offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 }
 
 static void add_assuredCtrl_xaRecoverRequest_item (
@@ -1219,6 +1226,7 @@ static void add_assuredCtrl_xaRecoverRequest_item (
 
 static void add_assuredCtrl_xaRecoverResponse_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size)
@@ -1268,7 +1276,7 @@ static void add_assuredCtrl_xaRecoverResponse_item (
     numXids = tvb_get_ntohl(tvb, offset);
     offset += get_32_bit_value(sub_tree, tvb, offset, "NumXids");
     for (loop = 0; loop < numXids; loop++) {
-        offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+        offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
     }
 }
 
@@ -1295,7 +1303,6 @@ static int add_assuredCtrl_msgIdList_item (
 {
     int old_offset = offset;
     uint32_t msgIdCount = 0;
-    uint64_t msgId = 0;
     unsigned int i = 0;
     int len;
 
@@ -1368,10 +1375,8 @@ static int add_assuredCtrl_externalAckList_item (
 }
 
 static void add_assuredCtrl_txnResponse_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1391,10 +1396,9 @@ static void add_assuredCtrl_txnResponse_item (
 }
 
 static void add_assuredCtrl_syncPrepareRequest_item (
-    proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1412,7 +1416,7 @@ static void add_assuredCtrl_syncPrepareRequest_item (
     proto_tree_add_item(sub_tree, hf_assuredctrl_payload_correlationId, tvb, offset, len = 8, false);
     offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 
     offset += add_assuredCtrl_txnClientFields_item(sub_tree, tvb, offset, hf_assuredctrl_payload_clientName);
     offset += add_assuredCtrl_txnClientFields_item(sub_tree, tvb, offset, hf_assuredctrl_payload_clientUsername);
@@ -1420,10 +1424,8 @@ static void add_assuredCtrl_syncPrepareRequest_item (
 }
 
 static void add_assuredCtrl_asyncCommitRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1440,10 +1442,8 @@ static void add_assuredCtrl_asyncCommitRequest_item (
 }
 
 static void add_assuredCtrl_syncCommitRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1462,10 +1462,9 @@ static void add_assuredCtrl_syncCommitRequest_item (
 }
 
 static void add_assuredCtrl_syncCommitStart_item (
-    proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1483,7 +1482,7 @@ static void add_assuredCtrl_syncCommitStart_item (
     proto_tree_add_item(sub_tree, hf_assuredctrl_payload_correlationId, tvb, offset, len = 8, false);
     offset += len;
 
-    offset += add_assuredCtrl_Xid_item(sub_tree,  tvb, offset);
+    offset += add_assuredCtrl_Xid_item(sub_tree, pinfo, tvb, offset);
 
     offset += add_assuredCtrl_txnClientFields_item(sub_tree, tvb, offset, hf_assuredctrl_payload_clientName);
     offset += add_assuredCtrl_txnClientFields_item(sub_tree, tvb, offset, hf_assuredctrl_payload_clientUsername);
@@ -1491,10 +1490,8 @@ static void add_assuredCtrl_syncCommitStart_item (
 }
 
 static void add_assuredCtrl_syncCommitEnd_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1510,10 +1507,8 @@ static void add_assuredCtrl_syncCommitEnd_item (
 }
 
 static void add_assuredCtrl_syncRespoolRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1531,10 +1526,8 @@ static void add_assuredCtrl_syncRespoolRequest_item (
 }
 
 static void add_assuredCtrl_asyncRollbackRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1551,10 +1544,8 @@ static void add_assuredCtrl_asyncRollbackRequest_item (
 }
 
 static void add_assuredCtrl_syncUncommitRequest_item (
-    proto_tree *tree,
     tvbuff_t *tvb,
     int offset,
-    int size,
     proto_item *item)
 {
     proto_tree* sub_tree;
@@ -1572,6 +1563,7 @@ static void add_assuredCtrl_syncUncommitRequest_item (
 /* ---------- Additional Functions --------------------- */
 static void add_assuredCtrl_payload_param_xa_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size,
@@ -1604,28 +1596,28 @@ static void add_assuredCtrl_payload_param_xa_item (
             add_assuredCtrl_xaResponse_item(tree, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XASTART_REQUEST:
-            add_assuredCtrl_xaStartRequest_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaStartRequest_item(tree, pinfo, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XAEND_REQUEST:
-            add_assuredCtrl_xaEndRequest_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaEndRequest_item(tree, pinfo, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XAPREPARE_REQUEST:
-            add_assuredCtrl_xaPrepareRequest_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaPrepareRequest_item(tree, pinfo, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XACOMMIT_REQUEST:
-            add_assuredCtrl_xaCommitRequest_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaCommitRequest_item(tree, pinfo, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XAROLLBACK_REQUEST:
-            add_assuredCtrl_xaRollbackRequest_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaRollbackRequest_item(tree, pinfo, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XAFORGET_REQUEST:
-            add_assuredCtrl_xaForgetRequest_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaForgetRequest_item(tree, pinfo, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XARECOVER_REQUEST:
             add_assuredCtrl_xaRecoverRequest_item(tree, tvb, offset, size);
             break;
         case ASSUREDCTRL_XAMSGTYPE_XARECOVER_RESPONSE:
-            add_assuredCtrl_xaRecoverResponse_item(tree, tvb, offset, size);
+            add_assuredCtrl_xaRecoverResponse_item(tree, pinfo, tvb, offset, size);
             break;
         default:
             proto_tree_add_item(tree,
@@ -1637,6 +1629,7 @@ static void add_assuredCtrl_payload_param_xa_item (
 
 static void add_assuredCtrl_payload_param_txn_item (
     proto_tree *tree,
+    packet_info *pinfo,
     tvbuff_t *tvb,
     int offset,
     int size,
@@ -1650,39 +1643,39 @@ static void add_assuredCtrl_payload_param_txn_item (
     switch (msgType)
     {
         case ASSUREDCTRL_TXNMSGTYPE_TXN_RESPONSE:
-            add_assuredCtrl_txnResponse_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_txnResponse_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_PREPARE_REQUEST:
-            add_assuredCtrl_syncPrepareRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncPrepareRequest_item(pinfo, tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_ASYNC_COMMIT_REQUEST:
-            add_assuredCtrl_asyncCommitRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_asyncCommitRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_COMMIT_REQUEST:
-            add_assuredCtrl_syncCommitRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncCommitRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_COMMIT_START:
-            add_assuredCtrl_syncCommitStart_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncCommitStart_item(pinfo, tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_COMMIT_END:
-            add_assuredCtrl_syncCommitEnd_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncCommitEnd_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_RESPOOL_REQUEST:
-            add_assuredCtrl_syncRespoolRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncRespoolRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_ASYNC_ROLLBACK_REQUEST:
-            add_assuredCtrl_asyncRollbackRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_asyncRollbackRequest_item(tvb, offset, item);
             break;
 
         case ASSUREDCTRL_TXNMSGTYPE_SYNC_UNCOMMIT_REQUEST:
-            add_assuredCtrl_syncUncommitRequest_item(tree, tvb, offset, size, item);
+            add_assuredCtrl_syncUncommitRequest_item(tvb, offset, item);
             break;
 
         default:
@@ -1695,15 +1688,16 @@ static void add_assuredCtrl_payload_param_txn_item (
 
 static void add_transactionid_param(
     proto_tree *tree,
+    packet_info *pinfo,
     int id,
     tvbuff_t *tvb,
     int offset,
     int size)
 {
     char* str;
-    int field_a, field_b;
+    unsigned int field_a, field_b;
 
-    str = (char *)wmem_alloc(wmem_packet_scope(), 100);
+    str = (char *)wmem_alloc(pinfo->pool, 100);
     field_a = tvb_get_ntohl(tvb, offset);
     field_b = tvb_get_ntohl(tvb, offset+4);
     g_snprintf(str, 100, "A=%d B=%d", field_a, field_b);
@@ -1913,7 +1907,7 @@ add_assuredctrl_param(
             if (version < 3) { msg_type = (tvb_get_uint8(tvb, 1) & 0xf0) >> 4; }
             else { msg_type = tvb_get_uint8(tvb, 1); }
 
-            windowSize = tvb_get_guint8(tvb, offset);
+            windowSize = tvb_get_uint8(tvb, offset);
             item = proto_tree_add_item(tree,
                 hf_assuredctrl_window_size_param,
                 tvb, offset, size, false);
@@ -2078,6 +2072,7 @@ add_assuredctrl_param(
             break;
         case ASSUREDCTRL_TRANSACTIONID_PARAM:
             add_transactionid_param(tree,
+                pinfo,
                 hf_assuredctrl_transactionid_param,
                 tvb, offset, size);
             break;
@@ -2186,8 +2181,8 @@ add_assuredctrl_param(
             /* Only parse if msg is either an XaCtrl (0x0e) or TxnCtrl (0x10). */
             if ( (msg_type != 0x0e) && (msg_type != 0x10) ) { break; }
 
-            if (msg_type == 0x0e) { add_assuredCtrl_payload_param_xa_item(tree, tvb, offset, size, lenbytes, str_transactionctrl_msgtype); }
-            else { add_assuredCtrl_payload_param_txn_item(tree, tvb, offset, size, lenbytes, str_transactionctrl_msgtype); }
+            if (msg_type == 0x0e) { add_assuredCtrl_payload_param_xa_item(tree, pinfo, tvb, offset, size, lenbytes, str_transactionctrl_msgtype); }
+            else { add_assuredCtrl_payload_param_txn_item(tree, pinfo, tvb, offset, size, lenbytes, str_transactionctrl_msgtype); }
 
             break;
         case ASSUREDCTRL_ENDPOINTID_PARAM:
@@ -2386,7 +2381,7 @@ dissect_assuredctrl_param(
     assuredctrl_param_tree = proto_item_add_subtree(ti, ett_assuredctrl_list);
 
     param_type = tvb_get_uint8(tvb, offset) & 0x3f;
-    proto_item_append_text(ti, " (%s)", val_to_str(param_type, parametertypenames, "Unknown (0x%02x)"));
+    proto_item_append_text(ti, " (%s)", val_to_str(pinfo->pool, param_type, parametertypenames, "Unknown (0x%02x)"));
 
     /* Is it a pad byte? */
     if (param_type == 0)

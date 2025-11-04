@@ -35,14 +35,14 @@ jobs:
     uses: ./.github/workflows/macos_arm64.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
       SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || 'dev' }}
   build_windows:
     uses: ./.github/workflows/windows.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
       # this goes into FILEVERSION which appears when you hover over the DLL, but cannot 
       # contain a string like "dev"
@@ -51,6 +51,6 @@ jobs:
     uses: ./.github/workflows/ubuntu.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '4' }}
+      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
       PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
       SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || 'dev' }}

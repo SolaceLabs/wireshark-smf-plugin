@@ -1,4 +1,4 @@
-name: Build MacOS
+name: Build MacOS ARM64
 
 on:
   workflow_call:
@@ -12,12 +12,29 @@ on:
         description: "Minor version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '4'
+        default: '6'
       PATCH_VERSION:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '5'
+        default: '0'
+  workflow_dispatch:
+    inputs:
+      MAJOR_VERSION:
+        description: "Major version of the wireshark tag to use when building plugin"
+        type: string
+        required: true
+        default: '4'
+      MINOR_VERSION:
+        description: "Minor version of the wireshark tag to use when building plugin"
+        type: string
+        required: true
+        default: '6'
+      PATCH_VERSION:
+        description: "Patch version of the wireshark tag to use when building plugin"
+        type: string
+        required: true
+        default: '0'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
@@ -65,7 +82,7 @@ jobs:
           python-version: "3.10"
 
       - name: Run Setup Script
-        run: ./wireshark/tools/macos-setup-brew.sh
+        run: ./wireshark/tools/macos-setup-brew.sh --install-required
 
       - name: Link SMF plugin
         shell: bash
@@ -93,7 +110,7 @@ jobs:
             -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }} \
             -DSMF_PLUGIN_COMMIT_HASH=0 \
             -DPython_FIND_STRATEGY=LOCATION
-          
+
       - name: Build
         working-directory: build
         run: ninja
@@ -103,7 +120,7 @@ jobs:
         run: |
           VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
           install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/../Frameworks/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
-                  
+
        # A compressed tarball is created for release.
        # This means that the artifact is compressed and zipped as a result.
       - name: Create Compressed Tarball

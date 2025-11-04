@@ -14,17 +14,17 @@ on:
         description: "Minor version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: "4"
+        default: "6"
       PATCH_VERSION:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: "5"
+        default: "0"
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
-        default: ''
+        default: ""
 
 jobs:
   macos:
