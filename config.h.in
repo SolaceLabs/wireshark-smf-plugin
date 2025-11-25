@@ -1,0 +1,23 @@
+// Copyright 2025 Solace Corporation. All rights reserved.
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+/* Wireshark System Checks */
+#cmakedefine HAVE_SSIZE_T 1
+
+/*
+ * Plugin Identity
+ * PLUGIN_VERSION is required by the generated plugin.c
+ */
+#define PLUGIN_VERSION "@PLUGIN_VERSION@"
+
+/*
+ * Wireshark Compatibility
+ * The generated plugin.c requires VERSION_MAJOR/MINOR to match the
+ * Wireshark headers used during compilation.
+ */
+#define VERSION_MAJOR @WS_VERSION_MAJOR@
+#define VERSION_MINOR @WS_VERSION_MINOR@
+
+#endif

@@ -25,7 +25,7 @@ Global Plugin Folder (version specific, use the wireshark major.minor):
 `C:\Program Files\Wireshark\plugins\4.6\plugins\epan`
 
 ### macOS/Linux Plugin Folder
-Personal Plugin Folder:
+Personal Plugin Directory:
 
 `~/.local/lib/wireshark/plugins/epan`
 
@@ -39,116 +39,63 @@ See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/w
 4. After installing the plugin, verify that the plugin is loaded by searching `smf` under the `Plugins` tab
 
 ## Building Manually
-Go to an appropriate directory and execute:
-```
-git clone --recurse-submodules git@github.com:SolaceLabs/wireshark-smf-plugin.git
-```
-Note: If you plan to submit changes, create a fork first and clone from the fork.
-
-### Windows
-#### Windows Build
-Follow instructions in https://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWindows
-
-The following are some deviations from the above instructions.
-Use a cmd prompt with admin privilege:
-```
-cd base-directory-of-wireshark-smf-plugin
-mkdir build
-mklink CMakeListsCustom.txt ..\src\CMakeListsCustom.txt
-cd plugins\epan
-mklink /D smf ..\..\..\src\smf
-```
-In vscode, my task.json looks like this:
-```json
-{
-	"version": "2.0.0",
-	"tasks": [
-        {
-            "label": "Pre-Build Files (cmake)",
-            "type": "shell",
-            "group":"build",
-            "options": {
-                "cwd": "build",
-                "env": {
-                    "WIRESHARK_BASE_DIR": "C:\\my-path\\wireshark-smf-plugin",
-                    "QT6_DIR": "C:\\Qt\\6.7.3\\msvc2022_64",
-                    "WIRESHARK_VERSION_EXTRA": "-YourExtraVersionInfo"
-                }
-            },
-            "command": "cmake -DVCSVERSION_OVERRIDE=\"Git v3.1.0 packaged as 3.1.0-1\" -G “Visual Studio 17 2022” -A x64 ..\\wireshark",
-            "problemMatcher": [
-                "$msCompile"
-            ]
-        },
-        {
-            "label": "Build wireshark (msbuild)",
-            "type": "shell",
-            "group":{
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "cwd": "build",
-                "env": {
-                    "WIRESHARK_BASE_DIR": "C:\\my-path\\wireshark-smf-plugin",
-                    "QT6_BASE_DIR": "C:\\Qt\\6.7.3\\msvc2022_64",
-                    "WIRESHARK_VERSION_EXTRA": "-YourExtraVersionInfo"
-                }
-            },
-            "command": "msbuild /m /p:Configuration=Debug Wireshark.sln",
-            "problemMatcher": [
-                "$msCompile"
-            ]
-        },
-        {
-            "label": "Clean wireshark (msbuild)",
-            "type": "shell",
-            "group":"build",
-            "options": {
-                "cwd": "build",
-                "env": {
-                    "WIRESHARK_BASE_DIR": "C:\\my-path\\wireshark-smf-plugin",
-                    "QT6_BASE_DIR": "C:\\Qt\\6.7.3\\msvc2022_64",
-                    "WIRESHARK_VERSION_EXTRA": "-YourExtraVersionInfo"
-                }
-            },
-            "command": "msbuild /m /p:Configuration=Debug Wireshark.sln /t:Clean"
-        }
-	]
-}
-```
-
-Note 1: To start VSCode, start from the "X64 Native Tools Command Prompt" (search for this in Windows search box), then type "code" to start VSCode.
-
-Note 2: The VCSVERSION_OVERRIDE is needed because the compile failed to find the approparite git repository.
+> [!NOTE]
+> If you plan to submit changes, create a fork first and clone from the fork.
 
 ### Linux
-    Wireshark is best built from source on Linux following the steps outlined at wireshark.org.
+1. Install the dependencies
+```sh
+# adjust for your distribution, you need
+# - C compiler (gcc or clang)
+# - cmake
+# - ninja (optional, can use make)
+# - glib2 with development headers
+# - wireshark with development headers
+# - zlib with development headers
+sudo apt install build-essential cmake ninja wireshark-dev zlib1g-dev
+```
 
-    That said, if you already have a wireshark running on Linux and just need to build the plugin you can do the following:
-...
-    # clone the repo
-    git clone --recurse-submodules <your-fork>/wireshark-smf-plugin.git
-    # enter the repo
-    cd wireshark-smf-plugin/
-    # symlink out plugin into wireshark 
-    ln -s ../../../src/smf wireshark/plugins/epan/smf
-    # create a build directory and enter it
-    mkdir build
-    cd build
-    # configure cmake,   turn off all options for building wireshark and just build the plugin
-    cmake ../wireshark -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCUSTOM_PLUGIN_SRC_DIR="plugins/epan/smf" $(sed -n 's/^option(\(BUILD_\S\+\).*ON)$/-D\1=OFF/p' ../wireshark/CMakeOptions.txt)
-    # build the plugins
-    ninja plugins
-...
+2. Clone the repo
+```sh
+git clone https://github.com/SolaceLabs/wireshark-smf-plugin
+# or
+git clone <your-fork>/wireshark-smf-plugin
+```
+
+3. Enter the repo
+```sh
+cd wireshark-smf-plugin
+```
+
+4. Configure cmake
+```sh
+# optionally add "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" to export the "compile_commands.json"
+# ninja is optional
+cmake -G Ninja -B build
+```
+
+5. (optional) If you chose to export the compile commands, you can copy them from build or create a symbolic link
+```sh
+ln -s build/compile_commands.json
+```
+
+6. Build the plugin
+```sh
+cmake --build build
+```
+
+You can then find the plugin at `build/smf.so`.
+
+### Windows
+TODO: Build out-of-tree. See github workflow for working steps.
 
 ### MacOS
-    TODO
+TODO: Build out-of-tree. See github workflow for working steps.
 
 ## Version Naming Convention
 As this plugin is designed for use in Wireshark, the MAJOR.MINOR match the Wireshark versions. I.E. SMF Plugin 4.0.x indicates support for all patches of Wireshark 4.0.
 
-The PATCH version of the plugin differentiates versions of the SMF Plugin.  As long as the MAJOR.MINOR of the plugin match the corresponding MAJOR.MINOR Wireshark version, then they are compatible.
+The PATCH version of the plugin differentiates versions of the SMF Plugin. As long as the MAJOR.MINOR of the plugin match the corresponding MAJOR.MINOR Wireshark version, then they are compatible.
 
 ## Resources
 This is not an officially supported Solace product.

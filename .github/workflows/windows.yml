@@ -17,13 +17,13 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '0'
+        default: '1'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
         default: ''
-        
+
   workflow_dispatch:
     inputs:
       MAJOR_VERSION:
@@ -40,97 +40,127 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '0'
+        default: '1'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
         default: ''
 
-env:
-  # This is the name for the file in releases
-  PLUGIN_NAME: wireshark-smf-windows-x64.zip
-
 jobs:
   windows:
     name: Build on Windows
     runs-on: windows-2022
     env:
-      PLATFORM: x64
-      WIRESHARK_BASE_DIR: C:\Development
-      CMAKE_PREFIX_PATH: D:\a\wireshark-smf-plugin\Qt\6.2.3\msvc2019_64
-      WIRESHARK_VERSION_EXTRA: -GithubActionBuild
+      WIRESHARK_BASE_DIR: ${{ github.workspace }}/wireshark-libs
     steps:
-      #- name: Checkout with Submodule
-      #  if: ${{ inputs.MAJOR_VERSION == '' }}
-      #  uses: actions/checkout@v4
-      #  with:
-      #    submodules: recursive
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Setup MSVC Environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache Wireshark Libs
+        id: cache-wireshark-libs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.WIRESHARK_BASE_DIR }}
+          key: wireshark-libs-v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}-windows
+
+      - name: Cache Wireshark Install
+        id: cache-wireshark-install
+        uses: actions/cache@v4
+        with:
+          path: wireshark-install
+          key: wireshark-v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}-windows
+
+      - name: Create Wireshark Build Directory
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: |
+          mkdir wireshark-install
+
       - name: Checkout Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
         with:
           repository: wireshark/wireshark
-          path: "./wireshark"
+          path: wireshark-src
           ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
 
-      - name: Choco install
-        run: choco install -y --force --no-progress asciidoctorj xsltproc docbook-bundle nsis winflexbison3 cmake
+      - name: Install Wireshark Dependencies
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: choco install winflexbison3 --no-progress
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
-
-      - name: Install strawberryperl
-        uses: shogo82148/actions-setup-perl@v1
-        with:
-          perl-version: "5.30"
-          distribution: strawberry
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        uses: jurplel/install-qt-action@v4
         with:
-          arch: win64_msvc2019_64
-          version: 6.2.3
           modules: "qt5compat"
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
-        with:
-          vs-version: 16.8
 
-      - name: Set MSVC command prompt
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: >-
+          cmake -G Ninja -S wireshark-src -B wireshark-build
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/wireshark-install"
+          -DBUILD_wireshark=OFF
+          -DBUILD_tshark=OFF
+          -DBUILD_editcap=OFF
+          -DBUILD_capinfos=OFF
+          -DBUILD_mmdbresolve=OFF
+          -DENABLE_XXHASH=OFF
+          -DENABLE_PCAP=OFF
 
-      - name: Link SMF plugin
-        shell: cmd
+      - name: Build Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install
+
+      - name: Install Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install-headers
+
+      - name: Locate Windows 3rd Party Libs
         run: |
-          move D:\a\wireshark-smf-plugin\wireshark-smf-plugin\src\smf D:\a\wireshark-smf-plugin\wireshark-smf-plugin\wireshark\plugins\epan
-          copy D:\a\wireshark-smf-plugin\wireshark-smf-plugin\src\CMakeListsCustom.txt D:\a\wireshark-smf-plugin\wireshark-smf-plugin\wireshark\
-      - name: Mkdir
-        run: mkdir build
+          $RequiredLibs = @("glib-2.0.lib", "zlib.lib")
+          $FoundPaths = @()
 
-      - name: Cmake
-        run: |
-          cmake -DUSE_qt6=ON -DCMAKE_SYSTEM_VERSION="10.0.20348.0" -A x64 ../wireshark -DCMAKE_POLICY_DEFAULT_CMP0094=NEW -DPython3_ROOT_DIR='${{ env.Python3_ROOT_DIR }}' -DPython3_EXECUTABLE='${{ env.Python3_ROOT_DIR }}\python.exe' -DPython3_LIBRARY='${{ env.Python3_ROOT_DIR }}\libs\python380.lib' -DPython3_INCLUDE_DIR='${{ env.Python3_ROOT_DIR }}\Include' -DSMF_PLUGIN_PATCH_VERSION='${{ inputs.SMF_PLUGIN_PATCH_VERSION }}'
-        env:
-          PLATFORM: x64
-          WIRESHARK_BASE_DIR: C:/wireshark-libs
-          QT5_BASE_DIR: C:/Qt/5.12.3/msvc2017_64
-        working-directory: build
+          foreach ($LibName in $RequiredLibs) {
+              $AllCopies = Get-ChildItem -Path "${{ env.WIRESHARK_BASE_DIR }}" -Filter $LibName -Recurse -File
 
-      - name: Build
-        run: cmake --build . --config RelWithDebInfo
-        working-directory: build
+              $BestMatch = $AllCopies | Where-Object {
+                  $_.FullName -match "vcpkg-export" -and $_.FullName -notmatch "\\debug\\"
+              } | Select-Object -First 1
 
-      # A zip is created for release
-      # This means that the artifact is double-zipped as a result
-      - name: Create Zip
-        working-directory: ${{ github.workspace }}/build/run/RelWithDebInfo/plugins
-        run: Compress-Archive ./*/epan/smf.* -Destination ${{ github.workspace }}\${{ env.PLUGIN_NAME }}
+              if (-not $BestMatch) {
+                  Write-Error "Could not find Release version of $LibName inside a vcpkg-export folder!"
+                  exit 1
+              }
+
+              $InstallRoot = $BestMatch.Directory.Parent.FullName
+              $FoundPaths += $InstallRoot
+          }
+
+          $FinalPath = ($FoundPaths | Select-Object -Unique) -join ";"
+
+          Write-Host "Selected Library Path: $FinalPath"
+          echo "WS_DEP_PATH=$FinalPath" >> $env:GITHUB_ENV
+
+      - name: Configure Plugin
+        run: >-
+          cmake -G Ninja -S . -B build
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/wireshark-install;${{ github.workspace }}/wireshark-build;${{ env.WS_DEP_PATH }}"
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_C_FLAGS="/std:c11"
+          -DWireshark_VERSION="${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}"
+          -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }}
+          -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }}
+          -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }}
+
+      - name: Build Plugin
+        run: cmake --build build
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PLUGIN_NAME }}
-          path: ${{ github.workspace }}/${{ env.PLUGIN_NAME }}
+          name: wireshark-smf-windows-x64.zip
+          path: build/smf.dll
+          overwrite: true

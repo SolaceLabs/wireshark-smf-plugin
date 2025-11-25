@@ -1,4 +1,4 @@
-name: Build Ubuntu
+name: Build Linux
 
 on:
   workflow_call:
@@ -17,13 +17,13 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '0'
+        default: '1'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
-        default: ''
-        
+        default: '0'
+
   workflow_dispatch:
     inputs:
       MAJOR_VERSION:
@@ -40,70 +40,84 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '0'
+        default: '1'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
-        default: ''
-
-env:
-  # This is the name for the file in releases
-  PLUGIN_NAME: wireshark-smf-linux-x86_64.tar.gz
+        default: '0'
 
 jobs:
   ubuntu:
     name: Build on Linux
     runs-on: ubuntu-22.04
     steps:
-      #- name: Checkout with Submodule
-      #  if: ${{ inputs.MAJOR_VERSION == '' }}
-      #  uses: actions/checkout@v4
-      #  with:
-      #    submodules: recursive
-
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Cache Wireshark Install
+        id: cache-wireshark-install
+        uses: actions/cache@v4
+        with:
+          path: wireshark-install
+          key: wireshark-v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}-linux
+
+      - name: Create Wireshark Build Directory
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: mkdir wireshark-install
+
       - name: Checkout Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
         with:
           repository: wireshark/wireshark
-          path: "./wireshark"
+          path: wireshark-src
           ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
 
-      - name: Install deps
-        run: sudo ./wireshark/tools/debian-setup.sh --install-optional --install-test-deps --install-deb-deps python3-pip -y
+      - name: Install Wireshark Dependencies
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: sudo wireshark-src/tools/debian-setup.sh
 
-      - name: Link SMF plugin
-        shell: bash
-        run: |
-          ln -s ${{ github.workspace }}/src/CMakeListsCustom.txt  ${{ github.workspace }}/wireshark/CMakeListsCustom.txt
-          ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
+      - name: Configure Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: >-
+          cmake -G Ninja -S wireshark-src -B wireshark-build
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/wireshark-install"
+          -DBUILD_wireshark=OFF
+          -DBUILD_tshark=OFF
+          -DBUILD_editcap=OFF
+          -DBUILD_capinfos=OFF
+          -DBUILD_mmdbresolve=OFF
+          -DENABLE_XXHASH=OFF
+          -DENABLE_PCAP=OFF
 
-      - name: Mkdir
-        run: mkdir build
+      - name: Build Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build
 
-      - name: Cmake
-        working-directory: build
-        run: cmake -GNinja ${{ github.workspace }}/wireshark \
-            -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} \
-            -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} \
-            -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }} \
-            -DSMF_PLUGIN_COMMIT_HASH=0
+      - name: Install Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install
 
-      - name: Build
-        run: ninja
-        working-directory: build
+      - name: Install Wireshark Headers
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install-headers
 
-      # A compressed tarball is created for release
-      # This means that the artifact is compressed and zipped as a result.
-      - name: Create Compressed Tarball
-        working-directory: ${{ github.workspace }}/build/run/plugins
-        run: tar -czvf ${{ github.workspace }}/${{ env.PLUGIN_NAME }} **/epan/smf.so
+      - name: Configure Plugin
+        run: >-
+          cmake -G Ninja -S . -B build
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/wireshark-install"
+          -DWireshark_VERSION="${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}"
+          -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }}
+          -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }}
+          -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }}
+
+      - name: Build Plugin
+        run: cmake --build build
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PLUGIN_NAME }}
-          path: "${{ github.workspace }}/${{ env.PLUGIN_NAME }}"
+          name: wireshark-smf-linux-x86_64.tar.gz
+          path: build/smf.so
           overwrite: true

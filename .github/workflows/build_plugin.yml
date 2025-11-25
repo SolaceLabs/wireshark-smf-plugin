@@ -24,26 +24,19 @@ on:
         required: true
         default: ''
 jobs:
-  # Commenting out intel mac for regular builds as it is currently broken.
-  #build_macos:
-  #  uses: ./.github/workflows/macos.yml
-  #  with:
-  #    MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-  #    MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
-  #    PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
   build_macos_arm64:
     uses: ./.github/workflows/macos_arm64.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '1' }}
       SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || 'dev' }}
   build_windows:
     uses: ./.github/workflows/windows.yml
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '1' }}
       # this goes into FILEVERSION which appears when you hover over the DLL, but cannot 
       # contain a string like "dev"
       SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '-1' }}
@@ -52,5 +45,5 @@ jobs:
     with:
       MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
       MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
+      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '1' }}
       SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || 'dev' }}

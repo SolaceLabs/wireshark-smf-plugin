@@ -17,13 +17,13 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '0'
+        default: '1'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
         default: ''
-        
+
   workflow_dispatch:
     inputs:
       MAJOR_VERSION:
@@ -40,102 +40,89 @@ on:
         description: "Patch version of the wireshark tag to use when building plugin"
         type: string
         required: true
-        default: '0'
+        default: '1'
       SMF_PLUGIN_PATCH_VERSION:
         description: "PATCH for SMF plugin"
         type: string
         required: true
         default: ''
 
-env:
-  # This is the name for the file in releases
-  PLUGIN_NAME: wireshark-smf-macos-arm64.tar.gz
-
 jobs:
   macos:
     name: Build on MacOS
     runs-on: macos-14
     steps:
-      #- name: Checkout with Submodule
-      #  if: ${{ inputs.MAJOR_VERSION == '' }}
-      #  uses: actions/checkout@v4
-      #  with:
-      #    submodules: recursive
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Cache Wireshark Install
+        id: cache-wireshark-install
+        uses: actions/cache@v4
+        with:
+          path: wireshark-install
+          key: wireshark-v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}-macos
+
+      - name: Create Wireshark Build Directory
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: mkdir wireshark-install
+
       - name: Checkout Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
         with:
           repository: wireshark/wireshark
-          path: "./wireshark"
-          ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
-      - name: Checkout with Specified Input
-        if : ${{ inputs.MAJOR_VERSION != '' }}
-        uses: actions/checkout@v4
-        with:
-          repository: wireshark/wireshark
-          path: "./wireshark"
+          path: wireshark-src
           ref: v${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}
 
-      - name: Install Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      - name: Install Wireshark Dependencies
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: wireshark-src/tools/macos-setup-brew.sh --install-required
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+      - name: Configure Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: >-
+          cmake -G Ninja -S wireshark-src -B wireshark-build
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/wireshark-install"
+          -DBUILD_wireshark=OFF
+          -DBUILD_tshark=OFF
+          -DBUILD_editcap=OFF
+          -DBUILD_capinfos=OFF
+          -DBUILD_mmdbresolve=OFF
+          -DENABLE_XXHASH=OFF
+          -DENABLE_PCAP=OFF
 
-      - name: Run Setup Script
-        run: ./wireshark/tools/macos-setup-brew.sh --install-required
+      - name: Build Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build
 
-      - name: Link SMF plugin
-        shell: bash
+      - name: Install Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install
+
+      - name: Install Wireshark Headers
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install-headers
+
+      - name: Configure Plugin
+        run: >-
+          cmake -G Ninja -S . -B build
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/wireshark-install"
+          -DWireshark_VERSION="${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.PATCH_VERSION }}"
+          -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }}
+          -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }}
+          -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }}
+
+      - name: Build Plugin
+        run: cmake --build build
+
+      - name: Update dependency paths for SMF plugin
         run: |
-          ln -s ${{ github.workspace }}/src/CMakeListsCustom.txt  ${{ github.workspace }}/wireshark/CMakeListsCustom.txt
-          ln -s ${{ github.workspace }}/src/smf  ${{ github.workspace }}/wireshark/plugins/epan/smf
-
-      - name: Mkdir
-        run: mkdir -p build
-
-      - name: Cmake
-        working-directory: build
-
-        run: |
-          cmake -G Ninja ${{ github.workspace }}/wireshark \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_APPLE_SILICON_PROCESSOR=arm64 \
-            -DCMAKE_C_FLAGS="-std=c99" \
-            -DPython_ROOT_DIR=${{ env.pythonLocation }} \
-            -DPython_LIBRARY=${{ env.pythonLocation }}/lib \
-            -DPython_INCLUDE_DIR=${{ env.pythonLocation }}/include \
-            -DPython_EXECUTABLE=${{ env.pythonLocation }}/bin/python \
-            -DSMF_PLUGIN_MAJOR_VERSION=${{ inputs.MAJOR_VERSION }} \
-            -DSMF_PLUGIN_MINOR_VERSION=${{ inputs.MINOR_VERSION }} \
-            -DSMF_PLUGIN_PATCH_VERSION=${{ inputs.SMF_PLUGIN_PATCH_VERSION }} \
-            -DSMF_PLUGIN_COMMIT_HASH=0 \
-            -DPython_FIND_STRATEGY=LOCATION
-
-      - name: Build
-        working-directory: build
-        run: ninja
-
-      # Update dependency path for SMF plugin to find the libraries from wireshark package
-      - name: Update dependency path for SMF plugin
-        run: |
-          VERSIONED_DIR="${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}"
-          install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @executable_path/../Frameworks/libglib-2.0.0.dylib ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark/${VERSIONED_DIR}/epan/smf.so
-
-       # A compressed tarball is created for release.
-       # This means that the artifact is compressed and zipped as a result.
-      - name: Create Compressed Tarball
-        working-directory: ${{ github.workspace }}/build/run/Wireshark.app/Contents/PlugIns/wireshark
-        run: tar -czvf ${{ github.workspace }}/${{ env.PLUGIN_NAME }} **/epan/smf.so
+          install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @rpath/libglib-2.0.0.dylib build/smf.so
+          install_name_tool -change /opt/homebrew/opt/xxhash/lib/libxxhash.0.dylib @rpath/libxxhash.0.dylib build/smf.so
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PLUGIN_NAME }}
-          path: "${{ github.workspace }}/${{ env.PLUGIN_NAME }}"
+          name: wireshark-smf-macos-arm64.tar.gz
+          path: build/smf.so
           overwrite: true
