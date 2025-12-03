@@ -10,9 +10,7 @@ This project is a plugin for wireshark that will dissect Solace SMF protocol.
 **Note: Wireshark SMF Plugin is currently supported on Wireshark 4.0.x, 4.2.x, 4.4.x, and 4.6.x**
 
 1. Install [Wireshark](https://www.wireshark.org/download.html).
-
 2. Download the corresponding zip file for your platform (Click on "Releases" and in the releases page, click on "Assets" to see the downloadable contents).
-
 3. Unzip the folder and place the .dll (Windows) or .so (Mac/Linux) file in the Wireshark plugin folder, under `epan`. The plugin folder path varies for each OS.
 
 ### Windows Plugin Folder
@@ -22,12 +20,18 @@ Personal Plugin Folder (version specific, use the wireshark major.minor):
 
 Global Plugin Folder (version specific, use the wireshark major.minor):
 
-`C:\Program Files\Wireshark\plugins\4.6\plugins\epan`
+`C:\Program Files\Wireshark\plugins\4.6\epan`
 
 ### macOS/Linux Plugin Folder
 Personal Plugin Directory:
 
-`~/.local/lib/wireshark/plugins/epan`
+`~/.local/lib/wireshark/plugins/4.6/epan`
+
+> [!IMPORTANT]
+> If you get an error message saying `library load disallowed by system policy` when lauching wireshark, you must run this command to allow the plugin to load:
+> ```sh
+> sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/4.6/epan/smf.so
+> ```
 
 See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins.
 
