@@ -54,7 +54,7 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-            name: "Wireshark SMF Plugin ${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.patch_vesion }}.${{ inputs.version_extra }}"
+            name: "Wireshark SMF Plugin ${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}.${{ inputs.version_extra }}"
             tag: "${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}.${{ inputs.version_extra }}"
             artifacts: "${{ env.LINUX_PLUGIN_NAME }}/*, ${{ env.WINDOWS_PLUGIN_NAME }}/*, ${{ env.MACOS_PLUGIN_NAME }}/*"
             bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md"
