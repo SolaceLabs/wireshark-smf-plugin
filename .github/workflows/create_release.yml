@@ -1,73 +1,61 @@
+# Copyright 2025 Solace Corporation. All rights reserved.
+
 name: Create Release
 on:
   workflow_dispatch:
     inputs:
-      MAJOR_VERSION:
-        description: "Major version of the wireshark tag to use when building plugin"
-        required: false
+      version_major:
+        description: "Major version of the wireshark tag to use when building the plugin"
+        required: true
         default: '4'
-      MINOR_VERSION:
-        description: "Minor version of the wireshark tag to use when building plugin"
-        required: false
+      version_minor:
+        description: "Minor version of the wireshark tag to use when building the plugin"
+        required: true
         default: '6'
-      PATCH_VERSION:
-          description: "Patch version of the wireshark tag to use when building plugin"
-          required: false
-          default: '0'
-      SMF_PLUGIN_PATCH_VERSION:
-        description: "PATCH for SMF plugin"
+      version_patch:
+        description: "Patch version of the wireshark tag to use when building the plugin"
+        required: true
+        default: '1'
+      version_extra:
+        description: "Extra version for the SMF plugin"
         type: string
         required: true
-        default: ''
+        default: '0'
+
 env:
-  LINUX_x86_64_PLUGIN_NAME: wireshark-smf-linux-x86_64.tar.gz
-  WINDOWS_x64_PLUGIN_NAME: wireshark-smf-windows-x64.zip
-  MACOS_ARM64_PLUGIN_NAME: wireshark-smf-macos-arm64.tar.gz
+  LINUX_PLUGIN_NAME: wireshark-smf-linux-x86_64.tar.gz
+  WINDOWS_PLUGIN_NAME: wireshark-smf-windows-x64.zip
+  MACOS_PLUGIN_NAME: wireshark-smf-macos-arm64.tar.gz
 
 jobs:
-  build_linux:
-    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/ubuntu.yml@main
+  build_plugin:
+    name: Build All Plugins
+    uses: ./.github/workflows/build_plugin.yml
     with:
-      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
-  
-  build_windows:
-    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/windows.yml@main
-    with:
-      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
-    
-  build_macos:
-    uses: SolaceLabs/wireshark-smf-plugin/.github/workflows/macos_arm64.yml@main
-    with:
-      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '0' }}
-      
+      version_major: ${{ inputs.version_major }}
+      version_minor: ${{ inputs.version_minor }}
+      version_patch: ${{ inputs.version_patch }}
+      version_extra: ${{ inputs.version_extra }}
+
   create_release:
+    name: Create Draft Release
     runs-on: ubuntu-latest
-    # Wait for all jobs to finish before continuing
-    needs: [build_linux, build_windows, build_macos]
+    needs: [build_plugin]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md
 
       # The only way to share artifacts between workflows is to upload and download them.
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with:
-            path: ${{ github.workspace }}
+        uses: actions/download-artifact@v5
 
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-            name: "Wireshark SMF Plugin ${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.SMF_PLUGIN_PATCH_VERSION }}"
-            tag: "${{ inputs.MAJOR_VERSION }}.${{ inputs.MINOR_VERSION }}.${{ inputs.SMF_PLUGIN_PATCH_VERSION }}"
-            artifacts: "${{ env.LINUX_x86_64_PLUGIN_NAME }}/*, ${{ env.WINDOWS_x64_PLUGIN_NAME }}/*, ${{ env.MACOS_ARM64_PLUGIN_NAME }}/*"
-            bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.MAJOR_VERSION }}-${{ inputs.MINOR_VERSION }}-x_instructions.md"
+            name: "Wireshark SMF Plugin ${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.patch_vesion }}.${{ inputs.version_extra }}"
+            tag: "${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}.${{ inputs.version_extra }}"
+            artifacts: "${{ env.LINUX_PLUGIN_NAME }}/*, ${{ env.WINDOWS_PLUGIN_NAME }}/*, ${{ env.MACOS_PLUGIN_NAME }}/*"
+            bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md"
             draft: true

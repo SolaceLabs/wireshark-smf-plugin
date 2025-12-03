@@ -1,56 +1,281 @@
-name: Build SMF plugin
+# Copyright 2025 Solace Corporation. All rights reserved.
 
+name: Build Plugin
 on:
   push:
     branches:
       - main
+
   workflow_dispatch:
     inputs:
-      MAJOR_VERSION:
-        description: "Major version of the wireshark tag to use when building plugin"
-        required: false
-        default: ''
-      MINOR_VERSION:
-        description: "Minor version of the wireshark tag to use when building plugin"
-        required: false
-        default: ''
-      PATCH_VERSION:
-        description: "Patch version of the wireshark tag to use when building plugin"
-        required: false
-        default: ''
-      SMF_PLUGIN_PATCH_VERSION:
-        description: "PATCH for SMF plugin"
+      version_major:
+        description: "Major version of the wireshark tag to use when building the plugin"
         type: string
         required: true
-        default: ''
+        default: '4'
+      version_minor:
+        description: "Minor version of the wireshark tag to use when building the plugin"
+        type: string
+        required: true
+        default: '6'
+      version_patch:
+        description: "Patch version of the wireshark tag to use when building the plugin"
+        type: string
+        required: true
+        default: '1'
+      version_extra:
+        description: "Extra version for the SMF plugin"
+        type: string
+        required: true
+        default: '0'
+      build_linux:
+        description: 'Build for Linux'
+        type: boolean
+        default: true
+      build_windows:
+        description: 'Build for Windows'
+        type: boolean
+        default: true
+      build_macos:
+        description: 'Build for MacOS'
+        type: boolean
+        default: true
+
+  workflow_call:
+    inputs:
+      version_major:
+        type: string
+        required: true
+      version_minor:
+        type: string
+        required: true
+      version_patch:
+        type: string
+        required: true
+      version_extra:
+        type: string
+        required: true
+      build_linux:
+        type: boolean
+        default: true
+      build_windows:
+        type: boolean
+        default: true
+      build_macos:
+        type: boolean
+        default: true
+
 jobs:
-  # Commenting out intel mac for regular builds as it is currently broken.
-  #build_macos:
-  #  uses: ./.github/workflows/macos.yml
-  #  with:
-  #    MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-  #    MINOR_VERSION: ${{ inputs.MINOR_VERSION || '0' }}
-  #    PATCH_VERSION: ${{ inputs.PATCH_VERSION || '5' }}
-  build_macos_arm64:
-    uses: ./.github/workflows/macos_arm64.yml
-    with:
-      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || 'dev' }}
-  build_windows:
-    uses: ./.github/workflows/windows.yml
-    with:
-      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      # this goes into FILEVERSION which appears when you hover over the DLL, but cannot 
-      # contain a string like "dev"
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || '-1' }}
-  build_linux:
-    uses: ./.github/workflows/ubuntu.yml
-    with:
-      MAJOR_VERSION: ${{ inputs.MAJOR_VERSION || '4' }}
-      MINOR_VERSION: ${{ inputs.MINOR_VERSION || '6' }}
-      PATCH_VERSION: ${{ inputs.PATCH_VERSION || '0' }}
-      SMF_PLUGIN_PATCH_VERSION: ${{ inputs.SMF_PLUGIN_PATCH_VERSION || 'dev' }}
+  setup:
+    name: Setup Build Parameters
+    runs-on: ubuntu-latest
+    outputs:
+      version_major: ${{ steps.defaults.outputs.version_major }}
+      version_minor: ${{ steps.defaults.outputs.version_minor }}
+      version_patch: ${{ steps.defaults.outputs.version_patch }}
+      version_extra: ${{ steps.defaults.outputs.version_extra }}
+      build_linux: ${{ steps.defaults.outputs.build_linux }}
+      build_windows: ${{ steps.defaults.outputs.build_windows }}
+      build_macos: ${{ steps.defaults.outputs.build_macos }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set defaults
+        id: defaults
+        run: |
+          echo "version_major=${{ inputs.version_major || '4' }}" >> $GITHUB_OUTPUT
+          echo "version_minor=${{ inputs.version_minor || '6' }}" >> $GITHUB_OUTPUT
+          echo "version_patch=${{ inputs.version_patch || '1' }}" >> $GITHUB_OUTPUT
+          echo "version_extra=${{ inputs.version_extra || '0' }}" >> $GITHUB_OUTPUT
+          echo "build_linux=${{ inputs.build_linux || 'true' }}" >> $GITHUB_OUTPUT
+          echo "build_windows=${{ inputs.build_windows || 'true' }}" >> $GITHUB_OUTPUT
+          echo "build_macos=${{ inputs.build_macos || 'true' }}" >> $GITHUB_OUTPUT
+
+      - name: Set OS Matrix
+        id: set-matrix
+        run: |
+          ALL_OS='[
+            {
+              "name": "linux",
+              "pretty-name": "Linux",
+              "runner": "ubuntu-22.04",
+              "deps": "sudo wireshark-src/tools/debian-setup.sh",
+              "artifact": "wireshark-smf-linux-x86_64.tar.gz"
+            },
+            {
+              "name": "windows",
+              "pretty-name": "Windows",
+              "runner": "windows-2022",
+              "deps": "choco install winflexbison3 --no-progress",
+              "c-flags": "/std:c11",
+              "artifact": "wireshark-smf-windows-x64.zip"
+            },
+            {
+              "name": "macos",
+              "pretty-name": "MacOS",
+              "runner": "macos-14",
+              "deps": "wireshark-src/tools/macos-setup-brew.sh --install-required",
+              "artifact": "wireshark-smf-macos-arm64.tar.gz"
+            }
+          ]'
+
+          MATRIX=$(echo "$ALL_OS" | jq -c '[.[] | select(
+            (.name == "linux" and "${{ steps.defaults.outputs.build_linux }}" == "true") or
+            (.name == "windows" and "${{ steps.defaults.outputs.build_windows }}" == "true") or
+            (.name == "macos" and "${{ steps.defaults.outputs.build_macos }}" == "true")
+          )]')
+
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+  build_plugin:
+    needs: setup
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+    name: Build on ${{ matrix.os.pretty-name }}
+    env:
+      WIRESHARK_BASE_DIR: ${{ github.workspace }}/wireshark-libs
+    runs-on: ${{ matrix.os.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup MSVC Environment
+        if: matrix.os.name == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Get MacOS GLib Version
+        id: macos-deps-hash
+        if: matrix.os.name == 'macos'
+        run: |
+          GLIB_VER=$(brew list --versions glib | awk '{print $2}')
+          echo "glib version: $GLIB_VER"
+          echo "GLIB_VER=$GLIB_VER" >> $GITHUB_OUTPUT
+
+      - name: Cache Wireshark Libs
+        if: matrix.os.name == 'windows'
+        id: cache-wireshark-libs
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.WIRESHARK_BASE_DIR }}
+          key: wireshark-libs-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}-${{ matrix.os.name }}
+
+      - name: Cache Wireshark Install
+        id: cache-wireshark-install
+        uses: actions/cache@v4
+        with:
+          path: wireshark-install
+          key: wireshark-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}${{ matrix.os.name == 'macos' && format('-glib{0}', steps.macos-deps-hash.outputs.GLIB_VER) || '' }}-${{ matrix.os.name }}
+
+      - name: Create Wireshark Install Directory
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: mkdir wireshark-install
+
+      - name: Checkout Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: wireshark/wireshark
+          path: wireshark-src
+          ref: v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}
+
+      - name: Install Wireshark Dependencies
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true' && matrix.os.deps
+        run: ${{ matrix.os.deps }}
+
+      - name: Install Qt
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true' && matrix.os.name == 'windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          modules: "qt5compat"
+
+      - name: Configure Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: >-
+          cmake -G Ninja -S wireshark-src -B wireshark-build
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/wireshark-install"
+          -DBUILD_wireshark=OFF
+          -DBUILD_tshark=OFF
+          -DBUILD_editcap=OFF
+          -DBUILD_capinfos=OFF
+          -DBUILD_mmdbresolve=OFF
+          -DENABLE_XXHASH=OFF
+          -DENABLE_PCAP=OFF
+
+      - name: Build Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build
+
+      - name: Install Wireshark
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install
+
+      - name: Install Wireshark Headers
+        if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
+        run: cmake --build wireshark-build --target install-headers
+
+      - name: Locate Windows Third Party Libs
+        if: matrix.os.name == 'windows'
+        run: |
+          $RequiredLibs = @("glib-2.0.lib", "zlib.lib")
+          $FoundPaths = @()
+
+          foreach ($LibName in $RequiredLibs) {
+              $AllCopies = Get-ChildItem -Path "${{ env.WIRESHARK_BASE_DIR }}" -Filter $LibName -Recurse -File
+
+              $BestMatch = $AllCopies | Where-Object {
+                  $_.FullName -match "vcpkg-export" -and $_.FullName -notmatch "\\debug\\"
+              } | Select-Object -First 1
+
+              if (-not $BestMatch) {
+                  Write-Error "Could not find release version of $LibName inside a vcpkg-export directory!"
+                  exit 1
+              }
+
+              $InstallRoot = $BestMatch.Directory.Parent.FullName
+              $FoundPaths += $InstallRoot
+          }
+
+          $FinalPath = ($FoundPaths | Select-Object -Unique) -join ";"
+
+          Write-Host "Selected Library Path: $FinalPath"
+          echo "WS_DEP_PATH=$FinalPath" >> $env:GITHUB_ENV
+
+      - name: Add Wireshark Build Path
+        if: matrix.os.name == 'windows'
+        run: echo "WS_DEP_PATH=${{ env.WS_DEP_PATH }};${{ github.workspace }}/wireshark-build" >> $env:GITHUB_ENV
+
+      - name: Configure Plugin
+        run: >-
+          cmake -G Ninja -S . -B build
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/wireshark-install;${{ env.WS_DEP_PATH }}"
+          -DCMAKE_BUILD_TYPE="RelWithDebInfo"
+          -DWireshark_VERSION="${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}"
+          -DCMAKE_C_FLAGS="${{ matrix.os.c-flags }}"
+          -DPLUGIN_VERSION_MAJOR=${{ needs.setup.outputs.version_major }}
+          -DPLUGIN_VERSION_MINOR=${{ needs.setup.outputs.version_minor }}
+          -DPLUGIN_VERSION_PATCH=${{ needs.setup.outputs.version_patch }}
+          -DPLUGIN_VERSION_EXTRA=${{ needs.setup.outputs.version_extra }}
+
+      - name: Build Plugin
+        run: cmake --build build
+
+      - name: Update Dependency Paths
+        if: matrix.os.name == 'macos'
+        run: |
+          install_name_tool -change /opt/homebrew/opt/glib/lib/libglib-2.0.0.dylib @rpath/libglib-2.0.0.dylib build/smf.so
+          install_name_tool -change /opt/homebrew/opt/xxhash/lib/libxxhash.0.dylib @rpath/libxxhash.0.dylib build/smf.so
+
+      - name: Create Compressed Tarball
+        if: matrix.os.name == 'linux' || matrix.os.name == 'macos'
+        run: tar -czvf ${{ matrix.os.artifact }} -C build smf.so
+
+      - name: Create ZIP Archive
+        if: matrix.os.name == 'windows'
+        run: Get-ChildItem -Path build/smf.dll, build/smf.pdb | Compress-Archive -DestinationPath ${{ matrix.os.artifact }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os.artifact }}
+          path: ${{ matrix.os.artifact }}
+          overwrite: true

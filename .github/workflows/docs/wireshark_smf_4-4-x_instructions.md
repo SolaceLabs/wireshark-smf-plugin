@@ -3,26 +3,30 @@
 ## Installation Instructions
 
 1. Install [Wireshark 4.4](https://www.wireshark.org/download.html).
-
 2. Download the corresponding zip file for your platform.
-
 3. Unzip the folder and place the .dll (Windows) or .so (Mac/Linux) file in the Wireshark plugin folder, under `epan`. The plugin folder path varies for each OS.
 
 ### Windows Plugin Folder
-Personal Plugin Folder: 
+Personal Plugin Folder:
 
-`%APPDATA%\Roaming\Wireshark\plugins\4.4\epan`
+`%APPDATA%\Wireshark\plugins\4.4\epan`
 
-Global Plugin Folder: 
+Global Plugin Folder:
 
-`C:\Program Files\Wireshark\plugins\4.4\plugins\epan`
+`C:\Program Files\Wireshark\plugins\4.4\epan`
 
 ### macOS/Linux Plugin Folder
-Personal Plugin Folder: 
+Personal Plugin Folder:
 
-`~/.local/lib/wireshark/plugins/epan`
+`~/.local/lib/wireshark/plugins/4.4/epan`
 
-See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins. 
+> [!IMPORTANT]
+> If you get an error message saying `library load disallowed by system policy` when lauching wireshark, you must run this command to allow the plugin to load:
+> ```sh
+> sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/4.4/epan/smf.so
+> ```
+
+See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins.
 
 ## Finding Plugin Folders and Verify Installation
 
