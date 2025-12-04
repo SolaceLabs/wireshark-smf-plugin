@@ -6,21 +6,18 @@ on:
     inputs:
       version_major:
         description: "Major version of the wireshark tag to use when building the plugin"
+        type: number
         required: true
-        default: '4'
+        default: 4
       version_minor:
         description: "Minor version of the wireshark tag to use when building the plugin"
+        type: number
         required: true
-        default: '6'
+        default: 6
       version_patch:
-        description: "Patch version of the wireshark tag to use when building the plugin"
+        description: "Patch version for the SMF plugin"
+        type: number
         required: true
-        default: '1'
-      version_extra:
-        description: "Extra version for the SMF plugin"
-        type: string
-        required: true
-        default: '0'
 
 env:
   LINUX_PLUGIN_NAME: wireshark-smf-linux-x86_64.tar.gz
@@ -35,7 +32,6 @@ jobs:
       version_major: ${{ inputs.version_major }}
       version_minor: ${{ inputs.version_minor }}
       version_patch: ${{ inputs.version_patch }}
-      version_extra: ${{ inputs.version_extra }}
 
   create_release:
     name: Create Draft Release
@@ -54,8 +50,8 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-            name: "Wireshark SMF Plugin ${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}.${{ inputs.version_extra }}"
-            tag: "${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}.${{ inputs.version_extra }}"
+            name: "Wireshark SMF Plugin ${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}"
+            tag: "${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}"
             artifacts: "${{ env.LINUX_PLUGIN_NAME }}/*, ${{ env.WINDOWS_PLUGIN_NAME }}/*, ${{ env.MACOS_PLUGIN_NAME }}/*"
             bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md"
             draft: true

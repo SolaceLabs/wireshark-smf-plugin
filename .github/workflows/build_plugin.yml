@@ -10,24 +10,18 @@ on:
     inputs:
       version_major:
         description: "Major version of the wireshark tag to use when building the plugin"
-        type: string
+        type: number
         required: true
-        default: '4'
+        default: 4
       version_minor:
         description: "Minor version of the wireshark tag to use when building the plugin"
-        type: string
+        type: number
         required: true
-        default: '6'
+        default: 6
       version_patch:
-        description: "Patch version of the wireshark tag to use when building the plugin"
-        type: string
-        required: true
-        default: '1'
-      version_extra:
-        description: "Extra version for the SMF plugin"
-        type: string
-        required: true
-        default: '0'
+        description: "Patch version for the SMF plugin"
+        type: number
+        required: false
       build_linux:
         description: 'Build for Linux'
         type: boolean
@@ -44,16 +38,13 @@ on:
   workflow_call:
     inputs:
       version_major:
-        type: string
+        type: number
         required: true
       version_minor:
-        type: string
+        type: number
         required: true
       version_patch:
-        type: string
-        required: true
-      version_extra:
-        type: string
+        type: number
         required: true
       build_linux:
         type: boolean
@@ -73,7 +64,6 @@ jobs:
       version_major: ${{ steps.defaults.outputs.version_major }}
       version_minor: ${{ steps.defaults.outputs.version_minor }}
       version_patch: ${{ steps.defaults.outputs.version_patch }}
-      version_extra: ${{ steps.defaults.outputs.version_extra }}
       build_linux: ${{ steps.defaults.outputs.build_linux }}
       build_windows: ${{ steps.defaults.outputs.build_windows }}
       build_macos: ${{ steps.defaults.outputs.build_macos }}
@@ -82,13 +72,13 @@ jobs:
       - name: Set defaults
         id: defaults
         run: |
-          echo "version_major=${{ inputs.version_major || '4' }}" >> $GITHUB_OUTPUT
-          echo "version_minor=${{ inputs.version_minor || '6' }}" >> $GITHUB_OUTPUT
-          echo "version_patch=${{ inputs.version_patch || '1' }}" >> $GITHUB_OUTPUT
-          echo "version_extra=${{ inputs.version_extra || '0' }}" >> $GITHUB_OUTPUT
-          echo "build_linux=${{ inputs.build_linux || 'true' }}" >> $GITHUB_OUTPUT
-          echo "build_windows=${{ inputs.build_windows || 'true' }}" >> $GITHUB_OUTPUT
-          echo "build_macos=${{ inputs.build_macos || 'true' }}" >> $GITHUB_OUTPUT
+          echo "version_major=${{ inputs.version_major || 4 }}" >> $GITHUB_OUTPUT
+          echo "version_minor=${{ inputs.version_minor || 6 }}" >> $GITHUB_OUTPUT
+          echo "version_patch=${{ inputs.version_patch || -1 }}" >> $GITHUB_OUTPUT
+
+          echo "build_linux=${{ !contains(inputs.build_linux, 'false') }}" >> $GITHUB_OUTPUT
+          echo "build_windows=${{ !contains(inputs.build_windows, 'false') }}" >> $GITHUB_OUTPUT
+          echo "build_macos=${{ !contains(inputs.build_macos, 'false') }}" >> $GITHUB_OUTPUT
 
       - name: Set OS Matrix
         id: set-matrix
@@ -134,6 +124,7 @@ jobs:
     name: Build on ${{ matrix.os.pretty-name }}
     env:
       WIRESHARK_BASE_DIR: ${{ github.workspace }}/wireshark-libs
+      WIRESHARK_PATCH_VERSION: 0
     runs-on: ${{ matrix.os.runner }}
     steps:
       - name: Checkout
@@ -157,14 +148,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.WIRESHARK_BASE_DIR }}
-          key: wireshark-libs-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}-${{ matrix.os.name }}
+          key: wireshark-libs-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ env.WIRESHARK_PATCH_VERSION }}-${{ matrix.os.name }}
 
       - name: Cache Wireshark Install
         id: cache-wireshark-install
         uses: actions/cache@v4
         with:
           path: wireshark-install
-          key: wireshark-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}${{ matrix.os.name == 'macos' && format('-glib{0}', steps.macos-deps-hash.outputs.GLIB_VER) || '' }}-${{ matrix.os.name }}
+          key: wireshark-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ env.WIRESHARK_PATCH_VERSION }}${{ matrix.os.name == 'macos' && format('-glib{0}', steps.macos-deps-hash.outputs.GLIB_VER) || '' }}-${{ matrix.os.name }}
 
       - name: Create Wireshark Install Directory
         if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
@@ -176,7 +167,7 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark-src
-          ref: v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}
+          ref: v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ env.WIRESHARK_PATCH_VERSION }}
 
       - name: Install Wireshark Dependencies
         if: steps.cache-wireshark-install.outputs.cache-hit != 'true' && matrix.os.deps
@@ -249,12 +240,11 @@ jobs:
           cmake -G Ninja -S . -B build
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/wireshark-install;${{ env.WS_DEP_PATH }}"
           -DCMAKE_BUILD_TYPE="RelWithDebInfo"
-          -DWireshark_VERSION="${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ needs.setup.outputs.version_patch }}"
+          -DWireshark_VERSION="${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ env.WIRESHARK_PATCH_VERSION }}"
           -DCMAKE_C_FLAGS="${{ matrix.os.c-flags }}"
           -DPLUGIN_VERSION_MAJOR=${{ needs.setup.outputs.version_major }}
           -DPLUGIN_VERSION_MINOR=${{ needs.setup.outputs.version_minor }}
           -DPLUGIN_VERSION_PATCH=${{ needs.setup.outputs.version_patch }}
-          -DPLUGIN_VERSION_EXTRA=${{ needs.setup.outputs.version_extra }}
 
       - name: Build Plugin
         run: cmake --build build
