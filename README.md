@@ -22,15 +22,20 @@ Global Plugin Folder (version specific, use the wireshark major.minor):
 
 `C:\Program Files\Wireshark\plugins\4.6\epan`
 
-### macOS/Linux Plugin Folder
-Personal Plugin Directory:
+### Linux Plugin Folder
+Personal Plugin Folder:
 
 `~/.local/lib/wireshark/plugins/4.6/epan`
+
+### macOS Plugin Folder
+Personal Plugin Directory:
+
+`~/.local/lib/wireshark/plugins/4-6/epan`
 
 > [!IMPORTANT]
 > If you get an error message saying `library load disallowed by system policy` when lauching wireshark, you must run this command to allow the plugin to load:
 > ```sh
-> sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/4.6/epan/smf.so
+> sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/4-6/epan/smf.so
 > ```
 
 See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins.
