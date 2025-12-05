@@ -120,7 +120,7 @@ jobs:
     needs: setup
     strategy:
       matrix:
-        os: ${{ fromJson(needs.setup.outputs.matrix) }}
+        os: ${{ fromJSON(needs.setup.outputs.matrix) }}
     name: Build on ${{ matrix.os.pretty-name }}
     env:
       WIRESHARK_BASE_DIR: ${{ github.workspace }}/wireshark-libs

@@ -29,9 +29,9 @@ jobs:
     name: Build All Plugins
     uses: ./.github/workflows/build_plugin.yml
     with:
-      version_major: ${{ inputs.version_major }}
-      version_minor: ${{ inputs.version_minor }}
-      version_patch: ${{ inputs.version_patch }}
+      version_major: ${{ fromJSON(inputs.version_major) }}
+      version_minor: ${{ fromJSON(inputs.version_minor) }}
+      version_patch: ${{ fromJSON(inputs.version_patch) }}
 
   create_release:
     name: Create Draft Release
