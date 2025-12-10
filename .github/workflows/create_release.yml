@@ -1,6 +1,14 @@
 # Copyright 2025 Solace Corporation. All rights reserved.
 
 name: Create Release
+run-name: >-
+  ${{
+    format('v{0}.{1}.{2}',
+           inputs.version_major,
+           inputs.version_minor,
+           inputs.version_patch)
+  }}
+
 on:
   workflow_dispatch:
     inputs:
