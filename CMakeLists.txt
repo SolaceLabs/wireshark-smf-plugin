@@ -3,6 +3,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(smf DESCRIPTION "SMF Wireshark Plugin" LANGUAGES C)
 
+include(cmake/SetupWiresharkSDK.cmake)
+
 find_package(Wireshark CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
 
