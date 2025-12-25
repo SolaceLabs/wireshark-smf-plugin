@@ -51,17 +51,18 @@ See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/w
 > [!NOTE]
 > If you plan to submit changes, create a fork first and clone from the fork.
 
-### Linux
+### Using wireshark packaged with your Linux distribution
+
 1. Install the dependencies
 ```sh
-# adjust for your distribution, you need
-# - C compiler (gcc or clang)
-# - cmake
-# - ninja (optional, can use make)
-# - glib2 with development headers
-# - wireshark with development headers
-# - zlib with development headers
-sudo apt install build-essential cmake ninja wireshark-dev zlib1g-dev
+# ubuntu
+sudo apt install cmake gcc git ninja-build wireshark-dev
+
+# fedora
+sudo dnf install cmake gcc git ninja wireshark-devel
+
+# arch linux
+sudo pacman -Syu cmake gcc git ninja wireshark-cli xxhash
 ```
 
 2. Clone the repo
@@ -79,7 +80,6 @@ cd wireshark-smf-plugin
 4. Configure cmake
 ```sh
 # optionally add "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" to export the "compile_commands.json"
-# ninja is optional
 cmake -G Ninja -B build
 ```
 
@@ -95,8 +95,55 @@ cmake --build build
 
 You can then find the plugin at `build/smf.so`.
 
-### Windows
-TODO: Build out-of-tree. See github workflow for working steps.
+### Using a specific version of Wireshark
+> [!NOTE]
+> On Windows, you must use the Visual Studio Developer Command Prompt when running the `cmake` commands.
+
+1. Install the dependencies
+```sh
+# windows
+choco install -y visualstudio2022community visualstudio2022-workload-nativedesktop cmake git ninja 7zip
+
+# ubuntu
+apt install build-essential bison cmake curl flex git ninja-build libc-ares-dev libgcrypt20-dev libglib2.0-dev libxml2-dev zlib1g-dev
+
+# fedora
+dnf install bison cmake curl flex gcc gcc-c++ git ninja-build c-ares-devel glib2-devel libgcrypt-devel libxml2-devel zlib-devel
+
+# arch linux
+sudo pacman -Syu c-ares cmake flex gcc git ninja python
+```
+
+2. Clone the repo
+```sh
+git clone https://github.com/SolaceLabs/wireshark-smf-plugin
+# or
+git clone <your-fork>/wireshark-smf-plugin
+```
+
+3. Enter the repo
+```sh
+cd wireshark-smf-plugin
+```
+
+4. Configure cmake
+```sh
+# optionally add "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" to export the "compile_commands.json"
+# you must specific a major / minor version
+cmake -G Ninja -B build -DPLUGIN_VERSION_MAJOR=4 -DPLUGIN_VERSION_MINOR=6
+```
+
+5. (optional) If you chose to export the compile commands, you can copy them from build or create a symbolic link
+```sh
+ln -s build/compile_commands.json
+```
+
+6. Build the plugin
+```sh
+cmake --build build
+```
+
+You can then find the plugin at `build/smf.so` or `build/smf.dll`.
 
 ### MacOS
 TODO: Build out-of-tree. See github workflow for working steps.
