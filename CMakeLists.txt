@@ -8,7 +8,9 @@ if((DEFINED PLUGIN_VERSION_MAJOR AND NOT DEFINED PLUGIN_VERSION_MINOR) OR
     message(FATAL_ERROR "Invalid Configuration: You must define BOTH PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR, or NEITHER")
 endif()
 
-include(cmake/SetupWiresharkSDK.cmake)
+if(NOT DEFINED Wireshark_VERSION)
+    include(cmake/SetupWiresharkSDK.cmake)
+endif()
 
 find_package(Wireshark CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
