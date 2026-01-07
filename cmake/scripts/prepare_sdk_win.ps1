@@ -2,94 +2,94 @@
 
 param (
     [string]$Version,
-    [string]$SdkRoot,
-    [string]$DumpbinPath,
-    [string]$LibPath
+    [string]$SdkRoot
 )
 
 $ErrorActionPreference = "Stop"
 
-if (-not (Test-Path $DumpbinPath)) { Write-Error "dumpbin missing"; exit 1 }
-$ToolDir = Split-Path -Parent $DumpbinPath
-$Env:PATH = "$ToolDir;$Env:PATH"
+if (-not (Test-Path $SdkRoot)) {
+    New-Item -ItemType Directory -Force -Path $SdkRoot | Out-Null
+}
 
-if (-not (Test-Path $SdkRoot)) { New-Item -ItemType Directory -Force -Path $SdkRoot | Out-Null }
 Set-Location $SdkRoot
 New-Item -ItemType Directory -Force -Path "libs" | Out-Null
 
 function Fast-Download ($Url, $Name) {
-    if (Test-Path $Name) { return }
-    Write-Host "Downloading $Name..." -ForegroundColor Cyan
-    try { (New-Object System.Net.WebClient).DownloadFile($Url, "$PWD\$Name") }
-    catch { Write-Error "Failed to download $Url"; exit 1 }
+    if (Test-Path $Name) {
+        return
+    }
+
+    Write-Host "Downloading $Url as $Name..." -ForegroundColor Cyan
+
+    try {
+        (New-Object System.Net.WebClient).DownloadFile($Url, "$PWD\$Name")
+    }
+    catch {
+        Write-Error "Failed to download $Url"
+        exit 1
+    }
 }
 
 # 1. Get source
-$WS_SRC_URL = "https://www.wireshark.org/download/src/all-versions/wireshark-$Version.tar.xz"
-Fast-Download $WS_SRC_URL "ws.tar.xz"
-
 if (-not (Test-Path "wireshark-src")) {
+    $WS_SRC_URL = "https://www.wireshark.org/download/src/all-versions/wireshark-$Version.tar.xz"
+    Fast-Download $WS_SRC_URL "ws.tar.xz"
+
     Write-Host "Extracting Source..." -ForegroundColor Cyan
-    & "7z" x "ws.tar.xz" -y | Out-Null; & "7z" x "ws.tar" -y -o"wireshark-src" | Out-Null
+    & "7z" x "ws.tar.xz" -y | Out-Null
+    & "7z" x "ws.tar" -y -o"wireshark-src" | Out-Null
 }
 
 # 2. Dynamically find vcpkg artifact
 Write-Host "Reading dependency info..." -ForegroundColor Cyan
 $FetchFile = "$SdkRoot\wireshark-src\wireshark-$Version\cmake\modules\FetchArtifacts.cmake"
-if (-not (Test-Path $FetchFile)) { Write-Error "FetchArtifacts.cmake not found"; exit 1 }
+
+if (-not (Test-Path $FetchFile)) {
+    Write-Error "FetchArtifacts.cmake not found"
+    exit 1
+}
 
 $Content = Get-Content $FetchFile -Raw
 if ($Content -match 'vcpkg-export/(vcpkg-export-[^ \t\r\n"]+\.zip)') {
     $VcpkgZipName = $Matches[1]
     Write-Host "Detected Artifact: $VcpkgZipName" -ForegroundColor Green
-} else { Write-Error "Could not parse vcpkg filename"; exit 1 }
+}
+else {
+    Write-Error "Could not parse vcpkg filename"
+    exit 1
+}
 
-$DEPS_URL = "https://dev-libs.wireshark.org/windows/packages/vcpkg-export/$VcpkgZipName"
-$WS_PAF_URL = "https://www.wireshark.org/download/win64/all-versions/WiresharkPortable64_$Version.paf.exe"
-
-# 3. Download & Extract binaries
-Fast-Download $DEPS_URL "deps.zip"
-Fast-Download $WS_PAF_URL "portable.exe"
-
-Write-Host "Extracting Binaries..." -ForegroundColor Cyan
+# 3. Download & Extract dependencies
 if (-not (Test-Path "deps\installed")) {
+    $DEPS_URL = "https://dev-libs.wireshark.org/windows/packages/vcpkg-export/$VcpkgZipName"
+    Fast-Download $DEPS_URL "deps.zip"
+
+    Write-Host "Extracting Dependencies..." -ForegroundColor Cyan
     & "7z" x "deps.zip" -y -o"deps_temp" | Out-Null
     $InstDir = Get-ChildItem -Path "deps_temp" -Filter "installed" -Recurse | Select-Object -First 1
-    if ($InstDir) { New-Item -ItemType Directory -Force -Path "deps" | Out-Null; Move-Item $InstDir.FullName "deps" -Force }
+    if ($InstDir) {
+        New-Item -ItemType Directory -Force -Path "deps" | Out-Null
+        Move-Item $InstDir.FullName "deps" -Force
+    }
     Remove-Item "deps_temp" -Recurse -Force
 }
 
-if (-not (Test-Path "wireshark-bin")) {
-    & "7z" x "portable.exe" -y -o"portable_temp" | Out-Null
-    Move-Item "portable_temp\App\Wireshark" "wireshark-bin"
-    Remove-Item -Recurse -Force "portable_temp"
-}
+# 4. Download & Extract import libs
+if (-not (Test-Path "libs\libwireshark.lib")) {
+    $WS_PDB_URL = "https://www.wireshark.org/download/win64/all-versions/Wireshark-pdb-$Version-x64.zip"
+    Fast-Download $WS_PDB_URL "pdbs.zip"
 
-# 4. Generate import libs
-Write-Host "Generating .lib files..." -ForegroundColor Cyan
-function Gen-Lib ($dll) {
-    $dllPath = "$SdkRoot\wireshark-bin\$dll.dll"
-    if (-not (Test-Path $dllPath)) { Write-Error "Missing $dll.dll"; return }
-    $def = "$SdkRoot\libs\$dll.def"
-    $lib = "$SdkRoot\libs\$dll.lib"
+    Write-Host "Extracting Import Libraries..." -ForegroundColor Cyan
+    & "7z" e "pdbs.zip" -o"libs" "wireshark.lib" "wsutil.lib" -r -y | Out-Null
 
-    $dump = & $DumpbinPath /exports "$dllPath"
-    $lines = @("LIBRARY $dll", "EXPORTS")
-
-    foreach ($line in $dump) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        $parts = $line.Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
-        $sym = $null
-        if ($parts.Count -ge 4 -and $parts[0] -match "^\d+$" -and $parts[2] -match "^[0-9A-Fa-f]+$") { $sym = $parts[3] }
-        elseif ($parts.Count -ge 3 -and $parts[0] -match "^\d+$") { $sym = $parts[2] }
-
-        if ($sym -ne $null -and $sym -ne "[NONAME]" -and $sym -ne "summary") { $lines += "    $sym" }
+    # Rename to match CMake conventions
+    if (Test-Path "libs\wireshark.lib") {
+        Move-Item "libs\wireshark.lib" "libs\libwireshark.lib" -Force
     }
-    $lines | Out-File $def -Encoding ASCII
-    & $LibPath /def:$def /out:$lib /machine:x64 /nologo
+    if (Test-Path "libs\wsutil.lib") {
+        Move-Item "libs\wsutil.lib" "libs\libwsutil.lib" -Force
+    }
 }
-Gen-Lib "libwireshark"
-Gen-Lib "libwsutil"
 
 # 5. Generate headers
 Write-Host "Generating Headers..." -ForegroundColor Cyan
@@ -104,7 +104,9 @@ $WsHeaderContent = @"
 #endif
 "@
 $IncPath = "$SdkRoot\wireshark-src\wireshark-$Version\include"
-if (-not (Test-Path $IncPath)) { New-Item -ItemType Directory -Force -Path $IncPath | Out-Null }
+if (-not (Test-Path $IncPath)) {
+    New-Item -ItemType Directory -Force -Path $IncPath | Out-Null
+}
 $WsHeaderContent | Out-File "$IncPath\ws_version.h" -Encoding ASCII
 
 # 6. cmake config
