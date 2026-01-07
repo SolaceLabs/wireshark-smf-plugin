@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Copyright 2026 Solace Corporation. All rights reserved.
+
 set -e
 VERSION="$1"
 SDK_ROOT="$2"

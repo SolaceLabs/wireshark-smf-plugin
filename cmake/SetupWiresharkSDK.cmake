@@ -1,3 +1,5 @@
+# Copyright 2026 Solace Corporation. All rights reserved.
+
 # Check if the user provided specific version targets
 if(DEFINED PLUGIN_VERSION_MAJOR AND DEFINED PLUGIN_VERSION_MINOR)
     set(WS_FULL_VERSION "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.0")

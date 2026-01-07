@@ -1,3 +1,5 @@
+# Copyright 2026 Solace Corporation. All rights reserved.
+
 param (
     [string]$Version,
     [string]$SdkRoot,
