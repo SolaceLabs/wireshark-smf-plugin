@@ -1736,11 +1736,7 @@ static void add_FD_suback_item(
             if(min == 0 && max == 0 && msgCount == 1 && lastMsgIdRecved == 0 && windowSz == 0) {
                 item = proto_tree_add_string_format(sub_tree,
                     hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "ROLLBACK_ONLY_CONSUMER");
-                item = proto_tree_add_string_format(sub_tree,
-                    hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "ROLLBACK_ONLY_CONSUMER");
             } else {
-                item = proto_tree_add_string_format(sub_tree,
-                    hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "INVALID_FLOW_ID");
                 item = proto_tree_add_string_format(sub_tree,
                     hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "INVALID_FLOW_ID");
             }
