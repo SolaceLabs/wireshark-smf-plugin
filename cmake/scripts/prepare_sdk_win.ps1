@@ -19,7 +19,7 @@ function Fast-Download ($Url, $Name) {
         return
     }
 
-    Write-Host "Downloading $Name..." -ForegroundColor Cyan
+    Write-Host "Downloading $Url as $Name..." -ForegroundColor Cyan
 
     try {
         (New-Object System.Net.WebClient).DownloadFile($Url, "$PWD\$Name")
