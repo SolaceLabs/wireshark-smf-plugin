@@ -62,7 +62,7 @@ sudo apt install cmake gcc git ninja-build wireshark-dev
 sudo dnf install cmake gcc git ninja wireshark-devel
 
 # arch linux
-sudo pacman -Syu cmake gcc git ninja wireshark-cli xxhash
+sudo pacman -Syu cmake gcc git ninja wireshark-cli
 ```
 
 2. Clone the repo
