@@ -22,14 +22,6 @@ if(WIN32)
         message(STATUS "Wireshark SDK not found. Bootstrapping version ${WS_FULL_VERSION}...")
         message(STATUS "Artifacts will be downloaded to: ${WS_SDK_ROOT}")
 
-        # Locate MSVC Tools
-        find_program(MSVC_DUMPBIN "dumpbin")
-        find_program(MSVC_LIB "lib")
-
-        if(NOT MSVC_DUMPBIN OR NOT MSVC_LIB)
-             message(FATAL_ERROR "Could not find 'dumpbin.exe' or 'lib.exe'. Ensure you are running from a Visual Studio Developer Command Prompt")
-        endif()
-
         file(MAKE_DIRECTORY "${WS_SDK_ROOT}")
 
         # Run PowerShell Script
@@ -37,8 +29,6 @@ if(WIN32)
             COMMAND powershell -ExecutionPolicy Bypass -File "${CMAKE_SOURCE_DIR}/cmake/scripts/prepare_sdk_win.ps1"
                     -Version "${WS_FULL_VERSION}"
                     -SdkRoot "${WS_SDK_ROOT}"
-                    -DumpbinPath "${MSVC_DUMPBIN}"
-                    -LibPath "${MSVC_LIB}"
             RESULT_VARIABLE _ps_result
         )
 
