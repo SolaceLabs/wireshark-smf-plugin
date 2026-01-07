@@ -105,10 +105,10 @@ You can then find the plugin at `build/smf.so`.
 choco install -y visualstudio2022community visualstudio2022-workload-nativedesktop cmake git ninja 7zip
 
 # ubuntu
-apt install build-essential bison cmake curl flex git ninja-build libc-ares-dev libgcrypt20-dev libglib2.0-dev libxml2-dev zlib1g-dev
+sudo apt install build-essential bison cmake curl flex git ninja-build libc-ares-dev libgcrypt20-dev libglib2.0-dev libxml2-dev zlib1g-dev
 
 # fedora
-dnf install bison cmake curl flex gcc gcc-c++ git ninja-build c-ares-devel glib2-devel libgcrypt-devel libxml2-devel zlib-devel
+sudo dnf install bison cmake curl flex gcc gcc-c++ git ninja-build c-ares-devel glib2-devel libgcrypt-devel libxml2-devel zlib-devel
 
 # arch linux
 sudo pacman -Syu c-ares cmake flex gcc git ninja python
