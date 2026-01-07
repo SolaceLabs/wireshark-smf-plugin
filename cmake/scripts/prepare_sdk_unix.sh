@@ -14,9 +14,13 @@ mkdir -p "$SDK_ROOT"
 # 1. Download & Extract
 if [ ! -d "$SDK_ROOT/src" ]; then
     echo "Downloading Source..."
+
     TAR_FILE="$SDK_ROOT/ws.tar.xz"
-    if command -v wget &> /dev/null; then wget -q "$SRC_URL" -O "$TAR_FILE"
-    else curl -L -o "$TAR_FILE" "$SRC_URL"; fi
+    if command -v wget &> /dev/null; then
+        wget -q "$SRC_URL" -O "$TAR_FILE" || { echo "Error: Failed to download Wireshark source from $SRC_URL"; exit 1; }
+    else
+        curl -L -o "$TAR_FILE" "$SRC_URL" || { echo "Error: Failed to download Wireshark source from $SRC_URL"; exit 1; }
+    fi
 
     mkdir -p "$SDK_ROOT/src"
     tar -xf "$TAR_FILE" -C "$SDK_ROOT/src" --strip-components=1
