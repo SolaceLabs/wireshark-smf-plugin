@@ -104,9 +104,15 @@ static int hf_assuredctrl_transactionflowdescriptorpubnotify_param  = -1;
 static int hf_assuredctrl_transactionflowdescriptorpuback_param     = -1;
 static int hf_assuredctrl_transactionflowdescriptorsuback_param     = -1;
 
-static int hf_assuredctrl_transactionflow_pubnotify_string          = -1;
-static int hf_assuredctrl_transactionflow_puback_string             = -1;
-static int hf_assuredctrl_transactionflow_suback_string             = -1;
+static int hf_assuredctrl_transactionflow_string                    = -1;
+static int hf_assuredctrl_transactionflow_flowid_param              = -1;
+static int hf_assuredctrl_transactionflow_msgcount_param            = -1;
+static int hf_assuredctrl_transactionflow_lastmsgid_param           = -1;
+static int hf_assuredctrl_transactionflow_transportwindowsz_param   = -1;
+static int hf_assuredctrl_transactionflow_minmsgid_param            = -1;
+static int hf_assuredctrl_transactionflow_maxmsgid_param            = -1;
+static int hf_assuredctrl_transactionflow_msgackcount_param         = -1;
+static int hf_assuredctrl_transactionflow_lastmsgidrcvd_param       = -1;
 
 static int hf_assuredctrl_transaction_xid                           = -1;
 
@@ -223,8 +229,11 @@ static expert_field ei_assuredctrl_smf_expert_transport_window_zero = EI_INIT;
 /* Initialize the subtree pointers */
 static int ett_assuredctrl                         = -1;
 static int ett_FD_suback_list                      = -1;
+static int ett_FD_suback_list_item                 = -1;
 static int ett_FD_puback_list                      = -1;
+static int ett_FD_puback_list_item                 = -1;
 static int ett_FD_pubnotify_list                   = -1;
+static int ett_FD_pubnotify_list_item              = -1;
 static int ett_EP_behaviour_list                   = -1;
 static int ett_assuredctrl_list                    = -1;
 static int ett_XA_msg_openXaSessionRequest_list    = -1;
@@ -696,19 +705,6 @@ static void redelivery_delay_back_off_multiplier_format(gchar* s, uint16_t v)
 }
 
 /* ---------- Byte Accessor Helper Functions ----------- */
-static int get_8_bit_value (
-    proto_tree *tree,
-    tvbuff_t *tvb,
-    int offset,
-    char const * const field_name)
-{
-    uint8_t value = tvb_get_uint8(tvb, offset);                 /* gets value of the 8-bit field */
-    proto_tree_add_string_format(                               /* adds formatted string to proto tree*/
-        tree, hf_assuredctrl_8_bit_field, tvb, offset, 1, NULL, "%s: %d", field_name, value
-    );
-    return 1;                                                   /* returns the number of bytes processed */
-}
-
 static int get_16_bit_value (
     proto_tree *tree,
     tvbuff_t *tvb,
@@ -1713,6 +1709,8 @@ static void add_FD_suback_item(
     proto_tree* sub_tree;
     proto_item* item;
     int local_offset = offset;
+    int item_offset = 0;
+    int accumulative_item_offset = 0;
     uint32_t flowid = 0;
     uint64_t min = 0;
     uint64_t max = 0;
@@ -1726,6 +1724,7 @@ static void add_FD_suback_item(
     sub_tree = proto_item_add_subtree(item, ett_FD_suback_list);
     while( local_offset < offset+size )
     {
+        proto_tree* sub_sub_tree;
         flowid = tvb_get_ntohl(tvb, local_offset); // 32 bit flowid
         min = tvb_get_ntoh64(tvb, local_offset + 4);
         max = tvb_get_ntoh64(tvb, local_offset + 12);
@@ -1735,17 +1734,61 @@ static void add_FD_suback_item(
 
         if(flowid == 0xFFFFFFFF) {
             if(min == 0 && max == 0 && msgCount == 1 && lastMsgIdRecved == 0 && windowSz == 0) {
-                proto_tree_add_string_format(sub_tree,
-                hf_assuredctrl_transactionflow_suback_string, tvb, offset, 36, NULL, "ROLLBACK_ONLY_CONSUMER");
+                item = proto_tree_add_string_format(sub_tree,
+                    hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "ROLLBACK_ONLY_CONSUMER");
             } else {
-                proto_tree_add_string_format(sub_tree,
-                hf_assuredctrl_transactionflow_suback_string, tvb, offset, 36, NULL, "INVALID_FLOW_ID");
+                item = proto_tree_add_string_format(sub_tree,
+                    hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "INVALID_FLOW_ID");
             }
+            proto_item_set_generated(item);
         } else {
-            proto_tree_add_string_format(sub_tree,
-            hf_assuredctrl_transactionflow_suback_string, tvb, offset, 36, NULL,
-            "SubFlow:%u minAck:%" G_GINT64_MODIFIER "u maxAck:%" G_GINT64_MODIFIER "u msgCount:%u lastTpMsg:%" G_GINT64_MODIFIER "u windowSz:%u", flowid, min, max, msgCount, lastMsgIdRecved, windowSz);
+            item = proto_tree_add_string_format(sub_tree,
+                hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL,
+                "FlowId: %u, minAck: %" G_GUINT64_FORMAT ", maxAck: %" G_GUINT64_FORMAT
+                ", msgCount: %u, lastTpMsg: %" G_GUINT64_FORMAT ", windowSz: %u",
+                flowid, min, max, msgCount, lastMsgIdRecved, windowSz);
         }
+        sub_sub_tree = proto_item_add_subtree(item, ett_FD_suback_list_item);
+
+        item_offset = 4; // Transaction flowid is 4 bytes
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_flowid_param,
+            tvb, local_offset, item_offset, false);
+        item = proto_tree_add_item(sub_sub_tree, // This parameter is for easier search and filtering with flows
+            hf_smf_flowid_hidden_param,
+            tvb, local_offset, item_offset, false);
+        proto_item_set_hidden(item);
+        accumulative_item_offset += item_offset;
+
+        item_offset = 8; // message id is 8 bytes
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_minmsgid_param,
+            tvb, local_offset+accumulative_item_offset, item_offset, false);
+        accumulative_item_offset += item_offset;
+
+        item_offset = 8; // message id is 8 bytes   
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_maxmsgid_param,
+            tvb, local_offset+accumulative_item_offset, item_offset, false);
+        accumulative_item_offset += item_offset;
+
+        item_offset = 4; // message ack acount is 4 bytes 
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_msgackcount_param,
+            tvb, local_offset+accumulative_item_offset, item_offset, false);
+        accumulative_item_offset += item_offset;
+
+        item_offset = 8; // message id is 8 bytes   
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_lastmsgidrcvd_param,
+            tvb, local_offset+accumulative_item_offset, item_offset, false);
+        accumulative_item_offset += item_offset;
+
+        item_offset = 4; // transport window is 4 bytes 
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_transportwindowsz_param,
+            tvb, local_offset+accumulative_item_offset, item_offset, false);
+        accumulative_item_offset += item_offset;
 
         local_offset += 36;
     }
@@ -1770,23 +1813,41 @@ static void add_FD_pubnotify_item(
     sub_tree = proto_item_add_subtree(item, ett_FD_pubnotify_list);
     while( local_offset < offset+size )
     {
+        proto_tree* sub_sub_tree;
         flowid = tvb_get_ntohl(tvb, local_offset); // 32 bit flowid
         messageCount = tvb_get_ntohl(tvb, local_offset + 4); // 32-bit count
         lastMsgId = tvb_get_ntoh64(tvb, local_offset + 8);
 
         if(flowid == 0xFFFFFFFF) {
             if(messageCount == 1 && lastMsgId == 0) {
-                proto_tree_add_string_format(sub_tree,
-                hf_assuredctrl_transactionflow_pubnotify_string, tvb, offset, 16, NULL, "ROLLBACK_ONLY_PUBLISHER");
+                item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, 
+                    tvb, offset, 16, NULL, "ROLLBACK_ONLY_PUBLISHER");
             } else {
-                proto_tree_add_string_format(sub_tree,
-                hf_assuredctrl_transactionflow_pubnotify_string, tvb, offset, 16, NULL, "INVALID_FLOW_ID");
+                item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, 
+                    tvb, offset, 16, NULL, "INVALID_FLOW_ID");
             }
+            proto_item_set_generated(item);
         } else {
-            proto_tree_add_string_format(sub_tree,
-            hf_assuredctrl_transactionflow_pubnotify_string, tvb, offset, 16, NULL,
-            "PubFlow:%u messageCount:%u lastMsgId:%" G_GINT64_MODIFIER "u", flowid, messageCount, lastMsgId);
+            item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, tvb, offset, 16, NULL,
+                "FlowId: %u, messageCount: %u, LastMsgId: %" G_GUINT64_FORMAT, flowid, messageCount, lastMsgId);
         }
+        sub_sub_tree = proto_item_add_subtree(item, ett_FD_pubnotify_list_item);
+
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_flowid_param,
+            tvb, local_offset, 4, false);
+        item = proto_tree_add_item(sub_sub_tree, // This parameter is for easier search and filtering with flows
+            hf_smf_flowid_hidden_param,
+            tvb, local_offset, 4, false);
+        proto_item_set_hidden(item);
+
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_msgcount_param,
+            tvb, local_offset+4, 4, false);
+
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_lastmsgid_param,
+            tvb, local_offset+8, 8, false);
 
         local_offset += 16;
     }
@@ -1811,14 +1872,32 @@ static void add_FD_puback_item(
     sub_tree = proto_item_add_subtree(item, ett_FD_puback_list);
     while( local_offset < offset+size )
     {
+        proto_tree* sub_sub_tree;
         flowid = tvb_get_ntohl(tvb, local_offset); // 32 bit flowid
         lastMsgId = tvb_get_ntoh64(tvb, local_offset + 4);
         windowSz = tvb_get_ntohl(tvb, local_offset + 12);
 
-        proto_tree_add_string_format(sub_tree,
-            hf_assuredctrl_transactionflow_puback_string, tvb, offset, 16, NULL,
-            "PubFlow:%u lastMsgId:%" G_GINT64_MODIFIER "u windowSize:%u", flowid, lastMsgId, windowSz
+        item = proto_tree_add_string_format(sub_tree,
+            hf_assuredctrl_transactionflow_string, tvb, offset, 16, NULL,
+            "FlowId:%u lastMsgId:%" G_GUINT64_FORMAT " windowSize:%u", flowid, lastMsgId, windowSz
         );
+        sub_sub_tree = proto_item_add_subtree(item, ett_FD_puback_list_item);
+
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_flowid_param,
+            tvb, local_offset, 4, false);
+        item = proto_tree_add_item(sub_sub_tree, // This parameter is for easier search and filtering with flows
+            hf_smf_flowid_hidden_param,
+            tvb, local_offset, 4, false);
+        proto_item_set_hidden(item);
+
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_lastmsgid_param,
+            tvb, local_offset+4, 8, false);
+
+        proto_tree_add_item(sub_sub_tree,
+            hf_assuredctrl_transactionflow_transportwindowsz_param,
+            tvb, local_offset+12, 4, false);
 
         local_offset += 16;
     }
@@ -2372,12 +2451,26 @@ dissect_assuredctrl_param(
     char **str_transactionctrl_msgtype)
 {
     int param_len;
+    int decode_len_param; // actual bytes used to decode the length
+    int len_offset_delta; // offset change to get the len param
     int len_bytes; //number of bytes used for length
     uint8_t param_type;
     proto_item *ti;
     proto_tree *assuredctrl_param_tree;
 
-    ti = proto_tree_add_item(tree, hf_assuredctrl_param, tvb, 0, -1, false);
+    // Calculate the length of the param
+    len_offset_delta = 1;
+    param_len  = tvb_get_uint8(tvb, offset+len_offset_delta);
+    len_bytes = 1;
+    decode_len_param = 1;
+    if (param_len == 0) {
+        len_offset_delta = 2;
+        param_len = tvb_get_ntohl(tvb, offset+len_offset_delta); //32bit len starts after the 0
+        len_bytes = 5;
+        decode_len_param = 4;
+    }
+        
+    ti = proto_tree_add_item(tree, hf_assuredctrl_param, tvb, offset, param_len, false);
     assuredctrl_param_tree = proto_item_add_subtree(ti, ett_assuredctrl_list);
 
     param_type = tvb_get_uint8(tvb, offset) & 0x3f;
@@ -2392,16 +2485,7 @@ dissect_assuredctrl_param(
 
     proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_uh, tvb, offset, 1, false);
     proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_type, tvb, offset, 1, false);
-
-    param_len  = tvb_get_uint8(tvb, offset+1);
-    if (param_len == 0) {
-        param_len = tvb_get_ntohl(tvb, offset+2); //32bit len starts after the 0
-        len_bytes = 5;
-        proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_len, tvb, offset+2,  4, false);
-    } else {
-        len_bytes = 1;
-        proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_len, tvb, offset+1,  1, false);
-    }
+    proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_len, tvb, offset+len_offset_delta, decode_len_param, false);
 
     add_assuredctrl_param(tvb, pinfo, assuredctrl_param_tree, param_type, offset, param_len, len_bytes, (const char**)str_transactionctrl_msgtype);
 
@@ -2821,8 +2905,8 @@ proto_register_assuredctrl(void)
             "", HFILL }
         },
         { &hf_assuredctrl_transactionctrlmessagetype_param,
-            { "XACtrl Message Type",           "assuredctrl.TxnCtrl.messagetype",
-            FT_UINT8, BASE_HEX, VALS(transactionctrlmsgtypenames), 0xff,
+            { "TxnCtrl Message Type",           "assuredctrl.TxnCtrl.messagetype",
+            FT_UINT8, BASE_HEX, VALS(transactionctrlmsgtypenames), 0x0,
             "", HFILL }
         },
         { &hf_assuredctrl_xaversion_param,
@@ -2851,39 +2935,69 @@ proto_register_assuredctrl(void)
             "", HFILL }
         },
         { &hf_assuredctrl_transactedsessionstate_param,
-            { "XACtrl TransactedSessionState",           "assuredctrl.TxnCtrl.transactedsessionstate",
+            { "XACtrl TransactedSessionState",  "assuredctrl.TxnCtrl.transactedsessionstate",
             FT_UINT8, BASE_HEX, VALS(transactedsessionstatenames), 0x0,
             "", HFILL }
         },
         { &hf_assuredctrl_transactionflowdescriptorpubnotify_param,
-            { "XACtrl TFDPubNotify",           "assuredctrl.TxnCtrl.tfdpubnotify",
-            FT_BYTES, BASE_NONE, NULL, 0x0,
+            { "TxnCtrl TFDPubNotify",           "assuredctrl.TxnCtrl.tfdpubnotify",
+            FT_NONE, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
         { &hf_assuredctrl_transactionflowdescriptorpuback_param,
-            { "XACtrl TFDPubAck",           "assuredctrl.TxnCtrl.tfdpuback",
-            FT_BYTES, BASE_NONE, NULL, 0x0,
+            { "TxnCtrl TFDPubAck",           "assuredctrl.TxnCtrl.tfdpuback",
+            FT_NONE, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
         { &hf_assuredctrl_transactionflowdescriptorsuback_param,
-            { "XACtrl TFDSubAck",           "assuredctrl.TxnCtrl.tfdsuback",
-            FT_BYTES, BASE_NONE, NULL, 0x0,
+            { "TxnCtrl TFDSubAck",           "assuredctrl.TxnCtrl.tfdsuback",
+            FT_NONE, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
 
-        { &hf_assuredctrl_transactionflow_pubnotify_string,
-            { "Field_PubNotify_Str",           "assuredctrl.discard",
+        { &hf_assuredctrl_transactionflow_string,
+            { "Field_Transactionflow_Str",   "assuredctrl.discard",
             FT_STRING, BASE_NONE, NULL, 0x0,
             "", HFILL }
         },
-        { &hf_assuredctrl_transactionflow_puback_string,
-            { "Field_PubAck_Str",           "assuredctrl.discard",
-            FT_STRING, BASE_NONE, NULL, 0x0,
+        { &hf_assuredctrl_transactionflow_flowid_param,
+            { "Flow ID",                    "assuredctrl.TxnCtrl.flowid",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
             "", HFILL }
         },
-        { &hf_assuredctrl_transactionflow_suback_string,
-            { "Field_SubAck_Str",           "assuredctrl.discard",
-            FT_STRING, BASE_NONE, NULL, 0x0,
+        { &hf_assuredctrl_transactionflow_msgcount_param,
+            { "MsgCount",                    "assuredctrl.TxnCtrl.msgcount",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            "", HFILL }
+        },
+        { &hf_assuredctrl_transactionflow_lastmsgid_param,
+            { "LastMsgId",                   "assuredctrl.TxnCtrl.lastmsgid",
+            FT_UINT64, BASE_DEC, NULL, 0x0,
+            "", HFILL }
+        },
+        { &hf_assuredctrl_transactionflow_transportwindowsz_param,
+            { "TransportWindowSz",           "assuredctrl.TxnCtrl.transportwindowsz",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            "", HFILL }
+        },
+        { &hf_assuredctrl_transactionflow_minmsgid_param,
+            { "MinMsgId",                    "assuredctrl.TxnCtrl.minmsgid",
+            FT_UINT64, BASE_DEC, NULL, 0x0,
+            "", HFILL }
+        },
+        { &hf_assuredctrl_transactionflow_maxmsgid_param,
+            { "MaxMsgId",                    "assuredctrl.TxnCtrl.maxmsgid",
+            FT_UINT64, BASE_DEC, NULL, 0x0,
+            "", HFILL }
+        },
+        { &hf_assuredctrl_transactionflow_msgackcount_param,
+            { "MsgAckCount",                 "assuredctrl.TxnCtrl.msgackcount",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            "", HFILL }
+        },
+        { &hf_assuredctrl_transactionflow_lastmsgidrcvd_param,
+            { "LastMsgIdRcvd",               "assuredctrl.TxnCtrl.lastmsgidrcvd",
+            FT_UINT64, BASE_DEC, NULL, 0x0,
             "", HFILL }
         },
         { &hf_assuredctrl_transaction_xid,
@@ -3385,8 +3499,11 @@ proto_register_assuredctrl(void)
     static int *ett[] = {
         &ett_assuredctrl,
         &ett_FD_suback_list,
+        &ett_FD_suback_list_item,
         &ett_FD_puback_list,
+        &ett_FD_puback_list_item,
         &ett_FD_pubnotify_list,
+        &ett_FD_pubnotify_list_item,
         &ett_EP_behaviour_list,
 
         &ett_assuredctrl_list,
