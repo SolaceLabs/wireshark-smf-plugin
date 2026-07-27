@@ -1,0 +1,21 @@
+version: 3
+project:
+  locator: SolaceLabs_wireshark-smf-plugin
+  id: SolaceLabs_wireshark-smf-plugin
+  name: wireshark-smf-plugin
+  teams: []
+  labels:
+    - c
+vendoredDependencies:
+  forceRescans: false
+  scanMethod: CLILicenseScan
+  licenseScanPathFilters:
+    exclude:
+      - "./.git"
+      - "./.github"
+paths:
+  exclude:
+    - ./.git
+    - ./.github
+telemetry:
+  scope: full
