@@ -47,16 +47,16 @@ jobs:
     needs: [build_plugin]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           sparse-checkout: .github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md
 
       # The only way to share artifacts between workflows is to upload and download them.
       - name: Download Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
 
       - name: Create Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
             name: "v${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}"
             tag: "v${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}"

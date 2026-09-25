@@ -137,11 +137,11 @@ jobs:
     runs-on: ${{ matrix.os.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup MSVC Environment
         if: matrix.os.name == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
 
       - name: Get MacOS GLib Version
         id: macos-deps-hash
@@ -154,14 +154,14 @@ jobs:
       - name: Cache Wireshark Libs
         if: matrix.os.name == 'windows'
         id: cache-wireshark-libs
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ env.WIRESHARK_BASE_DIR }}
           key: wireshark-libs-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ env.WIRESHARK_PATCH_VERSION }}-${{ matrix.os.name }}
 
       - name: Cache Wireshark Install
         id: cache-wireshark-install
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: wireshark-install
           key: wireshark-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}.${{ env.WIRESHARK_PATCH_VERSION }}${{ matrix.os.name == 'macos' && format('-glib{0}', steps.macos-deps-hash.outputs.GLIB_VER) || '' }}-${{ matrix.os.name }}
@@ -172,7 +172,7 @@ jobs:
 
       - name: Checkout Wireshark
         if: steps.cache-wireshark-install.outputs.cache-hit != 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: wireshark/wireshark
           path: wireshark-src
@@ -273,7 +273,7 @@ jobs:
         run: Get-ChildItem -Path build/smf.dll, build/smf.pdb | Compress-Archive -DestinationPath ${{ matrix.os.artifact }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ matrix.os.artifact }}
           path: ${{ matrix.os.artifact }}
