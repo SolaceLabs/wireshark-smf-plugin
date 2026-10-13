@@ -14,6 +14,10 @@ endif()
 
 find_package(Wireshark CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
+if(UNIX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GLIB2 REQUIRED IMPORTED_TARGET glib-2.0)
+endif()
 
 if(Wireshark_VERSION)
     message(STATUS "Wireshark version detected: ${Wireshark_VERSION}")
@@ -88,7 +92,9 @@ set_target_properties(smf PROPERTIES PREFIX "" DEFINE_SYMBOL "")
 target_include_directories(smf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_BINARY_DIR}
-    ${ZLIB_INCLUDE_DIRS}
 )
 
-target_link_libraries(smf epan ${ZLIB_LIBRARIES})
+target_link_libraries(smf epan ZLIB::ZLIB)
+if(UNIX)
+    target_link_libraries(smf PkgConfig::GLIB2)
+endif()
