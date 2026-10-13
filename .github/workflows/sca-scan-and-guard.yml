@@ -1,28 +1,21 @@
 name: SCA Scan
-
-# PRs run on pull_request_target so fork PRs can reach the FOSSA key at all
-# (pull_request never hands secrets to a fork); the workflow definition then
-# always comes from main. The scan job runs in a GitHub Environment that holds
-# FOSSA_API_KEY (from Vault secret/tools/githubactions):
-#   sca-scan       same-repo PRs and pushes to main, no approval
-#   sca-scan-fork  fork PRs, a maintainer/admin must approve each run
 on:
-  # zizmor: ignore[dangerous-triggers] -- needed for fork PR secrets; gated by
-  # the sca-scan-fork Environment and the PR head is only statically analysed.
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  pull_request:
     branches: [main]
   push:
     branches: [main]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
 
 permissions: {}
 
 jobs:
   sca_scan:
+    # Fork PRs never receive secrets (FOSSA_API_KEY) and get a read-only token,
+    # so the scan cannot work there. Only run for pushes and for PRs whose head
+    # branch lives in SolaceLabs/<this repo>; fork changes are scanned on merge.
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.pull_request.head.repo.owner.login == 'SolaceLabs'
+          && github.event.pull_request.head.repo.name == github.event.repository.name)
     # zizmor: ignore[unpinned-uses] -- reusable workflows are tracked by branch (#57)
     uses: SolaceDev/solace-public-workflows/.github/workflows/sca-scan-and-guard.yaml@main
     permissions:
@@ -33,18 +26,7 @@ jobs:
       statuses: write
       checks: write
       pull-requests: write
-    with:
-      environment: >-
-        ${{ github.event_name == 'pull_request_target'
-            && github.event.pull_request.head.repo.full_name != github.repository
-            && 'sca-scan-fork' || 'sca-scan' }}
-      # The PR head is untrusted: pin the FOSSA endpoint (overrides any
-      # .fossa.yml `server:`) and don't let FOSSA run third-party build tools.
-      additional_scan_params: |
-        fossa.endpoint=https://app.fossa.com
-        fossa.static_only_analysis=true
     secrets:
-      # Passed by name so the Environment's FOSSA_API_KEY takes precedence.
       FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
 
   update_manifest:
