@@ -1,23 +1,14 @@
 name: SCA Scan
 
-# FOSSA licensing + vulnerability scan. The FOSSA key lives in the `sca-scan`
-# Environment (sourced from Vault secret/tools/githubactions), which only
-# deploys from `main`.
-#
-# Pull requests run on `pull_request_target` so that fork PRs can reach the
-# Environment secret at all -- `pull_request` never hands secrets to a fork.
-# The workflow definition therefore always comes from `main`, and a fork PR
-# cannot edit the copy that runs for it. A fork PR additionally has to pass the
-# `fork-pr-approval` Environment, where a repo maintainer/admin reviews the
-# diff and approves the run before any job that holds the secret starts.
-#
-# The PR's code is only ever *read* (static FOSSA analysis); nothing from the
-# checkout is built or executed, and the FOSSA endpoint/project are pinned on
-# the command line so a PR-supplied .fossa.yml cannot redirect the key.
-
+# PRs run on pull_request_target so fork PRs can reach the FOSSA key at all
+# (pull_request never hands secrets to a fork); the workflow definition then
+# always comes from main. The scan job runs in a GitHub Environment that holds
+# FOSSA_API_KEY (from Vault secret/tools/githubactions):
+#   sca-scan       same-repo PRs and pushes to main, no approval
+#   sca-scan-fork  fork PRs, a maintainer/admin must approve each run
 on:
   # zizmor: ignore[dangerous-triggers] -- needed for fork PR secrets; gated by
-  # the fork-pr-approval Environment and the PR head is never executed.
+  # the sca-scan-fork Environment and the PR head is only statically analysed.
   pull_request_target:
     types: [opened, synchronize, reopened]
     branches: [main]
@@ -30,103 +21,38 @@ concurrency:
 
 permissions: {}
 
-env:
-  FOSSA_ENDPOINT: https://app.fossa.com
-  FOSSA_PROJECT_ID: SolaceLabs_wireshark-smf-plugin
-  IS_PR: ${{ github.event_name == 'pull_request_target' }}
-  FOSSA_BRANCH: ${{ github.event_name == 'pull_request_target' && 'PR' || 'main' }}
-  FOSSA_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
-
 jobs:
-  fork_approval:
-    name: Approve fork PR scan
-    if: >-
-      github.event_name == 'pull_request_target'
-      && github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-slim
-    environment: fork-pr-approval
-    permissions: {}
-    steps:
-      - name: Record approval
-        env:
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-        run: echo "Maintainer approved the SCA scan of ${HEAD_REPO}@${FOSSA_REVISION}"
-
   sca_scan:
-    name: SCA Scan
-    needs: fork_approval
-    # Same-repo PRs and pushes skip fork_approval; a rejected approval fails it.
-    if: ${{ !cancelled() && needs.fork_approval.result != 'failure' }}
-    runs-on: ubuntu-latest
-    environment: sca-scan
+    # zizmor: ignore[unpinned-uses] -- reusable workflows are tracked by branch (#57)
+    uses: SolaceDev/solace-public-workflows/.github/workflows/sca-scan-and-guard.yaml@main
     permissions:
       contents: read
-      packages: read     # pull the maas-build-actions fossa-guard container
-      pull-requests: write
-      checks: write
+      id-token: write
+      packages: read
+      actions: read
       statuses: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.FOSSA_REVISION }}
-          persist-credentials: false
-
-      - name: FOSSA analyze
-        uses: SolaceDev/solace-public-workflows/.github/actions/sca/sca-scan@c689e87fd881013c2e5009bf6e751b49cae7527b # main
-        with:
-          scanners: fossa
-          additional_scan_params: |
-            fossa.endpoint=${{ env.FOSSA_ENDPOINT }}
-            fossa.project=${{ env.FOSSA_PROJECT_ID }}
-            fossa.branch=${{ env.FOSSA_BRANCH }}
-            fossa.revision=${{ env.FOSSA_REVISION }}
-            fossa.static_only_analysis=true
-          fossa_api_key: ${{ secrets.FOSSA_API_KEY }}
-
-      - name: FOSSA licensing guard
-        uses: SolaceDev/solace-public-workflows/.github/actions/fossa-guard@c689e87fd881013c2e5009bf6e751b49cae7527b # main
-        with:
-          fossa_api_key: ${{ secrets.FOSSA_API_KEY }}
-          fossa_project_id: ${{ env.FOSSA_PROJECT_ID }}
-          fossa_branch: ${{ env.FOSSA_BRANCH }}
-          fossa_revision: ${{ env.FOSSA_REVISION }}
-          fossa_category: licensing
-          fossa_mode: REPORT
-          block_on: policy_conflict
-          enable_diff_mode: ${{ env.IS_PR }}
-          enable_pr_comment: ${{ env.IS_PR }}
-          enable_status_check: ${{ env.IS_PR }}
-          status_check_name: FOSSA SCA Licensing
-          enable_privacy_mode: "true"
-          github_token: ${{ github.token }}
-
-      - name: FOSSA vulnerability guard
-        uses: SolaceDev/solace-public-workflows/.github/actions/fossa-guard@c689e87fd881013c2e5009bf6e751b49cae7527b # main
-        with:
-          fossa_api_key: ${{ secrets.FOSSA_API_KEY }}
-          fossa_project_id: ${{ env.FOSSA_PROJECT_ID }}
-          fossa_branch: ${{ env.FOSSA_BRANCH }}
-          fossa_revision: ${{ env.FOSSA_REVISION }}
-          fossa_category: vulnerability
-          fossa_mode: REPORT
-          block_on: critical,high
-          enable_diff_mode: ${{ env.IS_PR }}
-          enable_pr_comment: ${{ env.IS_PR }}
-          enable_status_check: ${{ env.IS_PR }}
-          status_check_name: FOSSA SCA Vulnerabilities
-          enable_privacy_mode: "true"
-          github_token: ${{ github.token }}
+      checks: write
+      pull-requests: write
+    with:
+      environment: >-
+        ${{ github.event_name == 'pull_request_target'
+            && github.event.pull_request.head.repo.full_name != github.repository
+            && 'sca-scan-fork' || 'sca-scan' }}
+      # The PR head is untrusted: pin the FOSSA endpoint (overrides any
+      # .fossa.yml `server:`) and don't let FOSSA run third-party build tools.
+      additional_scan_params: |
+        fossa.endpoint=https://app.fossa.com
+        fossa.static_only_analysis=true
+    secrets:
+      # Passed by name so the Environment's FOSSA_API_KEY takes precedence.
+      FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
 
   update_manifest:
     needs: sca_scan
     # The manifest records what landed on the default branch, so it must never
     # be written from a PR run -- the scan still runs, the write does not.
-    # !cancelled() is needed because the skipped fork_approval upstream would
-    # otherwise make the implicit success() check skip this job.
     if: >-
-      !cancelled()
-      && needs.sca_scan.result == 'success'
+      needs.sca_scan.result == 'success'
       && github.event_name == 'push'
       && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
