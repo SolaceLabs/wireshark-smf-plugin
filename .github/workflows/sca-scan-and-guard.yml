@@ -5,18 +5,27 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: read
-  id-token: write
-  packages: read
-  actions: read
-  statuses: write
-  checks: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   sca_scan:
+    # Fork PRs never receive secrets (FOSSA_API_KEY) and get a read-only token,
+    # so the scan cannot work there. Only run for pushes and for PRs whose head
+    # branch lives in SolaceLabs/<this repo>; fork changes are scanned on merge.
+    if: >-
+      github.event_name != 'pull_request'
+      || (github.event.pull_request.head.repo.owner.login == 'SolaceLabs'
+          && github.event.pull_request.head.repo.name == github.event.repository.name)
+    # zizmor: ignore[unpinned-uses] -- reusable workflows are tracked by branch (#57)
     uses: SolaceDev/solace-public-workflows/.github/workflows/sca-scan-and-guard.yaml@main
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+      actions: read
+      statuses: write
+      checks: write
+      pull-requests: write
     secrets:
       FOSSA_API_KEY: ${{ secrets.FOSSA_API_KEY }}
 
@@ -41,7 +50,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Update solace-cloud-manifest
-        uses: SolaceDev/solace-public-workflows/.github/actions/cicd-helper@3cb03730e52b4b0337e9a3b50a4f1ed74d44bb3c # main
+        uses: SolaceDev/solace-public-workflows/.github/actions/cicd-helper@c689e87fd881013c2e5009bf6e751b49cae7527b # main
         with:
           rc_step: add_item_from_json_to_dynamodb_table
           ddb_table_name: solace-cloud-manifest
