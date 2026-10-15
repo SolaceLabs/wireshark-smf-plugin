@@ -9,13 +9,14 @@ permissions: {}
 
 jobs:
   sca_scan:
-    # Fork PRs never receive secrets (FOSSA_API_KEY) and get a read-only token,
-    # so the scan cannot work there. Only run for pushes and for PRs whose head
-    # branch lives in SolaceLabs/<this repo>; fork changes are scanned on merge.
+    # Needs org secrets (FOSSA_API_KEY), so only run in SolaceLabs itself: forks
+    # of this repo have no such secrets, and fork PRs never receive secrets and
+    # get a read-only token. Fork changes are scanned on the push to main.
     if: >-
-      github.event_name != 'pull_request'
-      || (github.event.pull_request.head.repo.owner.login == 'SolaceLabs'
-          && github.event.pull_request.head.repo.name == github.event.repository.name)
+      github.repository_owner == 'SolaceLabs'
+      && (github.event_name != 'pull_request'
+          || (github.event.pull_request.head.repo.owner.login == 'SolaceLabs'
+              && github.event.pull_request.head.repo.name == github.event.repository.name))
     # zizmor: ignore[unpinned-uses] -- reusable workflows are tracked by branch (#57)
     uses: SolaceDev/solace-public-workflows/.github/workflows/sca-scan-and-guard.yaml@main
     permissions:
@@ -33,8 +34,10 @@ jobs:
     needs: sca_scan
     # The manifest records what landed on the default branch, so it must never
     # be written from a PR run -- the scan still runs, the write does not.
+    # Needs MANIFEST_AWS_ROLE, so SolaceLabs only (see sca_scan).
     if: >-
-      needs.sca_scan.result == 'success'
+      github.repository_owner == 'SolaceLabs'
+      && needs.sca_scan.result == 'success'
       && github.event_name == 'push'
       && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
