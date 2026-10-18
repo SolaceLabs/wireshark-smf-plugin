@@ -8,6 +8,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   build_plugin:
     name: Build All Plugins
@@ -17,6 +20,8 @@ jobs:
     name: Create Draft Release
     needs: [build_plugin]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       MAJOR: ${{ needs.build_plugin.outputs.version_major }}
       MINOR: ${{ needs.build_plugin.outputs.version_minor }}

@@ -7,6 +7,8 @@ on:
     branches:
       - main
 
+  pull_request:
+
   workflow_call:
     outputs:
       version_major:
@@ -28,6 +30,9 @@ on:
         description: 'Build for MacOS'
         type: boolean
         default: true
+
+permissions:
+  contents: read
 
 jobs:
   setup:
