@@ -2,7 +2,10 @@
 
 # Check if the user provided specific version targets
 if(DEFINED PLUGIN_VERSION_MAJOR AND DEFINED PLUGIN_VERSION_MINOR)
-    set(WS_FULL_VERSION "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.0")
+    set(WS_SDK_VERSION_MAJOR "${PLUGIN_VERSION_MAJOR}")
+    set(WS_SDK_VERSION_MINOR "${PLUGIN_VERSION_MINOR}")
+    set(WS_SDK_VERSION_MICRO 0)
+    set(WS_FULL_VERSION "${WS_SDK_VERSION_MAJOR}.${WS_SDK_VERSION_MINOR}.${WS_SDK_VERSION_MICRO}")
     set(WS_VERSION_DEFINED TRUE)
 else()
     set(WS_VERSION_DEFINED FALSE)
@@ -11,50 +14,19 @@ endif()
 # Define where the SDK will be created if bootstrapping is needed
 set(WS_DEPS_DIR "${CMAKE_BINARY_DIR}/_deps")
 set(WS_SDK_ROOT "${WS_DEPS_DIR}/wireshark-${WS_FULL_VERSION}")
+set(WS_SRC_DIR "${WS_SDK_ROOT}/src")
+
+set(NEED_BOOTSTRAP FALSE)
 
 if(WIN32)
     # Windows always requires bootstrapping, so we MUST have the version.
     if(NOT WS_VERSION_DEFINED)
         message(FATAL_ERROR "On Windows, you must define PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR to bootstrap the Wireshark SDK")
     endif()
-
-    if(NOT EXISTS "${WS_SDK_ROOT}/WiresharkConfig.cmake")
-        message(STATUS "Wireshark SDK not found. Bootstrapping version ${WS_FULL_VERSION}...")
-        message(STATUS "Artifacts will be downloaded to: ${WS_SDK_ROOT}")
-
-        file(MAKE_DIRECTORY "${WS_SDK_ROOT}")
-
-        # Run PowerShell Script
-        execute_process(
-            COMMAND powershell -ExecutionPolicy Bypass -File "${CMAKE_SOURCE_DIR}/cmake/scripts/prepare_sdk_win.ps1"
-                    -Version "${WS_FULL_VERSION}"
-                    -SdkRoot "${WS_SDK_ROOT}"
-            RESULT_VARIABLE _ps_result
-        )
-
-        if(NOT _ps_result EQUAL 0)
-            message(FATAL_ERROR "Failed to bootstrap Wireshark SDK")
-        endif()
-    else()
-        message(STATUS "Using local Wireshark SDK: ${WS_SDK_ROOT}")
-    endif()
-
-    # Configure CMake to use this SDK
-    set(Wireshark_DIR "${WS_SDK_ROOT}" CACHE PATH "Path to Wireshark Config" FORCE)
-
-    # Configure ZLIB from the SDK bundle
-    set(VCPKG_ROOT "${WS_SDK_ROOT}/deps/installed/x64-windows")
-    set(ZLIB_ROOT "${VCPKG_ROOT}" CACHE PATH "Path to ZLIB root" FORCE)
-    set(ZLIB_INCLUDE_DIR "${VCPKG_ROOT}/include" CACHE PATH "Path to ZLIB include" FORCE)
-    set(ZLIB_LIBRARY "${VCPKG_ROOT}/lib/zlib.lib" CACHE PATH "Path to ZLIB library" FORCE)
-
-    # Force C11 Standard for Windows builds
-    add_compile_options(/std:c11)
+    set(NEED_BOOTSTRAP TRUE)
 elseif(UNIX)
     # Try to find System Wireshark
     find_package(Wireshark CONFIG QUIET)
-
-    set(NEED_BOOTSTRAP FALSE)
 
     if(Wireshark_FOUND)
         if(WS_VERSION_DEFINED)
@@ -84,30 +56,60 @@ elseif(UNIX)
             message(FATAL_ERROR "System Wireshark not found. To bootstrap a local SDK, you must define PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR")
         endif()
     endif()
+endif()
 
-    if(NEED_BOOTSTRAP)
-        # Deterministic path enforced by the shell script (lib/cmake/wireshark)
-        set(LOCAL_CONFIG "${WS_SDK_ROOT}/lib/cmake/wireshark/WiresharkConfig.cmake")
+if(NOT NEED_BOOTSTRAP)
+    return()
+endif()
 
-        # Build if config doesn't exist
-        if(NOT EXISTS "${LOCAL_CONFIG}")
-            execute_process(
-                COMMAND bash "${CMAKE_SOURCE_DIR}/cmake/scripts/prepare_sdk_unix.sh"
-                        "${WS_FULL_VERSION}" "${WS_SDK_ROOT}"
-                RESULT_VARIABLE _sh_result
-            )
+if(WIN32)
+    set(WS_SDK_READY "${WS_SDK_ROOT}/libs/wsutil.lib")
+    find_program(WS_POWERSHELL NAMES pwsh powershell)
+    set(WS_SDK_COMMAND "${WS_POWERSHELL}" -ExecutionPolicy Bypass -File "${CMAKE_SOURCE_DIR}/cmake/scripts/prepare_sdk_win.ps1"
+                       -Version "${WS_FULL_VERSION}" -SdkRoot "${WS_SDK_ROOT}")
+else()
+    set(WS_SDK_READY "${WS_SRC_DIR}/epan/packet.h")
+    set(WS_SDK_COMMAND bash "${CMAKE_SOURCE_DIR}/cmake/scripts/prepare_sdk_unix.sh" "${WS_FULL_VERSION}" "${WS_SDK_ROOT}")
+endif()
 
-            if(NOT _sh_result EQUAL 0)
-                message(FATAL_ERROR "Failed to build Wireshark SDK from source")
-            endif()
-        endif()
-
-        # Check again after build
-        if(EXISTS "${LOCAL_CONFIG}")
-            get_filename_component(WS_CONFIG_DIR "${LOCAL_CONFIG}" DIRECTORY)
-            set(Wireshark_DIR "${WS_CONFIG_DIR}" CACHE PATH "Path to Wireshark Config" FORCE)
-        else()
-            message(FATAL_ERROR "Bootstrap appeared to succeed, but WiresharkConfig.cmake was not found at: ${LOCAL_CONFIG}")
-        endif()
+if(NOT EXISTS "${WS_SDK_READY}")
+    message(STATUS "Downloading Wireshark SDK ${WS_FULL_VERSION} to: ${WS_SDK_ROOT}")
+    execute_process(COMMAND ${WS_SDK_COMMAND} RESULT_VARIABLE _sdk_result)
+    if(NOT _sdk_result EQUAL 0 OR NOT EXISTS "${WS_SDK_READY}")
+        message(FATAL_ERROR "Failed to bootstrap Wireshark SDK")
     endif()
+else()
+    message(STATUS "Using local Wireshark SDK: ${WS_SDK_ROOT}")
+endif()
+
+set(PROJECT_MAJOR_VERSION "${WS_SDK_VERSION_MAJOR}")
+set(PROJECT_MINOR_VERSION "${WS_SDK_VERSION_MINOR}")
+set(PROJECT_PATCH_VERSION "${WS_SDK_VERSION_MICRO}")
+configure_file("${WS_SRC_DIR}/ws_version.h.in" "${WS_SDK_ROOT}/include/ws_version.h" @ONLY)
+
+set(Wireshark_VERSION "${WS_FULL_VERSION}")
+set(WS_INCLUDE_DIRS
+    "${WS_SRC_DIR}"
+    "${WS_SRC_DIR}/epan"
+    "${WS_SRC_DIR}/include"
+    "${WS_SRC_DIR}/wsutil"
+    "${WS_SDK_ROOT}/include"
+)
+
+if(WIN32)
+    set(WS_WIN_DEPS "${WS_SDK_ROOT}/deps")
+
+    add_library(epan UNKNOWN IMPORTED)
+    set_target_properties(epan PROPERTIES
+        IMPORTED_LOCATION "${WS_SDK_ROOT}/libs/wireshark.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "${WS_INCLUDE_DIRS};${WS_WIN_DEPS}/include;${WS_WIN_DEPS}/include/glib-2.0;${WS_WIN_DEPS}/lib/glib-2.0/include"
+        INTERFACE_LINK_LIBRARIES "${WS_SDK_ROOT}/libs/wsutil.lib;${WS_WIN_DEPS}/lib/glib-2.0.lib;${WS_WIN_DEPS}/lib/gmodule-2.0.lib;${WS_WIN_DEPS}/lib/gobject-2.0.lib"
+    )
+
+    set(ZLIB_ROOT "${WS_WIN_DEPS}")
+
+    add_compile_options(/std:c11)
+else()
+    add_library(epan INTERFACE IMPORTED)
+    set_target_properties(epan PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${WS_INCLUDE_DIRS}")
 endif()

@@ -56,13 +56,13 @@ See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/w
 1. Install the dependencies
 ```sh
 # ubuntu
-sudo apt install cmake gcc git ninja-build wireshark-dev
+sudo apt install cmake gcc git libxxhash-dev ninja-build pkg-config wireshark-dev
 
 # fedora
-sudo dnf install cmake gcc git ninja wireshark-devel
+sudo dnf install cmake gcc git ninja-build pkgconf wireshark-devel xxhash-devel
 
 # arch linux
-sudo pacman -Syu cmake gcc git ninja wireshark-cli
+sudo pacman -Syu cmake gcc git ninja pkgconf wireshark-cli xxhash
 ```
 
 2. Clone the repo
@@ -96,8 +96,12 @@ cmake --build build
 You can then find the plugin at `build/smf.so`.
 
 ### Using a specific version of Wireshark
+Wireshark is not compiled. CMake downloads the Wireshark source for its headers and, on Windows, the import libraries and
+third party dependencies from the official release, into `build/_deps`.
+
 > [!NOTE]
-> On Windows, you must use the Visual Studio Developer Command Prompt when running the `cmake` commands.
+> On Windows, you must use the Visual Studio Developer Command Prompt when running the `cmake` commands, and build with
+> `Release` or `RelWithDebInfo` so the plugin uses the same C runtime as the official Wireshark release.
 
 1. Install the dependencies
 ```sh
@@ -105,13 +109,16 @@ You can then find the plugin at `build/smf.so`.
 choco install -y visualstudio2022community visualstudio2022-workload-nativedesktop cmake git ninja 7zip
 
 # ubuntu
-sudo apt install build-essential bison cmake curl flex git ninja-build libc-ares-dev libgcrypt20-dev libglib2.0-dev libxml2-dev zlib1g-dev
+sudo apt install build-essential cmake curl git libglib2.0-dev ninja-build pkg-config xz-utils zlib1g-dev
 
 # fedora
-sudo dnf install bison cmake curl flex gcc gcc-c++ git ninja-build c-ares-devel glib2-devel libgcrypt-devel libxml2-devel zlib-devel
+sudo dnf install cmake curl gcc git glib2-devel ninja-build pkgconf zlib-devel
 
 # arch linux
-sudo pacman -Syu c-ares cmake flex gcc git ninja python
+sudo pacman -Syu cmake curl gcc git glib2 ninja pkgconf zlib
+
+# macos
+brew install cmake glib ninja pkgconf
 ```
 
 2. Clone the repo
@@ -144,9 +151,6 @@ cmake --build build
 ```
 
 You can then find the plugin at `build/smf.so` or `build/smf.dll`.
-
-### MacOS
-TODO: Build out-of-tree. See github workflow for working steps.
 
 ## Version Naming Convention
 As this plugin is designed for use in Wireshark, the MAJOR.MINOR match the Wireshark versions. I.E. SMF Plugin 4.0.x indicates support for all patches of Wireshark 4.0.

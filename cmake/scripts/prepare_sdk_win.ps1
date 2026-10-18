@@ -19,7 +19,7 @@ function Fast-Download ($Url, $Name) {
         return
     }
 
-    Write-Host "Downloading $Url as $Name..." -ForegroundColor Cyan
+    Write-Host "Downloading $Url as $Name..."
 
     try {
         (New-Object System.Net.WebClient).DownloadFile($Url, "$PWD\$Name")
@@ -30,99 +30,90 @@ function Fast-Download ($Url, $Name) {
     }
 }
 
+function Get-ReleaseHash ($FileName) {
+    Fast-Download "https://www.wireshark.org/download/src/all-versions/SIGNATURES-$Version.txt" "SIGNATURES.txt"
+
+    $Pattern = "SHA256\(" + [regex]::Escape($FileName) + "\)=([0-9a-fA-F]{64})"
+    if ((Get-Content "SIGNATURES.txt" -Raw) -match $Pattern) {
+        return $Matches[1]
+    }
+    Write-Error "No SHA256 for $FileName in SIGNATURES-$Version.txt"
+    exit 1
+}
+
+function Assert-Hash ($Name, $Expected) {
+    if ((Get-FileHash $Name -Algorithm SHA256).Hash -ne $Expected) {
+        Remove-Item $Name -Force
+        Write-Error "SHA256 mismatch for $Name"
+        exit 1
+    }
+}
+
 # 1. Get source
-if (-not (Test-Path "wireshark-src")) {
+if (-not (Test-Path "src")) {
     $WS_SRC_URL = "https://www.wireshark.org/download/src/all-versions/wireshark-$Version.tar.xz"
     Fast-Download $WS_SRC_URL "ws.tar.xz"
+    Assert-Hash "ws.tar.xz" (Get-ReleaseHash "wireshark-$Version.tar.xz")
 
-    Write-Host "Extracting Source..." -ForegroundColor Cyan
+    Write-Host "Extracting Source..."
     & "7z" x "ws.tar.xz" -y | Out-Null
-    & "7z" x "ws.tar" -y -o"wireshark-src" | Out-Null
+    & "7z" x "ws.tar" -y | Out-Null
+    Rename-Item "wireshark-$Version" "src"
+    Remove-Item "ws.tar.xz", "ws.tar" -Force
 }
 
 # 2. Dynamically find vcpkg artifact
-Write-Host "Reading dependency info..." -ForegroundColor Cyan
-$FetchFile = "$SdkRoot\wireshark-src\wireshark-$Version\cmake\modules\FetchArtifacts.cmake"
+Write-Host "Reading dependency info..."
+$FetchFile = "$SdkRoot\src\cmake\modules\FetchArtifacts.cmake"
 
 if (-not (Test-Path $FetchFile)) {
-    Write-Error "FetchArtifacts.cmake not found"
+    Write-Error "FetchArtifacts.cmake not found in the Wireshark $Version source"
     exit 1
 }
 
 $Content = Get-Content $FetchFile -Raw
-if ($Content -match 'vcpkg-export/(vcpkg-export-[^ \t\r\n"]+\.zip)') {
+if ($Content -match 'add_artifact\(vcpkg-export/(vcpkg-export-[^ \t\r\n"]*x64-windows-ws\.zip)\s+([0-9a-fA-F]{64})') {
     $VcpkgZipName = $Matches[1]
-    Write-Host "Detected Artifact: $VcpkgZipName" -ForegroundColor Green
+    $VcpkgZipHash = $Matches[2]
+    Write-Host "Detected Artifact: $VcpkgZipName"
 }
 else {
-    Write-Error "Could not parse vcpkg filename"
+    Write-Error ("Could not find the x64 vcpkg-export package in FetchArtifacts.cmake for Wireshark $Version. " +
+        "Find the add_artifact(...) line that provides GLib for x64 Windows in $FetchFile " +
+        "and update cmake/scripts/prepare_sdk_win.ps1 to match it.")
     exit 1
 }
 
 # 3. Download & Extract dependencies
-if (-not (Test-Path "deps\installed")) {
+if (-not (Test-Path "deps")) {
     $DEPS_URL = "https://dev-libs.wireshark.org/windows/packages/vcpkg-export/$VcpkgZipName"
     Fast-Download $DEPS_URL "deps.zip"
+    Assert-Hash "deps.zip" $VcpkgZipHash
 
-    Write-Host "Extracting Dependencies..." -ForegroundColor Cyan
+    Write-Host "Extracting Dependencies..."
     & "7z" x "deps.zip" -y -o"deps_temp" | Out-Null
-    $InstDir = Get-ChildItem -Path "deps_temp" -Filter "installed" -Recurse | Select-Object -First 1
-    if ($InstDir) {
-        New-Item -ItemType Directory -Force -Path "deps" | Out-Null
-        Move-Item $InstDir.FullName "deps" -Force
+    $GlibLib = Get-ChildItem -Path "deps_temp" -Filter "glib-2.0.lib" -Recurse |
+        Where-Object { $_.FullName -notmatch "\\debug\\" } |
+        Select-Object -First 1
+    if (-not $GlibLib) {
+        Write-Error ("Release glib-2.0.lib not found in $VcpkgZipName. " +
+            "The package layout changed in Wireshark ${Version}: inspect the archive " +
+            "and update cmake/scripts/prepare_sdk_win.ps1 to match it.")
+        exit 1
     }
-    Remove-Item "deps_temp" -Recurse -Force
+    Move-Item $GlibLib.Directory.Parent.FullName "deps"
+    Remove-Item "deps_temp", "deps.zip" -Recurse -Force
 }
 
 # 4. Download & Extract import libs
-if (-not (Test-Path "libs\libwireshark.lib")) {
+if (-not (Test-Path "libs\wsutil.lib")) {
     $WS_PDB_URL = "https://www.wireshark.org/download/win64/all-versions/Wireshark-pdb-$Version-x64.zip"
     Fast-Download $WS_PDB_URL "pdbs.zip"
 
-    Write-Host "Extracting Import Libraries..." -ForegroundColor Cyan
+    Write-Host "Extracting Import Libraries..."
     & "7z" e "pdbs.zip" -o"libs" "wireshark.lib" "wsutil.lib" -r -y | Out-Null
-
-    # Rename to match CMake conventions
-    if (Test-Path "libs\wireshark.lib") {
-        Move-Item "libs\wireshark.lib" "libs\libwireshark.lib" -Force
-    }
-    if (Test-Path "libs\wsutil.lib") {
-        Move-Item "libs\wsutil.lib" "libs\libwsutil.lib" -Force
-    }
+    Remove-Item "pdbs.zip" -Force
 }
 
-# 5. Generate headers
-Write-Host "Generating Headers..." -ForegroundColor Cyan
-$VerParts = $Version.Split('.')
-$WsHeaderContent = @"
-#ifndef __WS_VERSION_H__
-#define __WS_VERSION_H__
-#define WIRESHARK_VERSION_MAJOR $($VerParts[0])
-#define WIRESHARK_VERSION_MINOR $($VerParts[1])
-#define WIRESHARK_VERSION_MICRO $($VerParts[2])
-#define WIRESHARK_VERSION_STRING "$Version"
-#endif
-"@
-$IncPath = "$SdkRoot\wireshark-src\wireshark-$Version\include"
-if (-not (Test-Path $IncPath)) {
-    New-Item -ItemType Directory -Force -Path $IncPath | Out-Null
-}
-$WsHeaderContent | Out-File "$IncPath\ws_version.h" -Encoding ASCII
-
-# 6. cmake config
-Write-Host "Generating Config..." -ForegroundColor Cyan
-$SDK_C = $SdkRoot.Replace('\', '/')
-$DEPS_ROOT = "$SDK_C/deps/installed/x64-windows"
-$Config = @"
-set(Wireshark_VERSION "$Version")
-set(Wireshark_INSTALL_PREFIX "$SDK_C/wireshark-bin")
-add_library(epan SHARED IMPORTED)
-set_target_properties(epan PROPERTIES
-    IMPORTED_LOCATION "$SDK_C/wireshark-bin/libwireshark.dll"
-    IMPORTED_IMPLIB   "$SDK_C/libs/libwireshark.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "$SDK_C/wireshark-src/wireshark-$Version;$SDK_C/wireshark-src/wireshark-$Version/epan;$SDK_C/wireshark-src/wireshark-$Version/include;$SDK_C/wireshark-src/wireshark-$Version/wsutil;$DEPS_ROOT/include;$DEPS_ROOT/include/glib-2.0;$DEPS_ROOT/lib/glib-2.0/include"
-    INTERFACE_LINK_LIBRARIES      "$SDK_C/libs/libwsutil.lib;$DEPS_ROOT/lib/glib-2.0.lib;$DEPS_ROOT/lib/gmodule-2.0.lib;$DEPS_ROOT/lib/gobject-2.0.lib"
-)
-"@
-$Config | Out-File "$SdkRoot\WiresharkConfig.cmake" -Encoding ASCII
-Write-Host "SDK Ready" -ForegroundColor Green
+Remove-Item "SIGNATURES.txt" -Force -ErrorAction SilentlyContinue
+Write-Host "SDK Ready"
