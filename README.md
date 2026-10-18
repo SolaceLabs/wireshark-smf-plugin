@@ -33,7 +33,7 @@ Personal Plugin Directory:
 `~/.local/lib/wireshark/plugins/4-6/epan`
 
 > [!IMPORTANT]
-> If you get an error message saying `library load disallowed by system policy` when lauching wireshark, you must run this command to allow the plugin to load:
+> If you get an error message saying `library load disallowed by system policy` when launching wireshark, you must run this command to allow the plugin to load:
 > ```sh
 > sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/4-6/epan/smf.so
 > ```
@@ -96,15 +96,12 @@ cmake --build build
 You can then find the plugin at `build/smf.so`.
 
 ### Using the Wireshark version targeted by the repo
-The Wireshark version the code targets is set in `cmake/WiresharkVersion.cmake`. This is always used on Windows, and on
-Linux/MacOS when Wireshark is not installed or `-DUSE_SYSTEM_WIRESHARK=OFF` is passed to cmake.
+The Wireshark version the code targets is set in `cmake/WiresharkVersion.cmake`. This is always used on Windows, and on Linux/MacOS when Wireshark is not installed or `-DUSE_SYSTEM_WIRESHARK=OFF` is passed to cmake.
 
-Wireshark is not compiled. CMake downloads the Wireshark source for its headers and, on Windows, the import libraries and
-third party dependencies from the official release, into `build/_deps`.
+Wireshark is not compiled. CMake downloads the Wireshark source for its headers and, on Windows, the import libraries and third party dependencies from the official release, into `build/_deps`.
 
 > [!NOTE]
-> On Windows, you must use the Visual Studio Developer Command Prompt when running the `cmake` commands, and build with
-> `Release` or `RelWithDebInfo` so the plugin uses the same C runtime as the official Wireshark release.
+> On Windows, you must use the Visual Studio Developer Command Prompt when running the `cmake` commands, and build with `Release` or `RelWithDebInfo` so the plugin uses the same C runtime as the official Wireshark release.
 
 1. Install the dependencies
 ```sh

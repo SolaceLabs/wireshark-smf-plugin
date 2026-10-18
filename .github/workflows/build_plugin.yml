@@ -1,23 +1,21 @@
 # Copyright 2025 Solace Corporation. All rights reserved.
 
 name: Build Plugin
-run-name: >-
-  ${{ github.event_name != 'push'
-    && format('{0} patch {1}', github.ref_name, inputs.version_patch || -1)
-    || ''
-  }}
 
 on:
   push:
     branches:
       - main
 
+  workflow_call:
+    outputs:
+      version_major:
+        value: ${{ jobs.setup.outputs.version_major }}
+      version_minor:
+        value: ${{ jobs.setup.outputs.version_minor }}
+
   workflow_dispatch:
     inputs:
-      version_patch:
-        description: "Patch version for the SMF plugin"
-        type: number
-        required: false
       build_linux:
         description: 'Build for Linux'
         type: boolean
@@ -30,26 +28,6 @@ on:
         description: 'Build for MacOS'
         type: boolean
         default: true
-
-  workflow_call:
-    inputs:
-      version_patch:
-        type: number
-        required: true
-      build_linux:
-        type: boolean
-        default: true
-      build_windows:
-        type: boolean
-        default: true
-      build_macos:
-        type: boolean
-        default: true
-    outputs:
-      version_major:
-        value: ${{ jobs.setup.outputs.version_major }}
-      version_minor:
-        value: ${{ jobs.setup.outputs.version_minor }}
 
 jobs:
   setup:
@@ -73,17 +51,36 @@ jobs:
 
       - name: Set defaults
         id: defaults
+        env:
+          BUILD_LINUX: ${{ !contains(inputs.build_linux, 'false') }}
+          BUILD_WINDOWS: ${{ !contains(inputs.build_windows, 'false') }}
+          BUILD_MACOS: ${{ !contains(inputs.build_macos, 'false') }}
         run: |
           WIRESHARK_VERSION=$(cmake -P cmake/WiresharkVersion.cmake 2>&1)
           IFS=. read -r MAJOR MINOR _ <<< "$WIRESHARK_VERSION"
+
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^v([0-9]+)\.([0-9]+)\.(0|[1-9][0-9]*)$ ]]; then
+              echo "::error title=Invalid release tag::Release tags must be vMAJOR.MINOR.PATCH, got '$GITHUB_REF_NAME'"
+              exit 1
+            fi
+            if [[ "${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" != "$MAJOR.$MINOR" ]]; then
+              echo "::error title=Tag does not match Wireshark version::Tag $GITHUB_REF_NAME does not match WIRESHARK_TARGET_VERSION $WIRESHARK_VERSION in cmake/WiresharkVersion.cmake"
+              exit 1
+            fi
+            PATCH=${BASH_REMATCH[3]}
+          else
+            PATCH=-1
+          fi
+
           echo "wireshark_version=$WIRESHARK_VERSION" >> $GITHUB_OUTPUT
           echo "version_major=$MAJOR" >> $GITHUB_OUTPUT
           echo "version_minor=$MINOR" >> $GITHUB_OUTPUT
-          echo "version_patch=${{ inputs.version_patch || -1 }}" >> $GITHUB_OUTPUT
+          echo "version_patch=$PATCH" >> $GITHUB_OUTPUT
 
-          echo "build_linux=${{ !contains(inputs.build_linux, 'false') }}" >> $GITHUB_OUTPUT
-          echo "build_windows=${{ !contains(inputs.build_windows, 'false') }}" >> $GITHUB_OUTPUT
-          echo "build_macos=${{ !contains(inputs.build_macos, 'false') }}" >> $GITHUB_OUTPUT
+          echo "build_linux=$BUILD_LINUX" >> $GITHUB_OUTPUT
+          echo "build_windows=$BUILD_WINDOWS" >> $GITHUB_OUTPUT
+          echo "build_macos=$BUILD_MACOS" >> $GITHUB_OUTPUT
 
       - name: Set OS Matrix
         id: set-matrix
@@ -124,7 +121,7 @@ jobs:
     strategy:
       matrix:
         os: ${{ fromJSON(needs.setup.outputs.matrix) }}
-    name: Build ${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }} on ${{ matrix.os.pretty-name }}
+    name: Build on ${{ matrix.os.pretty-name }}
     runs-on: ${{ matrix.os.runner }}
     steps:
       - name: Checkout
