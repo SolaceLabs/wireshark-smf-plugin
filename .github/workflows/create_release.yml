@@ -40,12 +40,21 @@ jobs:
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
 
       - name: Create Release
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
-        with:
-            name: ${{ github.ref_name }}
-            tag: ${{ github.ref_name }}
-            artifacts: "${{ env.LINUX_PLUGIN_NAME }}/*, ${{ env.WINDOWS_PLUGIN_NAME }}/*, ${{ env.MACOS_PLUGIN_NAME }}/*"
-            bodyFile: "${{ runner.temp }}/release_notes.md"
-            draft: true
-            allowUpdates: true
-            updateOnlyUnreleased: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ARCHIVES=("$LINUX_PLUGIN_NAME"/* "$WINDOWS_PLUGIN_NAME"/* "$MACOS_PLUGIN_NAME"/*)
+          NOTES="$RUNNER_TEMP/release_notes.md"
+
+          case "$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null)" in
+            "")
+              gh release create "$TAG" --draft --title "$TAG" --notes-file "$NOTES" "${ARCHIVES[@]}" ;;
+            true)
+              gh release edit "$TAG" --notes-file "$NOTES"
+              gh release upload "$TAG" --clobber "${ARCHIVES[@]}" ;;
+            *)
+              echo "::error title=Release already published::$TAG is published and will not be modified"
+              exit 1 ;;
+          esac
