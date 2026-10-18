@@ -3,10 +3,7 @@
 name: Build Plugin
 run-name: >-
   ${{ github.event_name != 'push'
-    && format('v{0}.{1}.{2}',
-              inputs.version_major,
-              inputs.version_minor,
-              inputs.version_patch || -1)
+    && format('{0} patch {1}', github.ref_name, inputs.version_patch || -1)
     || ''
   }}
 
@@ -17,16 +14,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      version_major:
-        description: "Major version of the wireshark tag to use when building the plugin"
-        type: number
-        required: true
-        default: 4
-      version_minor:
-        description: "Minor version of the wireshark tag to use when building the plugin"
-        type: number
-        required: true
-        default: 6
       version_patch:
         description: "Patch version for the SMF plugin"
         type: number
@@ -46,12 +33,6 @@ on:
 
   workflow_call:
     inputs:
-      version_major:
-        type: number
-        required: true
-      version_minor:
-        type: number
-        required: true
       version_patch:
         type: number
         required: true
@@ -64,12 +45,18 @@ on:
       build_macos:
         type: boolean
         default: true
+    outputs:
+      version_major:
+        value: ${{ jobs.setup.outputs.version_major }}
+      version_minor:
+        value: ${{ jobs.setup.outputs.version_minor }}
 
 jobs:
   setup:
     name: Setup Build Parameters
     runs-on: ubuntu-latest
     outputs:
+      wireshark_version: ${{ steps.defaults.outputs.wireshark_version }}
       version_major: ${{ steps.defaults.outputs.version_major }}
       version_minor: ${{ steps.defaults.outputs.version_minor }}
       version_patch: ${{ steps.defaults.outputs.version_patch }}
@@ -78,11 +65,20 @@ jobs:
       build_macos: ${{ steps.defaults.outputs.build_macos }}
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          sparse-checkout: cmake/WiresharkVersion.cmake
+          sparse-checkout-cone-mode: false
+
       - name: Set defaults
         id: defaults
         run: |
-          echo "version_major=${{ inputs.version_major || 4 }}" >> $GITHUB_OUTPUT
-          echo "version_minor=${{ inputs.version_minor || 6 }}" >> $GITHUB_OUTPUT
+          WIRESHARK_VERSION=$(cmake -P cmake/WiresharkVersion.cmake 2>&1)
+          IFS=. read -r MAJOR MINOR _ <<< "$WIRESHARK_VERSION"
+          echo "wireshark_version=$WIRESHARK_VERSION" >> $GITHUB_OUTPUT
+          echo "version_major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "version_minor=$MINOR" >> $GITHUB_OUTPUT
           echo "version_patch=${{ inputs.version_patch || -1 }}" >> $GITHUB_OUTPUT
 
           echo "build_linux=${{ !contains(inputs.build_linux, 'false') }}" >> $GITHUB_OUTPUT
@@ -128,7 +124,7 @@ jobs:
     strategy:
       matrix:
         os: ${{ fromJSON(needs.setup.outputs.matrix) }}
-    name: Build on ${{ matrix.os.pretty-name }}
+    name: Build ${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }} on ${{ matrix.os.pretty-name }}
     runs-on: ${{ matrix.os.runner }}
     steps:
       - name: Checkout
@@ -146,14 +142,13 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: build/_deps
-          key: wireshark-sdk-v${{ needs.setup.outputs.version_major }}.${{ needs.setup.outputs.version_minor }}-${{ matrix.os.name }}-${{ hashFiles('cmake/SetupWiresharkSDK.cmake', 'cmake/scripts/*') }}
+          key: wireshark-sdk-v${{ needs.setup.outputs.wireshark_version }}-${{ matrix.os.name }}-${{ hashFiles('cmake/scripts/*') }}
 
       - name: Configure Plugin
         run: >-
           cmake -G Ninja -S . -B build
           -DCMAKE_BUILD_TYPE="RelWithDebInfo"
-          -DPLUGIN_VERSION_MAJOR=${{ needs.setup.outputs.version_major }}
-          -DPLUGIN_VERSION_MINOR=${{ needs.setup.outputs.version_minor }}
+          -DUSE_SYSTEM_WIRESHARK=OFF
           -DPLUGIN_VERSION_PATCH=${{ needs.setup.outputs.version_patch }}
 
       - name: Build Plugin

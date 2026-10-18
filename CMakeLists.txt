@@ -3,18 +3,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(smf DESCRIPTION "SMF Wireshark Plugin" LANGUAGES C)
 
-if((DEFINED PLUGIN_VERSION_MAJOR AND NOT DEFINED PLUGIN_VERSION_MINOR) OR
-   (NOT DEFINED PLUGIN_VERSION_MAJOR AND DEFINED PLUGIN_VERSION_MINOR))
-    message(FATAL_ERROR "Invalid Configuration: You must define BOTH PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR, or NEITHER")
-endif()
+option(USE_SYSTEM_WIRESHARK "Build against the installed Wireshark if found, instead of the version in cmake/WiresharkVersion.cmake" ON)
+include(cmake/SetupWiresharkSDK.cmake)
 
-if(NOT DEFINED Wireshark_VERSION)
-    include(cmake/SetupWiresharkSDK.cmake)
-endif()
-
-if(NOT TARGET epan)
-    find_package(Wireshark CONFIG REQUIRED)
-endif()
 find_package(ZLIB REQUIRED)
 if(UNIX)
     find_package(PkgConfig REQUIRED)
@@ -35,9 +26,9 @@ else()
 endif()
 set(PROJECT_VERSION "${WS_VERSION_MAJOR}.${WS_VERSION_MINOR}.${WS_VERSION_PATCH}")
 
-set(PLUGIN_VERSION_MAJOR "${WS_VERSION_MAJOR}" CACHE STRING "Major Version")
-set(PLUGIN_VERSION_MINOR "${WS_VERSION_MINOR}" CACHE STRING "Minor Version")
-set(PLUGIN_VERSION_PATCH "-1"                  CACHE STRING "Patch Version")
+set(PLUGIN_VERSION_MAJOR "${WS_VERSION_MAJOR}")
+set(PLUGIN_VERSION_MINOR "${WS_VERSION_MINOR}")
+set(PLUGIN_VERSION_PATCH "-1" CACHE STRING "Patch Version")
 set(PLUGIN_VERSION "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.${PLUGIN_VERSION_PATCH}")
 message(STATUS "SMF plugin version set to:  ${PLUGIN_VERSION}")
 

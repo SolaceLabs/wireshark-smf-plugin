@@ -1,66 +1,25 @@
 # Copyright 2026 Solace Corporation. All rights reserved.
 
-# Check if the user provided specific version targets
-if(DEFINED PLUGIN_VERSION_MAJOR AND DEFINED PLUGIN_VERSION_MINOR)
-    set(WS_SDK_VERSION_MAJOR "${PLUGIN_VERSION_MAJOR}")
-    set(WS_SDK_VERSION_MINOR "${PLUGIN_VERSION_MINOR}")
-    set(WS_SDK_VERSION_MICRO 0)
-    set(WS_FULL_VERSION "${WS_SDK_VERSION_MAJOR}.${WS_SDK_VERSION_MINOR}.${WS_SDK_VERSION_MICRO}")
-    set(WS_VERSION_DEFINED TRUE)
-else()
-    set(WS_VERSION_DEFINED FALSE)
+include(${CMAKE_CURRENT_LIST_DIR}/WiresharkVersion.cmake)
+
+if(NOT WIRESHARK_TARGET_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+    message(FATAL_ERROR "WIRESHARK_TARGET_VERSION in cmake/WiresharkVersion.cmake must be major.minor.patch, got '${WIRESHARK_TARGET_VERSION}'")
 endif()
+set(WS_SDK_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(WS_SDK_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(WS_SDK_VERSION_MICRO "${CMAKE_MATCH_3}")
+set(WS_FULL_VERSION "${WIRESHARK_TARGET_VERSION}")
 
-# Define where the SDK will be created if bootstrapping is needed
-set(WS_DEPS_DIR "${CMAKE_BINARY_DIR}/_deps")
-set(WS_SDK_ROOT "${WS_DEPS_DIR}/wireshark-${WS_FULL_VERSION}")
-set(WS_SRC_DIR "${WS_SDK_ROOT}/src")
-
-set(NEED_BOOTSTRAP FALSE)
-
-if(WIN32)
-    # Windows always requires bootstrapping, so we MUST have the version.
-    if(NOT WS_VERSION_DEFINED)
-        message(FATAL_ERROR "On Windows, you must define PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR to bootstrap the Wireshark SDK")
-    endif()
-    set(NEED_BOOTSTRAP TRUE)
-elseif(UNIX)
-    # Try to find System Wireshark
+if(USE_SYSTEM_WIRESHARK AND NOT WIN32)
     find_package(Wireshark CONFIG QUIET)
-
     if(Wireshark_FOUND)
-        if(WS_VERSION_DEFINED)
-            # Extract major.minor from system Wireshark version
-            string(REPLACE "." ";" _ws_ver_list ${Wireshark_VERSION})
-            list(GET _ws_ver_list 0 WS_SYSTEM_VERSION_MAJOR)
-            list(GET _ws_ver_list 1 WS_SYSTEM_VERSION_MINOR)
-            set(WS_SYSTEM_MAJOR_MINOR "${WS_SYSTEM_VERSION_MAJOR}.${WS_SYSTEM_VERSION_MINOR}")
-            set(WS_REQUESTED_MAJOR_MINOR "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}")
-
-            # If system found but version mismatch -> Bootstrap
-            if(NOT "${WS_SYSTEM_MAJOR_MINOR}" STREQUAL "${WS_REQUESTED_MAJOR_MINOR}")
-                message(STATUS "System Wireshark version (${Wireshark_VERSION}) does not match requested (${WS_REQUESTED_MAJOR_MINOR}.x). Bootstrapping local SDK...")
-                set(NEED_BOOTSTRAP TRUE)
-            else()
-                message(STATUS "Found System Wireshark ${Wireshark_VERSION} (matches ${WS_REQUESTED_MAJOR_MINOR}.x)")
-            endif()
-        else()
-            message(STATUS "Found System Wireshark ${Wireshark_VERSION}")
-        endif()
-    else()
-        # System not found. Can we bootstrap?
-        if(WS_VERSION_DEFINED)
-            message(STATUS "System Wireshark not found. Bootstrapping local SDK for version ${WS_FULL_VERSION}...")
-            set(NEED_BOOTSTRAP TRUE)
-        else()
-            message(FATAL_ERROR "System Wireshark not found. To bootstrap a local SDK, you must define PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR")
-        endif()
+        message(STATUS "Using system Wireshark ${Wireshark_VERSION} (WIRESHARK_TARGET_VERSION is ${WIRESHARK_TARGET_VERSION})")
+        return()
     endif()
 endif()
 
-if(NOT NEED_BOOTSTRAP)
-    return()
-endif()
+set(WS_SDK_ROOT "${CMAKE_BINARY_DIR}/_deps/wireshark-${WS_FULL_VERSION}")
+set(WS_SRC_DIR "${WS_SDK_ROOT}/src")
 
 if(WIN32)
     set(WS_SDK_READY "${WS_SDK_ROOT}/libs/wsutil.lib")

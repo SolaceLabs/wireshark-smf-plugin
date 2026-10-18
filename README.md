@@ -95,7 +95,10 @@ cmake --build build
 
 You can then find the plugin at `build/smf.so`.
 
-### Using a specific version of Wireshark
+### Using the Wireshark version targeted by the repo
+The Wireshark version the code targets is set in `cmake/WiresharkVersion.cmake`. This is always used on Windows, and on
+Linux/MacOS when Wireshark is not installed or `-DUSE_SYSTEM_WIRESHARK=OFF` is passed to cmake.
+
 Wireshark is not compiled. CMake downloads the Wireshark source for its headers and, on Windows, the import libraries and
 third party dependencies from the official release, into `build/_deps`.
 
@@ -136,8 +139,7 @@ cd wireshark-smf-plugin
 4. Configure cmake
 ```sh
 # optionally add "-DCMAKE_EXPORT_COMPILE_COMMANDS=1" to export the "compile_commands.json"
-# you must specific a major / minor version
-cmake -G Ninja -B build -DPLUGIN_VERSION_MAJOR=4 -DPLUGIN_VERSION_MINOR=6
+cmake -G Ninja -B build -DUSE_SYSTEM_WIRESHARK=OFF
 ```
 
 5. (optional) If you chose to export the compile commands, you can copy them from build or create a symbolic link
