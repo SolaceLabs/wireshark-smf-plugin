@@ -3,17 +3,14 @@
 cmake_minimum_required(VERSION 3.16)
 project(smf DESCRIPTION "SMF Wireshark Plugin" LANGUAGES C)
 
-if((DEFINED PLUGIN_VERSION_MAJOR AND NOT DEFINED PLUGIN_VERSION_MINOR) OR
-   (NOT DEFINED PLUGIN_VERSION_MAJOR AND DEFINED PLUGIN_VERSION_MINOR))
-    message(FATAL_ERROR "Invalid Configuration: You must define BOTH PLUGIN_VERSION_MAJOR and PLUGIN_VERSION_MINOR, or NEITHER")
-endif()
+option(USE_SYSTEM_WIRESHARK "Build against the installed Wireshark if found, instead of the version in cmake/WiresharkVersion.cmake" ON)
+include(cmake/SetupWiresharkSDK.cmake)
 
-if(NOT DEFINED Wireshark_VERSION)
-    include(cmake/SetupWiresharkSDK.cmake)
-endif()
-
-find_package(Wireshark CONFIG REQUIRED)
 find_package(ZLIB REQUIRED)
+if(UNIX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GLIB2 REQUIRED IMPORTED_TARGET glib-2.0)
+endif()
 
 if(Wireshark_VERSION)
     message(STATUS "Wireshark version detected: ${Wireshark_VERSION}")
@@ -29,13 +26,13 @@ else()
 endif()
 set(PROJECT_VERSION "${WS_VERSION_MAJOR}.${WS_VERSION_MINOR}.${WS_VERSION_PATCH}")
 
-set(PLUGIN_VERSION_MAJOR "${WS_VERSION_MAJOR}" CACHE STRING "Major Version")
-set(PLUGIN_VERSION_MINOR "${WS_VERSION_MINOR}" CACHE STRING "Minor Version")
-set(PLUGIN_VERSION_PATCH "-1"                  CACHE STRING "Patch Version")
+set(PLUGIN_VERSION_MAJOR "${WS_VERSION_MAJOR}")
+set(PLUGIN_VERSION_MINOR "${WS_VERSION_MINOR}")
+set(PLUGIN_VERSION_PATCH "-1" CACHE STRING "Patch Version")
 set(PLUGIN_VERSION "${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.${PLUGIN_VERSION_PATCH}")
 message(STATUS "SMF plugin version set to:  ${PLUGIN_VERSION}")
 
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND Wireshark_INSTALL_PREFIX)
     set(CMAKE_INSTALL_PREFIX "${Wireshark_INSTALL_PREFIX}" CACHE PATH "Installation prefix" FORCE)
 endif()
 
@@ -88,7 +85,12 @@ set_target_properties(smf PROPERTIES PREFIX "" DEFINE_SYMBOL "")
 target_include_directories(smf PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_BINARY_DIR}
-    ${ZLIB_INCLUDE_DIRS}
 )
 
-target_link_libraries(smf epan ${ZLIB_LIBRARIES})
+target_link_libraries(smf epan ZLIB::ZLIB)
+if(APPLE)
+    target_include_directories(smf PRIVATE ${GLIB2_INCLUDE_DIRS})
+    target_link_options(smf PRIVATE -undefined dynamic_lookup)
+elseif(UNIX)
+    target_link_libraries(smf PkgConfig::GLIB2)
+endif()

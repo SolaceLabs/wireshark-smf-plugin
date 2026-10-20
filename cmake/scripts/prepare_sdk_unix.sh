@@ -7,42 +7,47 @@ VERSION="$1"
 SDK_ROOT="$2"
 
 # Official Source URL
-SRC_URL="https://www.wireshark.org/download/src/all-versions/wireshark-$VERSION.tar.xz"
+BASE_URL="https://www.wireshark.org/download/src/all-versions"
+SRC_URL="$BASE_URL/wireshark-$VERSION.tar.xz"
+SIG_URL="$BASE_URL/SIGNATURES-$VERSION.txt"
+
+download() {
+    if command -v wget &> /dev/null; then
+        wget -q "$1" -O "$2" || { echo "Error: Failed to download $1"; exit 1; }
+    else
+        curl -fsSL -o "$2" "$1" || { echo "Error: Failed to download $1"; exit 1; }
+    fi
+}
+
+sha256() {
+    if command -v sha256sum &> /dev/null; then
+        sha256sum "$1" | cut -d' ' -f1
+    else
+        shasum -a 256 "$1" | cut -d' ' -f1
+    fi
+}
 
 mkdir -p "$SDK_ROOT"
 
-# 1. Download & Extract
 if [ ! -d "$SDK_ROOT/src" ]; then
     echo "Downloading Source..."
 
     TAR_FILE="$SDK_ROOT/ws.tar.xz"
-    if command -v wget &> /dev/null; then
-        wget -q "$SRC_URL" -O "$TAR_FILE" || { echo "Error: Failed to download Wireshark source from $SRC_URL"; exit 1; }
-    else
-        curl -L -o "$TAR_FILE" "$SRC_URL" || { echo "Error: Failed to download Wireshark source from $SRC_URL"; exit 1; }
+    SIG_FILE="$SDK_ROOT/SIGNATURES.txt"
+    download "$SIG_URL" "$SIG_FILE"
+    download "$SRC_URL" "$TAR_FILE"
+
+    EXPECTED=$(sed -n "s/^SHA256(wireshark-$VERSION\.tar\.xz)=\([0-9a-f]\{64\}\).*/\1/p" "$SIG_FILE")
+    rm -f "$SIG_FILE"
+    if [ -z "$EXPECTED" ] || [ "$(sha256 "$TAR_FILE")" != "$EXPECTED" ]; then
+        rm -f "$TAR_FILE"
+        echo "Error: SHA256 mismatch for wireshark-$VERSION.tar.xz"
+        exit 1
     fi
 
-    mkdir -p "$SDK_ROOT/src"
-    tar -xf "$TAR_FILE" -C "$SDK_ROOT/src" --strip-components=1
-fi
-
-# 2. Build & Install
-if [ ! -f "$SDK_ROOT/lib/cmake/wireshark/WiresharkConfig.cmake" ]; then
-    echo "Compiling Libs (using Ninja)..."
-    mkdir -p "$SDK_ROOT/build"
-    cd "$SDK_ROOT/build"
-
-    cmake -G Ninja "$SDK_ROOT/src" \
-        -DCMAKE_INSTALL_PREFIX="$SDK_ROOT" \
-        -DCMAKE_INSTALL_LIBDIR=lib \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-        -DBUILD_wireshark=OFF -DBUILD_tshark=OFF -DBUILD_dumpcap=OFF \
-        -DBUILD_capinfos=OFF -DBUILD_captype=OFF -DBUILD_randpkt=OFF \
-        -DBUILD_dftest=OFF -DBUILD_editcap=OFF -DBUILD_mergecap=OFF \
-        -DBUILD_reordercap=OFF -DBUILD_text2pcap=OFF -DBUILD_sharkd=OFF \
-        -DBUILD_mmdbresolve=OFF -DENABLE_XXHASH=OFF -DENABLE_PCAP=OFF \
-        -DENABLE_PLUGINS=OFF
-
-    cmake --build . --target install
-    cmake --build . --target install-headers
+    rm -rf "$SDK_ROOT/src_temp"
+    mkdir -p "$SDK_ROOT/src_temp"
+    tar -xf "$TAR_FILE" -C "$SDK_ROOT/src_temp" --strip-components=1
+    mv "$SDK_ROOT/src_temp" "$SDK_ROOT/src"
+    rm -f "$TAR_FILE"
 fi

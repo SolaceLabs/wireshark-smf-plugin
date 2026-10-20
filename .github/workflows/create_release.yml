@@ -1,65 +1,65 @@
 # Copyright 2025 Solace Corporation. All rights reserved.
 
 name: Create Release
-run-name: >-
-  ${{
-    format('v{0}.{1}.{2}',
-           inputs.version_major,
-           inputs.version_minor,
-           inputs.version_patch)
-  }}
+run-name: ${{ github.ref_name }}
 
 on:
-  workflow_dispatch:
-    inputs:
-      version_major:
-        description: "Major version of the wireshark tag to use when building the plugin"
-        type: number
-        required: true
-        default: 4
-      version_minor:
-        description: "Minor version of the wireshark tag to use when building the plugin"
-        type: number
-        required: true
-        default: 6
-      version_patch:
-        description: "Patch version for the SMF plugin"
-        type: number
-        required: true
+  push:
+    tags:
+      - 'v*'
 
-env:
-  LINUX_PLUGIN_NAME: wireshark-smf-linux-x86_64.tar.gz
-  WINDOWS_PLUGIN_NAME: wireshark-smf-windows-x64.zip
-  MACOS_PLUGIN_NAME: wireshark-smf-macos-arm64.tar.gz
+permissions:
+  contents: read
 
 jobs:
   build_plugin:
     name: Build All Plugins
     uses: ./.github/workflows/build_plugin.yml
-    with:
-      version_major: ${{ fromJSON(inputs.version_major) }}
-      version_minor: ${{ fromJSON(inputs.version_minor) }}
-      version_patch: ${{ fromJSON(inputs.version_patch) }}
 
   create_release:
     name: Create Draft Release
-    runs-on: ubuntu-latest
     needs: [build_plugin]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      MAJOR: ${{ needs.build_plugin.outputs.version_major }}
+      MINOR: ${{ needs.build_plugin.outputs.version_minor }}
+      LINUX_PLUGIN_NAME: wireshark-smf-linux-x86_64.tar.gz
+      WINDOWS_PLUGIN_NAME: wireshark-smf-windows-x64.zip
+      MACOS_PLUGIN_NAME: wireshark-smf-macos-arm64.tar.gz
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          sparse-checkout: .github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md
+          sparse-checkout: .github/workflows/docs/release_instructions.md
+          sparse-checkout-cone-mode: false
+
+      - name: Generate Release Notes
+        run: >-
+          sed -e "s/@MAJOR@/$MAJOR/g" -e "s/@MINOR@/$MINOR/g"
+          .github/workflows/docs/release_instructions.md > "$RUNNER_TEMP/release_notes.md"
 
       # The only way to share artifacts between workflows is to upload and download them.
       - name: Download Artifacts
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
 
       - name: Create Release
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
-        with:
-            name: "v${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}"
-            tag: "v${{ inputs.version_major }}.${{ inputs.version_minor }}.${{ inputs.version_patch }}"
-            artifacts: "${{ env.LINUX_PLUGIN_NAME }}/*, ${{ env.WINDOWS_PLUGIN_NAME }}/*, ${{ env.MACOS_PLUGIN_NAME }}/*"
-            bodyFile: "${{ github.workspace }}/.github/workflows/docs/wireshark_smf_${{ inputs.version_major }}-${{ inputs.version_minor }}-x_instructions.md"
-            draft: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ARCHIVES=("$LINUX_PLUGIN_NAME"/* "$WINDOWS_PLUGIN_NAME"/* "$MACOS_PLUGIN_NAME"/*)
+          NOTES="$RUNNER_TEMP/release_notes.md"
+
+          case "$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null)" in
+            "")
+              gh release create "$TAG" --draft --title "$TAG" --notes-file "$NOTES" "${ARCHIVES[@]}" ;;
+            true)
+              gh release edit "$TAG" --notes-file "$NOTES"
+              gh release upload "$TAG" --clobber "${ARCHIVES[@]}" ;;
+            *)
+              echo "::error title=Release already published::$TAG is published and will not be modified"
+              exit 1 ;;
+          esac

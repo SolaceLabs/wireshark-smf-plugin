@@ -1,34 +1,34 @@
-**Note: this plugin is only compatible with Wireshark 4.4.x**
+**Note: this plugin is only compatible with Wireshark @MAJOR@.@MINOR@.x**
 
 ## Installation Instructions
 
-1. Install [Wireshark 4.4](https://www.wireshark.org/download.html).
+1. Install [Wireshark @MAJOR@.@MINOR@](https://www.wireshark.org/download.html).
 2. Download the corresponding zip file for your platform.
 3. Unzip the folder and place the .dll (Windows) or .so (Mac/Linux) file in the Wireshark plugin folder, under `epan`. The plugin folder path varies for each OS.
 
 ### Windows Plugin Folder
 Personal Plugin Folder:
 
-`%APPDATA%\Wireshark\plugins\4.4\epan`
+`%APPDATA%\Wireshark\plugins\@MAJOR@.@MINOR@\epan`
 
 Global Plugin Folder:
 
-`C:\Program Files\Wireshark\plugins\4.4\epan`
+`C:\Program Files\Wireshark\plugins\@MAJOR@.@MINOR@\epan`
 
 ### Linux Plugin Folder
 Personal Plugin Folder:
 
-`~/.local/lib/wireshark/plugins/4.4/epan`
+`~/.local/lib/wireshark/plugins/@MAJOR@.@MINOR@/epan`
 
 ### macOS Plugin Folder
 Personal Plugin Folder:
 
-`~/.local/lib/wireshark/plugins/4-4/epan`
+`~/.local/lib/wireshark/plugins/@MAJOR@-@MINOR@/epan`
 
 > [!IMPORTANT]
-> If you get an error message saying `library load disallowed by system policy` when lauching wireshark, you must run this command to allow the plugin to load:
+> If you get an error message saying `library load disallowed by system policy` when launching wireshark, you must run this command to allow the plugin to load:
 > ```sh
-> sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/4-4/epan/smf.so
+> sudo xattr -d com.apple.quarantine ~/.local/lib/wireshark/plugins/@MAJOR@-@MINOR@/epan/smf.so
 > ```
 
 See [Wireshark Documentation on Plugin Folders](https://www.wireshark.org/docs/wsug_html_chunked/ChPluginFolders.html) for more information on installing plugins.
