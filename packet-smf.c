@@ -939,20 +939,21 @@ static void smf_proto_add_router_id_item(proto_tree *tree, int id1, int id2,
 static void smf_proto_add_uint16_list_item(proto_tree *tree, packet_info *pinfo,
     int id, tvbuff_t *tvb, int offset, int size)
 {
+    const size_t max_len = 500;
     int i;
-    char* buffer;
-    uint16_t list_item;
+    wmem_strbuf_t *buffer = wmem_strbuf_new(pinfo->pool, "");
 
-    buffer = (char*)wmem_alloc(pinfo->pool, 510);
-    buffer[0] = '\0';
-    for (i = 0; i < size; i += 2)
+    for (i = 0; i + 1 < size; i += 2)
     {
-        list_item = tvb_get_ntohs(tvb, offset + i);
-        g_snprintf(buffer, 510, "%s %d", buffer, list_item);
+        if (wmem_strbuf_get_len(buffer) >= max_len)
+        {
+            wmem_strbuf_append(buffer, " ...");
+            break;
+        }
+        wmem_strbuf_append_printf(buffer, "%s%u", i ? " " : "", tvb_get_ntohs(tvb, offset + i));
     }
 
-    proto_tree_add_string(tree, id, tvb, offset, size, buffer);
-
+    proto_tree_add_string(tree, id, tvb, offset, size, wmem_strbuf_get_str(buffer));
 }
 
 /* Add an entitlement list to the tree */
