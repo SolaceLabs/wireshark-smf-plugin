@@ -34,6 +34,7 @@
 #include <epan/wmem_scopes.h>
 #include <epan/tvbuff.h>
 #include <epan/column-info.h>
+#include <wsutil/sign_ext.h>
 
 #include "packet-smf.h"
 /* SDT Types */
@@ -284,8 +285,9 @@ add_sdt_block(proto_tree *bm_tree, packet_info* pinfo, int headerFieldIndex, tvb
                     proto_tree_add_string(bm_tree, headerFieldIndex, tvb, pos, payloadlen, buffer);
                     break;
                 case SDT_INTEGER:
-                    g_snprintf(buffer, 300, "%s%s%s Length=%d, Payload=%d Value=%" G_GUINT64_FORMAT "",
-                               pad_buf, in_map_str, tagtype_name, itemlen, payloadlen, int_payload);
+                    g_snprintf(buffer, 300, "%s%s%s Length=%d, Payload=%d Value=%" G_GINT64_FORMAT "",
+                               pad_buf, in_map_str, tagtype_name, itemlen, payloadlen,
+                               (payloadlen > 0 && payloadlen < 8) ? (int64_t)ws_sign_ext64(int_payload, payloadlen * 8) : (int64_t)int_payload);
                     /* We highlight from 'pos' (beginning of payload) to end of payload */
                     proto_tree_add_string(bm_tree, headerFieldIndex, tvb, pos, payloadlen, buffer);
                     break;
