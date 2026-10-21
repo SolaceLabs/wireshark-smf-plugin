@@ -24,52 +24,48 @@ Before you submit your pull request consider the following guidelines:
 
 ### Submitting a Pull Request
 
-Please follow these steps for all pull requests. These steps are derived from the [GitHub flow](https://help.github.com/articles/github-flow/).
+Please follow these steps for all pull requests. These steps are derived from the [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow).
 
 #### Step 1: Fork
 
-Fork the current repository and clone your fork
-locally.
+Fork [SolaceLabs/wireshark-smf-plugin](https://github.com/SolaceLabs/wireshark-smf-plugin) and clone your fork locally:
 
 ```sh
-git clone https://github.com/SolaceLabs/wireshark-smf-plugin
+git clone https://github.com/<your-username>/wireshark-smf-plugin
+cd wireshark-smf-plugin
+git remote add upstream https://github.com/SolaceLabs/wireshark-smf-plugin
 ```
 
 #### Step 2: Branch
 
-Make your changes on a new git branch in your fork of the repository.
+Make your changes on a new git branch in your fork of the repository:
 
 ```sh
-git checkout -b my-fix-branch master
+git checkout -b my-fix-branch main
 ```
 
 #### Step 3: Commit
 
-Commit your changes using a descriptive commit message.
+Commit your changes:
 
 ```sh
-git commit -a -m "Your Commit Message"
+git commit -a -m "Your commit message"
 ```
 
-Note: the optional commit `-a` command line option will automatically "add" and "rm" edited files.
+Individual commit messages don't need to follow any particular format, since they are squashed on merge.
 
-#### Step 4: Rebase (if possible)
+Note: the optional `-a` option stages modified and deleted files that git already tracks. New files must be added with `git add` first.
 
-Assuming you have not yet pushed your branch to origin, use `git rebase` (not `git merge`) to synchronize your work with the main
-repository.
+#### Step 4: Stay up to date
+
+Pull requests are squash-merged, so your branch history doesn't need to be tidy. To pick up changes from `main`, either rebase or merge. Rebasing is preferred since it keeps the PR diff cleaner:
 
 ```sh
-$ git fetch upstream
-$ git rebase upstream/master
+git fetch upstream
+git rebase upstream/main
 ```
 
-If you have not set the upstream, do so as follows:
-
-```sh
-$ git remote add upstream https://github.com/solacecommunity/<github-repo>
-```
-
-If you have already pushed your fork, then do not rebase. Instead merge any changes from master that are not already part of your branch.
+If you have already pushed your branch, rebasing rewrites its history, so your next push needs `git push --force-with-lease origin my-fix-branch`.
 
 #### Step 5: Push
 
@@ -81,13 +77,14 @@ git push origin my-fix-branch
 
 #### Step 6: Pull Request
 
-In GitHub, send a pull request to `<github-repo>:master`.
+In GitHub, open a pull request against `SolaceLabs/wireshark-smf-plugin:main`. Since the PR is squash-merged, its title becomes the commit message on `main` and must follow [Conventional Commits](https://www.conventionalcommits.org) (e.g. `fix: ...`, `feat: ...`, `docs: ...`, `ci: ...`).
 
-When fixing an existing issue, use the [commit message keywords](https://help.github.com/articles/closing-issues-via-commit-messages/) to close the associated GitHub issue.
+When fixing an existing issue, use the [closing keywords](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue) in the PR description to close the associated GitHub issue.
 
 * If we suggest changes then:
   * Make the required updates.
-  * Commit these changes to your branch (ex: my-fix-branch)
+  * Commit these changes to your branch (ex: my-fix-branch).
+  * Push your branch again. The pull request updates automatically.
 
 That's it! Thank you for your contribution!
 
@@ -97,4 +94,4 @@ That's it! Thank you for your contribution!
 
 ##  <a name="questions"></a> Do you have questions about the source code?
 
-* Ask any question about the code or how to use Solace technologies in the [Solace community](https://solace.community).
+* Ask any question about the code or how to use Solace technologies in the [Solace community](https://community.solace.com).

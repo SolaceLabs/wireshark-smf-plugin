@@ -160,7 +160,7 @@ The PATCH version of the plugin differentiates versions of the SMF Plugin. As lo
 This is not an officially supported Solace product.
 
 For more information try these resources:
-- Ask the [Solace Community](https://solace.community)
+- Ask the [Solace Community](https://community.solace.com)
 - The Solace Developer Portal website at: https://solace.dev
 
 ## Contributing
