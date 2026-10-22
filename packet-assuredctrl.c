@@ -1709,8 +1709,6 @@ static void add_FD_suback_item(
     proto_tree* sub_tree;
     proto_item* item;
     int local_offset = offset;
-    int item_offset = 0;
-    int accumulative_item_offset = 0;
     uint32_t flowid = 0;
     uint64_t min = 0;
     uint64_t max = 0;
@@ -1735,60 +1733,48 @@ static void add_FD_suback_item(
         if(flowid == 0xFFFFFFFF) {
             if(min == 0 && max == 0 && msgCount == 1 && lastMsgIdRecved == 0 && windowSz == 0) {
                 item = proto_tree_add_string_format(sub_tree,
-                    hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "ROLLBACK_ONLY_CONSUMER");
+                    hf_assuredctrl_transactionflow_string, tvb, local_offset, 36, NULL, "ROLLBACK_ONLY_CONSUMER");
             } else {
                 item = proto_tree_add_string_format(sub_tree,
-                    hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL, "INVALID_FLOW_ID");
+                    hf_assuredctrl_transactionflow_string, tvb, local_offset, 36, NULL, "INVALID_FLOW_ID");
             }
             proto_item_set_generated(item);
         } else {
             item = proto_tree_add_string_format(sub_tree,
-                hf_assuredctrl_transactionflow_string, tvb, offset, 36, NULL,
+                hf_assuredctrl_transactionflow_string, tvb, local_offset, 36, NULL,
                 "FlowId: %u, minAck: %" G_GUINT64_FORMAT ", maxAck: %" G_GUINT64_FORMAT
                 ", msgCount: %u, lastTpMsg: %" G_GUINT64_FORMAT ", windowSz: %u",
                 flowid, min, max, msgCount, lastMsgIdRecved, windowSz);
         }
         sub_sub_tree = proto_item_add_subtree(item, ett_FD_suback_list_item);
 
-        item_offset = 4; // Transaction flowid is 4 bytes
         proto_tree_add_item(sub_sub_tree,
             hf_assuredctrl_transactionflow_flowid_param,
-            tvb, local_offset, item_offset, false);
+            tvb, local_offset, 4, false);
         item = proto_tree_add_item(sub_sub_tree, // This parameter is for easier search and filtering with flows
             hf_smf_flowid_hidden_param,
-            tvb, local_offset, item_offset, false);
+            tvb, local_offset, 4, false);
         proto_item_set_hidden(item);
-        accumulative_item_offset += item_offset;
 
-        item_offset = 8; // message id is 8 bytes
         proto_tree_add_item(sub_sub_tree,
             hf_assuredctrl_transactionflow_minmsgid_param,
-            tvb, local_offset+accumulative_item_offset, item_offset, false);
-        accumulative_item_offset += item_offset;
+            tvb, local_offset+4, 8, false);
 
-        item_offset = 8; // message id is 8 bytes   
         proto_tree_add_item(sub_sub_tree,
             hf_assuredctrl_transactionflow_maxmsgid_param,
-            tvb, local_offset+accumulative_item_offset, item_offset, false);
-        accumulative_item_offset += item_offset;
+            tvb, local_offset+12, 8, false);
 
-        item_offset = 4; // message ack acount is 4 bytes 
         proto_tree_add_item(sub_sub_tree,
             hf_assuredctrl_transactionflow_msgackcount_param,
-            tvb, local_offset+accumulative_item_offset, item_offset, false);
-        accumulative_item_offset += item_offset;
+            tvb, local_offset+20, 4, false);
 
-        item_offset = 8; // message id is 8 bytes   
         proto_tree_add_item(sub_sub_tree,
             hf_assuredctrl_transactionflow_lastmsgidrcvd_param,
-            tvb, local_offset+accumulative_item_offset, item_offset, false);
-        accumulative_item_offset += item_offset;
+            tvb, local_offset+24, 8, false);
 
-        item_offset = 4; // transport window is 4 bytes 
         proto_tree_add_item(sub_sub_tree,
             hf_assuredctrl_transactionflow_transportwindowsz_param,
-            tvb, local_offset+accumulative_item_offset, item_offset, false);
-        accumulative_item_offset += item_offset;
+            tvb, local_offset+32, 4, false);
 
         local_offset += 36;
     }
@@ -1821,14 +1807,14 @@ static void add_FD_pubnotify_item(
         if(flowid == 0xFFFFFFFF) {
             if(messageCount == 1 && lastMsgId == 0) {
                 item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, 
-                    tvb, offset, 16, NULL, "ROLLBACK_ONLY_PUBLISHER");
+                    tvb, local_offset, 16, NULL, "ROLLBACK_ONLY_PUBLISHER");
             } else {
                 item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, 
-                    tvb, offset, 16, NULL, "INVALID_FLOW_ID");
+                    tvb, local_offset, 16, NULL, "INVALID_FLOW_ID");
             }
             proto_item_set_generated(item);
         } else {
-            item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, tvb, offset, 16, NULL,
+            item = proto_tree_add_string_format(sub_tree, hf_assuredctrl_transactionflow_string, tvb, local_offset, 16, NULL,
                 "FlowId: %u, messageCount: %u, LastMsgId: %" G_GUINT64_FORMAT, flowid, messageCount, lastMsgId);
         }
         sub_sub_tree = proto_item_add_subtree(item, ett_FD_pubnotify_list_item);
@@ -1878,7 +1864,7 @@ static void add_FD_puback_item(
         windowSz = tvb_get_ntohl(tvb, local_offset + 12);
 
         item = proto_tree_add_string_format(sub_tree,
-            hf_assuredctrl_transactionflow_string, tvb, offset, 16, NULL,
+            hf_assuredctrl_transactionflow_string, tvb, local_offset, 16, NULL,
             "FlowId:%u lastMsgId:%" G_GUINT64_FORMAT " windowSize:%u", flowid, lastMsgId, windowSz
         );
         sub_sub_tree = proto_item_add_subtree(item, ett_FD_puback_list_item);
