@@ -2458,6 +2458,16 @@ dissect_assuredctrl_param(
     proto_item *ti;
     proto_tree *assuredctrl_param_tree;
 
+    // A pad byte has no length to read
+    if ((tvb_get_uint8(tvb, offset) & 0x3f) == 0)
+    {
+        ti = proto_tree_add_item(tree, hf_assuredctrl_param, tvb, offset, 1, false);
+        proto_item_append_text(ti, " (%s)", val_to_str(pinfo->pool, 0, parametertypenames, "Unknown (0x%02x)"));
+        assuredctrl_param_tree = proto_item_add_subtree(ti, ett_assuredctrl_list);
+        proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_pad_byte, tvb, offset, 1, false);
+        return 1;
+    }
+
     // Calculate the length of the param
     len_offset_delta = 1;
     param_len  = tvb_get_uint8(tvb, offset+len_offset_delta);
@@ -2475,13 +2485,6 @@ dissect_assuredctrl_param(
 
     param_type = tvb_get_uint8(tvb, offset) & 0x3f;
     proto_item_append_text(ti, " (%s)", val_to_str(pinfo->pool, param_type, parametertypenames, "Unknown (0x%02x)"));
-
-    /* Is it a pad byte? */
-    if (param_type == 0)
-    {
-        proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_pad_byte, tvb, offset, 1, false);
-        return 1;
-    }
 
     proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_uh, tvb, offset, 1, false);
     proto_tree_add_item(assuredctrl_param_tree, hf_assuredctrl_param_type, tvb, offset, 1, false);
